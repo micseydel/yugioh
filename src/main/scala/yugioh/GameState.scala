@@ -3,26 +3,28 @@ package yugioh
 import java.util.logging.Logger
 
 import yugioh.Util.intWithTimes
+import yugioh.action.{Action, DiscardImpl, PassPriorityImpl}
 
 trait GameState {
   val players: Seq[Player]
 
   var turnCount = 0
-  var hasNormalSummonedThisTurn: Boolean
+  var hasNormalSummonedThisTurn: Boolean = false
 
-  def currentPhase: Phase
   def openGameState: Boolean
-  def battlePhaseStep: Option[BattlePhaseStep]
-  def damageStepSubStep: Option[DamageStepSubStep]
 
   def mainLoop(): Unit
 }
 
-// TODO should be an `object` or `class` rather than `abstract class`
-abstract class GameStateImpl(val players: Seq[Player]) extends GameState {
+class GameStateImpl(val players: Seq[Player]) extends GameState {
   private val InitialHandSize = 5
+  private val HandSizeLimit = 6
+
+  private var history: List[Action] = Nil
 
   def mainLoop() = {
+    implicit val gameState = this
+
     players foreach { player =>
       // TODO low: common logic that should be refactored for reuse
       InitialHandSize times {
@@ -31,21 +33,40 @@ abstract class GameStateImpl(val players: Seq[Player]) extends GameState {
     }
 
     playersCycle foreach { case (turnPlayer, opponent) =>
+      implicit val implicitTurnPlayer = turnPlayer
+
       turnCount += 1
       hasNormalSummonedThisTurn = false
 
-      actionablePhases(turnPlayer) foreach {
-        case DrawPhase =>
-          if (turnCount > 1) {
-            turnPlayer.draw()
-          }
-        case StandbyPhase =>
-        case MainPhase =>
-        case BattlePhase if turnCount > 1 =>
-        case MainPhase2 if turnCount > 1 =>
-        case EndPhase =>
-          // TODO low: ideally would remove this blanket case and the turnCount checks above
-        case _ => Logger.getLogger("GameState").info(s"Skipped phase $currentPhase (turncount $turnCount)")
+      actionablePhases(turnPlayer) foreach { phase =>
+        implicit val implicitPhase = phase
+
+        phase match {
+          case DrawPhase =>
+            if (turnCount > 1) {
+              turnPlayer.draw()
+            }
+          case StandbyPhase =>
+            val action = turnPlayer.chooseAction(Seq(new PassPriorityImpl))
+            action.execute()
+          case MainPhase =>
+            val action = turnPlayer.chooseAction(Seq(new PassPriorityImpl))
+            action.execute()
+          case BattlePhase =>
+            val action = turnPlayer.chooseAction(Seq(new PassPriorityImpl))
+            action.execute()
+          case MainPhase2 =>
+            val action = turnPlayer.chooseAction(Seq(new PassPriorityImpl))
+            action.execute()
+          case EndPhase =>
+            while (turnPlayer.hand.size > HandSizeLimit) {
+              val action = turnPlayer.chooseAction(Seq(new DiscardImpl))
+              action.execute()
+              history :+= action
+            }
+            val action = turnPlayer.chooseAction(Seq(new PassPriorityImpl))
+            action.execute()
+        }
       }
     }
   }
@@ -72,5 +93,9 @@ abstract class GameStateImpl(val players: Seq[Player]) extends GameState {
     }
 
     Stream.continually(Seq((player1, player2), (player2, player1)).toStream).flatten
+  }
+
+  override def openGameState: Boolean = {
+    false // TODO
   }
 }
