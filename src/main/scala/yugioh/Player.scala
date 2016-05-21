@@ -4,6 +4,7 @@ import yugioh.action.Action
 import yugioh.card.Card
 
 import scala.collection.mutable.ListBuffer
+import scala.io.StdIn
 
 trait Player {
   val name: String
@@ -23,10 +24,47 @@ trait Player {
   def draw(): Unit = hand.append(deck.fromTop())
 
   def cardToDiscardForHandSizeLimit: Card
+
+  /**
+    * Ask player if they wish to end the phase or step.
+    */
+  def consentToEnd(implicit phase: Phase, maybeStep: Option[Step]): Boolean
+
+  private[this] var myOpponent: Player = SentinelOpponent
+
+  def opponent_=(player: Player) = {
+    if (myOpponent != SentinelOpponent) {
+      throw new IllegalStateException(s"Opponent has already been set once (to $myOpponent), cannot be set a second time.")
+    }
+
+    myOpponent = player
+  }
+
+  def opponent = {
+    if (myOpponent == SentinelOpponent) {
+      throw new IllegalStateException("Opponent has not been set yet.")
+    }
+
+    myOpponent
+  }
 }
 
 object Player {
   val InitialLifePoints = 8000
+}
+
+/**
+  * A player used as a default value, trying to do anything with it will result in an UnsupportedOperationException.
+  */
+private object SentinelOpponent extends Player {
+  private def fail = throw new UnsupportedOperationException("Opponent was not set.")
+
+  override val name = null
+  override val deck = null
+  override def consentToEnd(implicit phase: Phase, maybeStep: Option[Step]) = fail
+  override def cardToDiscardForHandSizeLimit = fail
+  override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, phase: Phase) = fail
+  override def opponent = fail
 }
 
 class CommandLineHumanPlayer(val name: String) extends Player {
@@ -66,6 +104,11 @@ class CommandLineHumanPlayer(val name: String) extends Player {
 
     options(choice)
   }
+
+  override def consentToEnd(implicit phase: Phase, maybeStep: Option[Step]): Boolean = {
+    println(s"End $phase?")
+    StdIn.readBoolean()
+  }
 }
 
 /**
@@ -78,4 +121,5 @@ class PassivePlayer extends Player {
   override val deck = new TestDeck(this)
   override def cardToDiscardForHandSizeLimit: Card = hand.head
   override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, phase: Phase) = actions.head
+  override def consentToEnd(implicit phase: Phase, maybeStep: Option[Step]): Boolean = true
 }
