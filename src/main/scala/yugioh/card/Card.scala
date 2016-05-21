@@ -6,7 +6,6 @@ import yugioh.action.Action
 
 trait Card {
   val printedName: String
-  val name: String
   val owner: Player
 
   def handState: Option[HandState]
@@ -15,6 +14,7 @@ trait Card {
   def controller: Player
 
   def location: Location
+
   def actions(implicit gameState: GameState): Seq[Action]
 
   // TODO these probably need references to the field?
@@ -23,6 +23,8 @@ trait Card {
   def banish()(implicit gameState: GameState): Unit
   def toHand()(implicit gameState: GameState): Unit
   def toDeck()(implicit gameState: GameState): Unit
+
+  def name: String = printedName
 }
 
 trait SpellOrTrap extends Card
