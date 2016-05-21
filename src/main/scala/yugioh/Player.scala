@@ -21,6 +21,13 @@ trait Player {
     */
   def chooseAction(actions: Seq[Action])(implicit gameState: GameState, phase: Phase): Action
 
+  /**
+    * Called when MP1 is ended.
+    *
+    * @return true to enter BP, otherwise go to EP
+    */
+  def enterBattlePhase: Boolean = false
+
   def draw(): Unit = hand.append(deck.fromTop())
 
   def cardToDiscardForHandSizeLimit: Card
@@ -84,6 +91,11 @@ class CommandLineHumanPlayer(val name: String) extends Player {
     select("Select a card to discard:", hand)
   }
 
+  override def enterBattlePhase = {
+    print("MP1 is ending; enter BP? (If not, will go to EP) ")
+    StdIn.readBoolean()
+  }
+
   /**
     * Ask the user for a specific element of a sequence.
     */
@@ -95,11 +107,11 @@ class CommandLineHumanPlayer(val name: String) extends Player {
     }
 
     print("> ")
-    var choice = scala.io.StdIn.readInt()
+    var choice = StdIn.readInt()
     while (choice < 0 || choice >= options.size) {
       println("Not a valid option.")
       print("> ")
-      choice = scala.io.StdIn.readInt()
+      choice = StdIn.readInt()
     }
 
     options(choice)

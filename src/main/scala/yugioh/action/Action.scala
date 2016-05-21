@@ -11,7 +11,8 @@ trait Action {
     }
 
     doAction()
-    // TODO probably want to add to game state history here, emit an event
+    // TODO: will want emit an event here
+    gameState.history :+= this
     called = true
   }
 

@@ -1,15 +1,53 @@
 package yugioh
 
+/**
+  * State machine.
+  */
 sealed trait Phase {
   val abbreviation: String
+
+  def next(implicit turnPlayer: Player, gameState: GameState): Phase
 }
 
-case object DrawPhase extends Phase { val abbreviation = "DP" }
-case object StandbyPhase extends Phase { val abbreviation = "SP" }
-case object MainPhase extends Phase { val abbreviation = "MP" }
-case object BattlePhase extends Phase { val abbreviation = "BP" }
-case object MainPhase2 extends Phase { val abbreviation = "MP2" }
-case object EndPhase extends Phase { val abbreviation = "EP" }
+case object DrawPhase extends Phase {
+  val abbreviation = "DP"
+  override def next(implicit turnPlayer: Player, gameState: GameState): Phase = StandbyPhase
+}
+
+case object StandbyPhase extends Phase {
+  val abbreviation = "SP"
+  override def next(implicit turnPlayer: Player, gameState: GameState): Phase = MainPhase
+}
+
+case object MainPhase extends Phase {
+  val abbreviation = "MP"
+
+  /**
+    * If it's later than the first turn, ask the turn player if they want to go to BP. Otherwise go to EP.
+    */
+  override def next(implicit turnPlayer: Player, gameState: GameState): Phase = {
+    if (gameState.turnCount > 1 && turnPlayer.enterBattlePhase) {
+      BattlePhase
+    } else {
+      EndPhase
+    }
+  }
+}
+
+case object BattlePhase extends Phase {
+  val abbreviation = "BP"
+  override def next(implicit turnPlayer: Player, gameState: GameState): Phase = MainPhase2
+}
+
+case object MainPhase2 extends Phase {
+  val abbreviation = "MP2"
+  override def next(implicit turnPlayer: Player, gameState: GameState): Phase = EndPhase
+}
+
+case object EndPhase extends Phase {
+  val abbreviation = "EP"
+  override def next(implicit turnPlayer: Player, gameState: GameState): Phase = throw new IllegalStateException()
+}
 
 object Phase {
   val phases = Seq(DrawPhase, StandbyPhase, MainPhase, BattlePhase, MainPhase2, EndPhase)

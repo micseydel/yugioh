@@ -1,7 +1,5 @@
 package yugioh
 
-import java.util.logging.Logger
-
 import yugioh.Util.intWithTimes
 import yugioh.action.{Action, DiscardImpl, PassPriorityImpl}
 
@@ -10,8 +8,7 @@ trait GameState {
 
   var turnCount = 0
   var hasNormalSummonedThisTurn: Boolean = false
-
-  def openGameState: Boolean
+  var history: List[Action] = Nil
 
   def mainLoop(): Unit
 }
@@ -19,8 +16,6 @@ trait GameState {
 class GameStateImpl(val players: Seq[Player]) extends GameState {
   private val InitialHandSize = 5
   private val HandSizeLimit = 6
-
-  private var history: List[Action] = Nil
 
   def mainLoop() = {
     implicit val gameState = this
@@ -38,47 +33,30 @@ class GameStateImpl(val players: Seq[Player]) extends GameState {
       turnCount += 1
       hasNormalSummonedThisTurn = false
 
-      actionablePhases(turnPlayer) foreach { phase =>
-        implicit val implicitPhase = phase
-
+      implicit var phase: Phase = DrawPhase
+      while (phase != EndPhase) {
         phase match {
           case DrawPhase =>
             if (turnCount > 1) {
+              // TODO: this will have to emit an event in some way
               turnPlayer.draw()
             }
           case StandbyPhase =>
-            val action = turnPlayer.chooseAction(Seq(new PassPriorityImpl))
-            action.execute()
           case MainPhase =>
-            val action = turnPlayer.chooseAction(Seq(new PassPriorityImpl))
-            action.execute()
           case BattlePhase =>
-            val action = turnPlayer.chooseAction(Seq(new PassPriorityImpl))
-            action.execute()
           case MainPhase2 =>
-            val action = turnPlayer.chooseAction(Seq(new PassPriorityImpl))
-            action.execute()
           case EndPhase =>
             while (turnPlayer.hand.size > HandSizeLimit) {
               val action = turnPlayer.chooseAction(Seq(new DiscardImpl))
               action.execute()
-              history :+= action
             }
-            val action = turnPlayer.chooseAction(Seq(new PassPriorityImpl))
-            action.execute()
         }
-      }
-    }
-  }
 
-  /**
-    * First turn this should
-    */
-  private def actionablePhases(implicit turnPlayer: Player): Iterable[Phase] = {
-    if (turnCount > 1) {
-      Phase.phases // TODO low: need magic like in Python
-    } else {
-      Seq(DrawPhase, StandbyPhase, MainPhase, EndPhase)
+        val action = turnPlayer.chooseAction(Seq(new PassPriorityImpl))
+        action.execute()
+
+        phase = phase.next
+      }
     }
   }
 
@@ -93,9 +71,5 @@ class GameStateImpl(val players: Seq[Player]) extends GameState {
     }
 
     Stream.continually(Seq((player1, player2), (player2, player1)).toStream).flatten
-  }
-
-  override def openGameState: Boolean = {
-    false // TODO
   }
 }
