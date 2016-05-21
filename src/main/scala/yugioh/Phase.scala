@@ -17,7 +17,9 @@ object Phase {
 }
 
 
-sealed trait BattlePhaseStep
+sealed trait Step
+
+sealed trait BattlePhaseStep extends Step
 
 case object StartStep extends BattlePhaseStep
 case object BattleStep extends BattlePhaseStep
@@ -29,7 +31,7 @@ object BattlePhaseStep {
 }
 
 
-trait DamageStepSubStep
+sealed trait DamageStepSubStep extends Step
 
 case object SubStep1 extends DamageStepSubStep
 case object SubStep2 extends DamageStepSubStep
