@@ -44,6 +44,10 @@ class GameStateImpl(val players: Seq[Player]) extends GameState {
           case StandbyPhase =>
           case MainPhase =>
           case BattlePhase =>
+            implicit var battlePhaseStep: BattlePhaseStep = StartStep
+            while (battlePhaseStep != EndStep) {
+              battlePhaseStep = battlePhaseStep.next
+            }
           case MainPhase2 =>
           case EndPhase =>
             while (turnPlayer.hand.size > HandSizeLimit) {
