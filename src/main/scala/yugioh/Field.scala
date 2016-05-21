@@ -3,12 +3,16 @@ package yugioh
 import yugioh.card.{Card, SpellOrTrap}
 import yugioh.card.monster.Monster
 
+import scala.collection.mutable.ListBuffer
+
 trait Field {
   // try to put things toward the center first
-  val PositionPriorities = Seq(2, 1, 3, 0, 4)
+  protected val PositionPriorities = Seq(2, 1, 3, 0, 4)
 
   val MonsterZones: Array[Option[Monster]] = new Array[Option[Monster]](5)
   val SpellTrapZones: Array[Option[SpellOrTrap]] = new Array[Option[SpellOrTrap]](5)
+  val Graveyard = new ListBuffer[Card]
+  val Banished = new ListBuffer[Card]
 
   def hasFreeMonsterZone: Boolean = MonsterZones.exists(_.isEmpty)
 
@@ -19,6 +23,16 @@ trait Field {
   def placeAsSpellOrTrap(spellOrTrap: Card, locationPreference: Option[Location])
 
   def get(location: Location): Option[Card]
+}
+
+// TODO: fill in stump impl
+class FieldImpl extends Field {
+  // override methods
+  override def placeAsMonster(monster: Card, locationPreference: Option[Location]): Unit = {}
+
+  override def get(location: Location): Option[Card] = None
+
+  override def placeAsSpellOrTrap(spellOrTrap: Card, locationPreference: Option[Location]): Unit = {}
 }
 
 sealed trait Location
