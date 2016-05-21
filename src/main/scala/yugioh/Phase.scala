@@ -57,15 +57,26 @@ object Phase {
 
 sealed trait Step
 
-sealed trait BattlePhaseStep extends Step
+sealed trait BattlePhaseStep extends Step {
+  def next: BattlePhaseStep
+}
 
-case object StartStep extends BattlePhaseStep
-case object BattleStep extends BattlePhaseStep
-case object DamageStep extends BattlePhaseStep
-case object EndStep extends BattlePhaseStep
+case object StartStep extends BattlePhaseStep {
+  override def next: BattlePhaseStep = BattleStep
+}
+case object BattleStep extends BattlePhaseStep {
+  override def next: BattlePhaseStep = {
+    // TODO: DamageStep is also possible from this state
+    EndStep
+  }
+}
 
-object BattlePhaseStep {
-  val steps = Seq(StartStep, BattleStep, DamageStep, EndStep)
+case object DamageStep extends BattlePhaseStep {
+  override def next: BattlePhaseStep = BattleStep
+}
+
+case object EndStep extends BattlePhaseStep {
+  override def next: BattlePhaseStep = throw new UnsupportedOperationException
 }
 
 
