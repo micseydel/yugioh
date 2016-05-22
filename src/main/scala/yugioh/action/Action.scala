@@ -47,3 +47,14 @@ class DiscardImpl extends Discard {
     card.owner.field.Graveyard.append(card)
   }
 }
+
+trait Draw extends InherentAction
+
+trait DrawForTurn extends Draw
+
+class DrawForTurnImpl extends DrawForTurn {
+  override protected def doAction()(implicit gameState: GameState, player: Player): Unit = {
+    player.draw()
+  }
+}
+
