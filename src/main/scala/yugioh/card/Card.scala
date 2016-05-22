@@ -1,6 +1,6 @@
 package yugioh.card
 
-import yugioh.{GameState, Location, Player}
+import yugioh.{GameState, Location, Phase, Player, Step}
 import yugioh.card.state.{FieldState, HandState}
 import yugioh.action.Action
 
@@ -15,7 +15,7 @@ trait Card {
 
   def location: Location
 
-  def actions(implicit gameState: GameState): Seq[Action]
+  def actions(implicit gameState: GameState, phase: Phase, maybeStep: Option[Step]): Seq[Action]
 
   // TODO these probably need references to the field?
   def sendToGrave()(implicit gameState: GameState): Unit

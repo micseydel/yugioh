@@ -3,9 +3,8 @@ package yugioh
 import java.util
 import java.util.Collections
 
-import yugioh.card.Card
 import yugioh.Util.intWithTimes
-import yugioh.action.Action
+import yugioh.card.Card
 import yugioh.card.state.{FieldState, HandState}
 
 import scala.collection.mutable.ListBuffer
@@ -47,25 +46,15 @@ class TestDeck(val owner: Player) extends Deck {
 
   class TestCard(val owner: Player) extends Card {
     override val printedName: String = "Test Card"
-
     override def location: Location = InDeck
-
-    override def sendToGrave()(implicit gameState: GameState): Unit = {}
-
-    override def actions(implicit gameState: GameState): Seq[Action] = Seq.empty
-
-    override def banish()(implicit gameState: GameState): Unit = {}
-
+    override def sendToGrave()(implicit gameState: GameState): Unit = ()
+    override def actions(implicit gameState: GameState, phase: Phase, maybeStep: Option[Step]) = Seq.empty
+    override def banish()(implicit gameState: GameState): Unit = ()
     override def fieldState: Option[FieldState] = None
-
-    override def destroy()(implicit gameState: GameState): Unit = {}
-
-    override def toHand()(implicit gameState: GameState): Unit = {}
-
+    override def destroy()(implicit gameState: GameState): Unit = ()
+    override def toHand()(implicit gameState: GameState): Unit = ()
     override def controller: Player = null
-
-    override def toDeck()(implicit gameState: GameState): Unit = {}
-
+    override def toDeck()(implicit gameState: GameState): Unit = ()
     override def handState: Option[HandState] = None
   }
 }
