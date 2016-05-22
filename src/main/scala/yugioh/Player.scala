@@ -14,7 +14,7 @@ trait Player {
   val banished: ListBuffer[Card] = new ListBuffer[Card]
   val hand: ListBuffer[Card] = new ListBuffer[Card]
 
-  var lifePoints: Int = Player.InitialLifePoints
+  var lifePoints: Int = Constants.InitialLifePoints
 
   /**
     * @param actions must contain at least one thing, typically an option to pass
@@ -28,7 +28,8 @@ trait Player {
     */
   def enterBattlePhase: Boolean = false
 
-  def draw(): Unit = hand.append(deck.fromTop())
+  def draw(): Unit = draw(1)
+  def draw(howMany: Int): Unit = hand ++= deck.fromTop(howMany)
 
   def cardToDiscardForHandSizeLimit: Card
 
@@ -54,10 +55,6 @@ trait Player {
 
     myOpponent
   }
-}
-
-object Player {
-  val InitialLifePoints = 8000
 }
 
 /**

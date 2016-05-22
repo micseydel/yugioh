@@ -12,3 +12,9 @@ object Util {
     def times(f: => Unit) = 1 to n foreach { _ => f }
   }
 }
+
+object Constants {
+  val InitialHandSize = 5
+  val HandSizeLimit = 6
+  val InitialLifePoints = 8000
+}

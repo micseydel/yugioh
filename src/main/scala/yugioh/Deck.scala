@@ -13,16 +13,18 @@ import scala.collection.mutable.ListBuffer
 trait Deck {
   protected val cards: ListBuffer[Card]
 
-  def owner: Player
+  val owner: Player
 
   def shuffle(): Unit = Collections.shuffle(util.Arrays.asList(cards: _*))
+
+  def fromTop(): Card = fromTop(1).head
 
   /**
     * An EmptyDeck GameLoss exception will be thrown if the deck is empty.
     */
-  def fromTop(): Card = {
+  def fromTop(howMany: Int): Seq[Card] = {
     try {
-      cards.remove(0)
+      for (_ <- 1 to howMany) yield cards.remove(0)
     } catch {
       case outOfBounds: IndexOutOfBoundsException => throw EmptyDeckImpl
     }
