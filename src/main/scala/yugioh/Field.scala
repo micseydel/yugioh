@@ -18,21 +18,16 @@ trait Field {
 
   def hasFreeSpellOrTrapZone: Boolean = SpellTrapZones.exists(_.isEmpty)
 
-  // override methods
-  def placeAsMonster(monster: Card, locationPreference: Option[Location])
-  def placeAsSpellOrTrap(spellOrTrap: Card, locationPreference: Option[Location])
-
-  def get(location: Location): Option[Card]
+  def placeAsMonster(monster: Monster, locationPreference: Option[Location] = None): Location
+  def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, locationPreference: Option[Location] = None): Location
 }
 
 // TODO: fill in stump impl
 class FieldImpl extends Field {
   // override methods
-  override def placeAsMonster(monster: Card, locationPreference: Option[Location]): Unit = {}
+  override def placeAsMonster(monster: Monster, locationPreference: Option[Location]) = ???
 
-  override def get(location: Location): Option[Card] = None
-
-  override def placeAsSpellOrTrap(spellOrTrap: Card, locationPreference: Option[Location]): Unit = {}
+  override def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, locationPreference: Option[Location]) = ???
 }
 
 sealed trait Location

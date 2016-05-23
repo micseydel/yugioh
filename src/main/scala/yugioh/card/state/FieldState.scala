@@ -1,24 +1,23 @@
 package yugioh.card.state
 
-import yugioh.card.Card
-import yugioh.card.monster.{Monster, Position}
+import yugioh.card.monster.Position
 
 /**
   * State associated with a card while it remains on the field.
   */
 trait FieldState {
-  def faceup(implicit card: Card): Boolean
+  def faceup: Boolean
 }
 
 trait MonsterFieldState extends FieldState {
   var howSummoned: HowSummoned = NotSummoned
+  var maybePosition: Option[Position] = None
 
-  override def faceup(implicit card: Card): Boolean = {
-    // though not technically exhaustive, this should be an invariant
-    card match {
-      case monster: Monster => monster.maybePosition.exists(Position.FaceUp.contains)
-    }
-  }
+  // TODO: these need listeners for the turn ending
+  var attackedThisTurn = false
+  var manuallyChangedPositionsThisTurn = false // also set to true if attacked
+
+  override def faceup: Boolean = maybePosition.exists(Position.FaceUp.contains)
 }
 
 

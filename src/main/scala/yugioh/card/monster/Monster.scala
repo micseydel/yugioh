@@ -1,34 +1,51 @@
 package yugioh.card.monster
 
-import yugioh.GameState
-import yugioh.card.Card
-import yugioh.card.Delegate
-import yugioh.action.Action
-import yugioh.card.state.HowSummoned
+import yugioh.card.state.MonsterFieldState
+import yugioh.card.{Card, Delegate}
+import yugioh._
+import yugioh.action.{NormalSummonImpl, TributeSummonImpl}
 
 trait Monster extends Card {
   val printedAttack: Int
   val printedDefense: Int
   val maybePrintedLevel: Option[Int]
-  val maybePrintedRank: Option[Int]
+  val maybePrintedRank: Option[Int] = None
   val printedAttribute: Attribute
   val printedType: Type
 
-  def maybePosition: Option[Position]
   def attack: Int = printedAttack
   def defense: Int = printedDefense
   def maybeLevel: Option[Int] = maybePrintedLevel
   def maybeRank: Option[Int] = maybePrintedRank
   def attribute: Attribute = printedAttribute
-  def _type: Type = printedType
+  def monsterType: Type = printedType
 
-  var howSummoned: HowSummoned
+  override def fieldState: Option[MonsterFieldState] = None
 
-  var attackedThisTurn = false
-  var manuallyChangedPositionsThisTurn = false // also set to true if attacked
-
-  def getActions(implicit gameState: GameState): Seq[Action]
+  /**
+    * Default implementation of being able to normal/tribute summon during main phases
+    */
+  override def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, maybeStep: Option[Step]) = {
+    phase match {
+      case MainPhase | MainPhase2 if !gameState.hasNormalSummonedThisTurn =>
+        //TODO need to be able to change position
+        maybeLevel.map { level =>
+          if (level <= 4) {
+            Seq(new NormalSummonImpl(this))
+          } else {
+            Seq(new TributeSummonImpl(this))
+          }
+        }.getOrElse(Seq())
+      case BattlePhase =>
+        // TODO
+        Seq()
+      case _ =>
+        Seq()
+    }
+  }
 }
+
+trait NormalMonster extends Monster
 
 
 sealed trait Position

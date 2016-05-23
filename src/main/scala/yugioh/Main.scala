@@ -2,11 +2,13 @@ package yugioh
 
 object Main {
   def main(args: Array[String]): Unit = {
-    val players: Seq[Player] = Seq(new CommandLineHumanPlayer("Human"), new PassivePlayer)
-    players.head.opponent = players.last
-    players.last.opponent = players.head
+    val player1 = new CommandLineHumanPlayer("Human")
+    val player2 = new PassivePlayer
 
-    val gameState = new GameStateImpl(players)
+    player1.opponent = player2
+    player2.opponent = player1
+
+    val gameState = new GameStateImpl(Seq(player1, player2))
     gameState.mainLoop()
   }
 }

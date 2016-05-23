@@ -20,17 +20,21 @@ class GameStateImpl(val players: Seq[Player]) extends GameState {
       _.draw(Constants.InitialHandSize)
     }
 
-    playersCycle foreach {
-      takeTurn(_)
+    playersCycle foreach { player =>
+      takeTurn(player)
     }
   }
 
   private def takeTurn(implicit turnPlayer: Player) = {
     turnCount += 1
+
+    println(s"Turn number $turnCount, turn player $turnPlayer.")
+
     hasNormalSummonedThisTurn = false
 
     implicit var phase: Phase = DrawPhase
     while (phase != EndTurn) {
+      println(s"Entering $phase")
       phase = phase.next
     }
   }
@@ -39,6 +43,6 @@ class GameStateImpl(val players: Seq[Player]) extends GameState {
     * An infinite cycle alternating between the two players.
     */
   private def playersCycle: Iterator[Player] = {
-    Iterator.continually(players.toStream).flatten
+    Iterator.continually(players).flatten
   }
 }

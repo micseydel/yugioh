@@ -1,6 +1,6 @@
 package yugioh.card
 
-import yugioh.{GameState, Location, Phase, Player, Step}
+import yugioh._
 import yugioh.card.state.{FieldState, HandState}
 import yugioh.action.Action
 
@@ -8,23 +8,15 @@ trait Card {
   val printedName: String
   val owner: Player
 
-  def handState: Option[HandState]
-  def fieldState: Option[FieldState]
+  def handState: Option[HandState] = None
+  def fieldState: Option[FieldState] = None
 
-  def controller: Player
+  def controller: Player = owner
 
-  def location: Location
-
-  def actions(implicit gameState: GameState, phase: Phase, maybeStep: Option[Step]): Seq[Action]
-
-  // TODO these probably need references to the field?
-  def sendToGrave()(implicit gameState: GameState): Unit
-  def destroy()(implicit gameState: GameState): Unit
-  def banish()(implicit gameState: GameState): Unit
-  def toHand()(implicit gameState: GameState): Unit
-  def toDeck()(implicit gameState: GameState): Unit
+  def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, maybeStep: Option[Step]): Seq[Action]
 
   def name: String = printedName
+  def location: Location = InDeck
 }
 
 trait SpellOrTrap extends Card

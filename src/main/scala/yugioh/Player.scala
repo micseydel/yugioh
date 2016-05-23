@@ -19,24 +19,24 @@ trait Player {
   /**
     * @param actions must contain at least one thing, typically an option to pass
     */
-  def chooseAction(actions: Seq[Action])(implicit gameState: GameState, phase: Phase): Action
+  def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null): Action
 
   /**
     * Called when MP1 is ended.
     *
     * @return true to enter BP, otherwise go to EP
     */
-  def enterBattlePhase: Boolean = false
+  def enterBattlePhase(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step=null): Boolean
 
   def draw(): Unit = draw(1)
   def draw(howMany: Int): Unit = hand ++= deck.fromTop(howMany)
 
-  def cardToDiscardForHandSizeLimit: Card
+  def cardToDiscardForHandSizeLimit(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step): Card
 
   /**
     * Ask player if they wish to end the phase or step.
     */
-  def consentToEnd(implicit phase: Phase, maybeStep: Option[Step]): Boolean
+  def consentToEnd(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null): Boolean
 
   private[this] var myOpponent: Player = SentinelOpponent
 
@@ -55,40 +55,43 @@ trait Player {
 
     myOpponent
   }
+
+  override def toString = name
 }
 
 /**
   * A player used as a default value, trying to do anything with it will result in an UnsupportedOperationException.
   */
 private object SentinelOpponent extends Player {
-  private def fail = throw new UnsupportedOperationException("Opponent was not set.")
+  private def fail = throw new UnsupportedOperationException("Opponent was not set for a player.")
 
   override val name = null
   override val deck = null
-  override def consentToEnd(implicit phase: Phase, maybeStep: Option[Step]) = fail
-  override def cardToDiscardForHandSizeLimit = fail
-  override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, phase: Phase) = fail
   override def opponent = fail
+  override def consentToEnd(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null) = fail
+  override def cardToDiscardForHandSizeLimit(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null) = fail
+  override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null) = fail
+  override def enterBattlePhase(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null): Boolean = fail
 }
 
 class CommandLineHumanPlayer(val name: String) extends Player {
   override val deck: Deck = new TestDeck(this) // TODO: be more than just a stub
 
-  override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, phase: Phase) = {
+  override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
     if (actions.size == 1) {
       val action = actions.head
-      println(s"Action $action was only option, taking implicitly.")
+      println(s"Action $action was only option (during phase $phase), taking implicitly.")
       action
     } else {
       select("Select an action:", actions)
     }
   }
 
-  override def cardToDiscardForHandSizeLimit: Card = {
+  override def cardToDiscardForHandSizeLimit(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step): Card = {
     select("Select a card to discard:", hand)
   }
 
-  override def enterBattlePhase = {
+  override def enterBattlePhase(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
     print("MP1 is ending; enter BP? (If not, will go to EP) ")
     StdIn.readBoolean()
   }
@@ -96,7 +99,7 @@ class CommandLineHumanPlayer(val name: String) extends Player {
   /**
     * Ask the user for a specific element of a sequence.
     */
-  def select[A](prompt: String, options: Seq[A]): A = {
+  private def select[A](prompt: String, options: Seq[A]): A = {
     println(prompt)
 
     for ((action, i) <- options.zipWithIndex) {
@@ -114,9 +117,17 @@ class CommandLineHumanPlayer(val name: String) extends Player {
     options(choice)
   }
 
-  override def consentToEnd(implicit phase: Phase, maybeStep: Option[Step]): Boolean = {
-    println(s"End $phase?")
-    StdIn.readBoolean()
+  /**
+    * After SP, will ask via StdIn, otherwise just consents.
+    */
+  override def consentToEnd(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step): Boolean = {
+    phase match {
+      case MainPhase | BattlePhase | MainPhase2 | EndPhase =>
+        print(s"End ${Option(step).getOrElse(phase)}? ")
+        StdIn.readBoolean()
+      case _ =>
+        true
+    }
   }
 }
 
@@ -128,7 +139,8 @@ class CommandLineHumanPlayer(val name: String) extends Player {
 class PassivePlayer extends Player {
   override val name = "PassivePlayer"
   override val deck = new TestDeck(this)
-  override def cardToDiscardForHandSizeLimit: Card = hand.head
-  override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, phase: Phase) = actions.head
-  override def consentToEnd(implicit phase: Phase, maybeStep: Option[Step]): Boolean = true
+  override def cardToDiscardForHandSizeLimit(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step): Card = hand.head
+  override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step ) = actions.head
+  override def consentToEnd(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step): Boolean = true
+  override def enterBattlePhase(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null): Boolean = false
 }
