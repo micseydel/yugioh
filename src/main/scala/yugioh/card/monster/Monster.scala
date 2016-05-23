@@ -25,7 +25,7 @@ trait Monster extends Card {
   /**
     * Default implementation of being able to normal/tribute summon during main phases, does not apply to (Semi-)Nomi.
     */
-  override def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, maybeStep: Option[Step]) = {
+  override def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null) = {
     phase match {
       case MainPhase | MainPhase2 if !gameState.hasNormalSummonedThisTurn =>
         //TODO need to be able to change position
@@ -57,7 +57,7 @@ trait FlipMonster extends EffectMonster
   * e.g. Sephylon, the Ultimate Timelord & ritual monsters
   */
 trait Nomi extends EffectMonster {
-  override def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, maybeStep: Option[Step]) = ??? // TODO
+  override def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null) = ??? // TODO
 }
 
 /**
@@ -65,7 +65,7 @@ trait Nomi extends EffectMonster {
   *   e.g. BLS
   */
 trait SemiNomi extends EffectMonster {
-  override def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, maybeStep: Option[Step]) = ??? // TODO
+  override def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null) = ??? // TODO
 }
 
 trait RitualMonster extends SemiNomi

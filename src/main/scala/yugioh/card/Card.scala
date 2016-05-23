@@ -14,7 +14,7 @@ trait Card {
 
   def controller: Player = owner
 
-  def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, maybeStep: Option[Step]): Seq[Action]
+  def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null): Seq[Action]
 
   def name: String = printedName
   def location: Location = InDeck

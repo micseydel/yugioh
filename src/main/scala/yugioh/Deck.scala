@@ -47,7 +47,7 @@ class TestDeck(val owner: Player) extends Deck {
   class TestCard(val owner: Player) extends Card {
     override val printedName: String = "Test Card"
     override def location: Location = InDeck
-    override def actions(implicit gameState: GameState, phase: Phase, maybeStep: Option[Step]) = Seq.empty
+    override def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = Seq.empty
     override def fieldState: Option[FieldState] = None
     override def controller: Player = null
     override def handState: Option[HandState] = None
