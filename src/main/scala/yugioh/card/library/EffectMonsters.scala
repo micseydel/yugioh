@@ -3,6 +3,8 @@ package yugioh.card.library
 import yugioh.Player
 import yugioh.card.monster._
 
+object EffectMonsters
+
 class TheSternMystic(val owner: Player) extends EffectMonster {
   override val printedName = "The Stern Mystic"
   override val printedAttack = 1500

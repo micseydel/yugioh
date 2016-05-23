@@ -1,9 +1,9 @@
 package yugioh.card.monster
 
-import yugioh.card.state.MonsterFieldState
-import yugioh.card.{Card, Delegate}
 import yugioh._
 import yugioh.action.{NormalSummonImpl, TributeSummonImpl}
+import yugioh.card.Card
+import yugioh.card.state.MonsterFieldState
 
 trait Monster extends Card {
   val printedAttack: Int
@@ -23,7 +23,7 @@ trait Monster extends Card {
   override def fieldState: Option[MonsterFieldState] = None
 
   /**
-    * Default implementation of being able to normal/tribute summon during main phases
+    * Default implementation of being able to normal/tribute summon during main phases, does not apply to (Semi-)Nomi.
     */
   override def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, maybeStep: Option[Step]) = {
     phase match {
@@ -47,57 +47,35 @@ trait Monster extends Card {
 
 trait NormalMonster extends Monster
 
+trait EffectMonster extends Monster
+trait FlipMonster extends EffectMonster
 
-sealed trait Position
-
-// TODO low: there is technically a way to be face down and in attack mode
-case object Set extends Position // in defense mode
-case object Attack extends Position
-case object Defense extends Position
-
-object Position {
-  val FaceUp: Set[Position] = scala.collection.immutable.Set(Attack, Defense)
-}
-
-
-sealed trait Attribute
-
-case object Dark extends Attribute
-case object Earth extends Attribute
-case object Fire extends Attribute
-case object Light extends Attribute
-case object Water extends Attribute
-case object Wind extends Attribute
-
-
-sealed trait Type
-
-case object Aqua extends Type
-case object Beast extends Type
-case object BeastWarrior extends Type
-case object CreatorGod extends Type
-case object Dinosaur extends Type
-case object DivineBeast extends Type
-case object Dragon extends Type
-case object Fairy extends Type
-case object Fiend extends Type
-case object Fish extends Type
-case object Insect extends Type
-case object Machine extends Type
-case object Plant extends Type
-case object Psychic extends Type
-case object Pyro extends Type
-case object Reptile extends Type
-case object Rock extends Type
-case object SeaSerpent extends Type
-case object Spellcaster extends Type
-case object Thunder extends Type
-case object Warrior extends Type
-case object WingedBeast extends Type
-case object Wyrm extends Type
-case object Zombie extends Type
+// TODO is there an is-A relationship between Nomi and Semi-Nomi?
 
 /**
-  * This is essentially a wrapper that allows a SpellOrTrap to be treated as a Monster card.
+  * Cannot be Normal Summoned, Set or Special Summoned, except by fulfilling a special requirement.
+  * e.g. Sephylon, the Ultimate Timelord & ritual monsters
   */
-trait MonsterDelegate extends Delegate with Monster
+trait Nomi extends EffectMonster {
+  override def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, maybeStep: Option[Step]) = ??? // TODO
+}
+
+/**
+  * "Cannot be Normal Summoned/Set. Must first be Special Summoned..." (or an older variant).
+  *   e.g. BLS
+  */
+trait SemiNomi extends EffectMonster {
+  override def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, maybeStep: Option[Step]) = ??? // TODO
+}
+
+trait RitualMonster extends SemiNomi
+
+trait ExtraDeckMonster extends SemiNomi
+
+trait FusionMonster extends ExtraDeckMonster
+trait SynchroMonster extends ExtraDeckMonster
+
+trait XyzMonster extends ExtraDeckMonster {
+  override val maybePrintedLevel = None
+  override val maybePrintedRank = ??? // TODO
+}
