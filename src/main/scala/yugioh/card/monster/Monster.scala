@@ -75,3 +75,5 @@ trait XyzMonster extends ExtraDeckMonster {
   override val maybePrintedLevel = None
   override val maybePrintedRank = ??? // TODO: nicer way to be convenient elsewhere but force rank definition here?
 }
+
+trait PendulumMonster extends Monster
