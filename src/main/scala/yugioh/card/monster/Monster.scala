@@ -28,7 +28,7 @@ trait Monster extends Card {
   override def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null) = {
     phase match {
       case MainPhase | MainPhase2 if !gameState.hasNormalSummonedThisTurn =>
-        //TODO need to be able to change position
+        // TODO: need to be able to change position
         maybeLevel.map { level =>
           if (level <= 4) {
             Seq(new NormalSummonImpl(this))
@@ -37,7 +37,7 @@ trait Monster extends Card {
           }
         }.getOrElse(Seq())
       case BattlePhase =>
-        // TODO
+        // TODO: BP actions
         Seq()
       case _ =>
         Seq()
@@ -50,23 +50,19 @@ trait NormalMonster extends Monster
 trait EffectMonster extends Monster
 trait FlipMonster extends EffectMonster
 
-// TODO is there an is-A relationship between Nomi and Semi-Nomi?
+// TODO LOW: is there an is-A relationship between Nomi and Semi-Nomi?
 
 /**
   * Cannot be Normal Summoned, Set or Special Summoned, except by fulfilling a special requirement.
   * e.g. Sephylon, the Ultimate Timelord & ritual monsters
   */
-trait Nomi extends EffectMonster {
-  override def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null) = ??? // TODO
-}
+trait Nomi extends EffectMonster // TODO
 
 /**
   * "Cannot be Normal Summoned/Set. Must first be Special Summoned..." (or an older variant).
   *   e.g. BLS
   */
-trait SemiNomi extends EffectMonster {
-  override def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null) = ??? // TODO
-}
+trait SemiNomi extends EffectMonster // TODO
 
 trait RitualMonster extends SemiNomi
 
@@ -77,5 +73,5 @@ trait SynchroMonster extends ExtraDeckMonster
 
 trait XyzMonster extends ExtraDeckMonster {
   override val maybePrintedLevel = None
-  override val maybePrintedRank = ??? // TODO
+  override val maybePrintedRank = ??? // TODO: nicer way to be convenient elsewhere but force rank definition here?
 }

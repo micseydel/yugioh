@@ -12,7 +12,7 @@ class TheSternMystic(val owner: Player) extends EffectMonster {
   override val maybePrintedLevel = Some(4)
   override val printedAttribute = Light
   override val printedType = Spellcaster
-  // TODO: implementation
+  // TODO: TheSternMystic effect implementation
 }
 
 class WallOfIllusion(val owner: Player) extends EffectMonster {
@@ -22,7 +22,7 @@ class WallOfIllusion(val owner: Player) extends EffectMonster {
   override val maybePrintedLevel = Some(4)
   override val printedAttribute = Dark
   override val printedType = Fiend
-  // TODO: implementation
+  // TODO: WallOfIllusion effect implementation
 }
 
 class TrapMaster(val owner: Player) extends FlipMonster {
@@ -32,7 +32,7 @@ class TrapMaster(val owner: Player) extends FlipMonster {
   override val maybePrintedLevel = Some(3)
   override val printedAttribute = Earth
   override val printedType = Warrior
-  // TODO: implementation
+  // TODO: TrapMaster effect implementation
 }
 
 class ManEaterBug(val owner: Player) extends FlipMonster {
@@ -42,5 +42,5 @@ class ManEaterBug(val owner: Player) extends FlipMonster {
   override val maybePrintedLevel = Some(2)
   override val printedAttribute = Earth
   override val printedType = Insect
-  // TODO: implementation
+  // TODO: ManEaterBug effect implementation
 }

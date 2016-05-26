@@ -38,7 +38,7 @@ object FastEffectTiming {
   */
 object OpenGameState extends FastEffectTiming {
   override def next(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
-    val actions = Seq(new PassPriorityImpl) // TODO
+    val actions = Seq(new PassPriorityImpl) // TODO: OpenGameState actions
 
     turnPlayer.chooseAction(actions) match {
       case pass: PassPriority => TryToEnd
@@ -53,7 +53,7 @@ object OpenGameState extends FastEffectTiming {
   */
 object TurnPlayerFastEffects extends FastEffectTiming {
   override def next(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
-    val actions = Seq(new PassPriorityImpl) // TODO
+    val actions = Seq(new PassPriorityImpl) // TODO: TurnPlayerFastEffects actions
 
     turnPlayer.chooseAction(actions) match {
       case pass: PassPriority => OpponentFastEffects
@@ -67,7 +67,7 @@ object TurnPlayerFastEffects extends FastEffectTiming {
   */
 object OpponentFastEffects extends FastEffectTiming {
   override def next(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
-    val actions = Seq(new PassPriorityImpl) // TODO
+    val actions = Seq(new PassPriorityImpl) // TODO: OpponentFastEffects actions
 
     turnPlayer.opponent.chooseAction(actions) match {
       case pass: PassPriority => OpenGameState
@@ -81,8 +81,7 @@ object OpponentFastEffects extends FastEffectTiming {
   */
 object ChainRules extends FastEffectTiming {
   override def next(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
-    // TODO
-    CheckForTrigger
+    CheckForTrigger // TODO: ChainRules
   }
 }
 
@@ -93,7 +92,7 @@ object ChainRules extends FastEffectTiming {
   */
 object TryToEnd extends FastEffectTiming {
   override def next(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
-    val actions = Seq(new PassPriorityImpl) // TODO
+    val actions = Seq(new PassPriorityImpl) // TODO: TryToEnd actions
 
     turnPlayer.opponent.chooseAction(actions) match {
       case activation: Activation => ChainRules
@@ -112,7 +111,7 @@ object TryToEnd extends FastEffectTiming {
   */
 object CheckForTrigger extends FastEffectTiming {
   override def next(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
-    TurnPlayerFastEffects // TODO: once a trigger system is in place, this will be able to go to D
+    TurnPlayerFastEffects // TODO: once a trigger system is in place, this will be able to go to ChainRules
   }
 }
 
