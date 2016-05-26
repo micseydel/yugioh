@@ -2,6 +2,7 @@ package yugioh
 
 import yugioh.action.Action
 import yugioh.card.Card
+import yugioh.card.monster.ExtraDeckMonster
 
 import scala.collection.mutable.ListBuffer
 import scala.io.StdIn
@@ -9,6 +10,7 @@ import scala.io.StdIn
 trait Player {
   val name: String
   val deck: Deck
+  val extraDeck: ListBuffer[ExtraDeckMonster] = new ListBuffer[ExtraDeckMonster]
   val field: Field = new FieldImpl
   val grave: ListBuffer[Card] = new ListBuffer[Card]
   val banished: ListBuffer[Card] = new ListBuffer[Card]
