@@ -1,7 +1,8 @@
 package yugioh.card.spell
 
-import yugioh.card.Card
+import yugioh.card.SpellOrTrap
 
-trait Spell extends Card {
+trait Spell extends SpellOrTrap
 
-}
+trait FieldSpell extends Spell
+
