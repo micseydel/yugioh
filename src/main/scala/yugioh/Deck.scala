@@ -3,14 +3,13 @@ package yugioh
 import java.util
 import java.util.Collections
 
-import yugioh.Util.intWithTimes
 import yugioh.card.Card
-import yugioh.card.state.{FieldState, HandState}
+import yugioh.card.library._
 
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable
 
 trait Deck {
-  protected val cards: ListBuffer[Card]
+  protected val cards: mutable.Buffer[Card]
 
   val owner: Player
 
@@ -30,26 +29,37 @@ trait Deck {
   }
 }
 
-class DeckImpl(val owner: Player, val cards: ListBuffer[Card]) extends Deck {
-  def this(owner: Player) {
-    // TODO initialize with more than empty
-    this(owner, new ListBuffer[Card])
-  }
-}
-
 class TestDeck(val owner: Player) extends Deck {
-  val cards = new ListBuffer[Card]
-
-  60 times {
-    cards.append(new TestCard(owner))
-  }
-
-  class TestCard(val owner: Player) extends Card {
-    override val printedName: String = "Test Card"
-    override def location: Location = InDeck
-    override def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = Seq.empty
-    override def fieldState: Option[FieldState] = None
-    override def controller: Player = null
-    override def handState: Option[HandState] = None
-  }
+  // TODO: spells+traps for the deck
+  val cards: mutable.Buffer[Card] = Seq(
+    new AncientElf(owner),
+    new Ansatsu(owner),
+    new BaronOfTheFiendSword(owner),
+    new BeaverWarrior(owner),
+    new CelticGuard(owner),
+    new ClawReacher(owner),
+    new CurseOfDragon(owner),
+    new DarkMagician(owner),
+    new DomaTheAngelOfSilence(owner),
+    new DragonZombie(owner),
+    new FeralImp(owner),
+    new GaiaTheFierceKnight(owner),
+    new GiantSoldierOfStone(owner),
+    new GreatWhite(owner),
+    new MagicalGhost(owner),
+    new MammothGraveyard(owner),
+    new ManEaterBug(owner),
+    new ManEatingTreasureChest(owner),
+    new MysticClown(owner),
+    new MysticalElf(owner),
+    new NeoTheMagicSwordsman(owner),
+    new SilverFang(owner),
+    new SorcererOfTheDoomed(owner),
+    new SummonedSkull(owner),
+    new TheSternMystic(owner),
+    new TrapMaster(owner),
+    new WallOfIllusion(owner),
+    new WingedDragonGuardOftheFortressNo1(owner),
+    new WittyPhantom(owner)
+  ).toBuffer
 }
