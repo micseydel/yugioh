@@ -1,6 +1,6 @@
 package yugioh
 
-import yugioh.action.{Activation, InherentAction, PassPriority, PassPriorityImpl}
+import yugioh.action._
 
 
 /**
@@ -17,7 +17,24 @@ import yugioh.action.{Activation, InherentAction, PassPriority, PassPriorityImpl
   * the end of a phase or step.
   */
 sealed trait FastEffectTiming {
-  def next(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step=null): FastEffectTiming
+  def next(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null): FastEffectTiming
+
+  protected def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null) = {
+    // field includes grave + banished
+    Seq(new PassPriorityImpl) ++
+      turnPlayer.hand.flatMap(_.actions) ++
+      turnPlayer.extraDeck.flatMap(_.actions)
+      turnPlayer.field.actions ++
+      turnPlayer.opponent.field.actions
+  }
+
+  protected def opponentActions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null) = {
+    // field includes grave + banished
+    Seq(new PassPriorityImpl) ++
+      turnPlayer.opponent.hand.flatMap(_.actions) ++
+      turnPlayer.opponent.field.actions ++
+      turnPlayer.field.actions
+  }
 }
 
 object FastEffectTiming {
@@ -38,8 +55,6 @@ object FastEffectTiming {
   */
 object OpenGameState extends FastEffectTiming {
   override def next(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
-    val actions = Seq(new PassPriorityImpl) // TODO: OpenGameState actions
-
     turnPlayer.chooseAction(actions) match {
       case pass: PassPriority => TryToEnd
       case activation: Activation => ChainRules
@@ -53,8 +68,6 @@ object OpenGameState extends FastEffectTiming {
   */
 object TurnPlayerFastEffects extends FastEffectTiming {
   override def next(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
-    val actions = Seq(new PassPriorityImpl) // TODO: TurnPlayerFastEffects actions
-
     turnPlayer.chooseAction(actions) match {
       case pass: PassPriority => OpponentFastEffects
       case activation: Activation => ChainRules
@@ -67,9 +80,7 @@ object TurnPlayerFastEffects extends FastEffectTiming {
   */
 object OpponentFastEffects extends FastEffectTiming {
   override def next(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
-    val actions = Seq(new PassPriorityImpl) // TODO: OpponentFastEffects actions
-
-    turnPlayer.opponent.chooseAction(actions) match {
+    turnPlayer.opponent.chooseAction(opponentActions) match {
       case pass: PassPriority => OpenGameState
       case activation: Activation => ChainRules
     }
@@ -92,9 +103,7 @@ object ChainRules extends FastEffectTiming {
   */
 object TryToEnd extends FastEffectTiming {
   override def next(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
-    val actions = Seq(new PassPriorityImpl) // TODO: TryToEnd actions
-
-    turnPlayer.opponent.chooseAction(actions) match {
+    turnPlayer.opponent.chooseAction(opponentActions) match {
       case activation: Activation => ChainRules
       case pass: PassPriority =>
         if (turnPlayer.consentToEnd && turnPlayer.opponent.consentToEnd) {
