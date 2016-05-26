@@ -1,7 +1,9 @@
 package yugioh
 
+import yugioh.action.Action
 import yugioh.card.{Card, SpellOrTrap}
-import yugioh.card.monster.Monster
+import yugioh.card.monster.{Monster, PendulumMonster}
+import yugioh.card.spell.FieldSpell
 
 import scala.collection.mutable.ListBuffer
 
@@ -11,23 +13,44 @@ trait Field {
 
   val MonsterZones: Array[Option[Monster]] = new Array[Option[Monster]](5)
   val SpellTrapZones: Array[Option[SpellOrTrap]] = new Array[Option[SpellOrTrap]](5)
+
   val Graveyard = new ListBuffer[Card]
   val Banished = new ListBuffer[Card]
+
+  var FieldSpellZone: Option[FieldSpell] = None
+
+  var LeftPendulumZone: Option[PendulumMonster] = None
+  var RightPendulumZone: Option[PendulumMonster] = None
 
   def hasFreeMonsterZone: Boolean = MonsterZones.exists(_.isEmpty)
 
   def hasFreeSpellOrTrapZone: Boolean = SpellTrapZones.exists(_.isEmpty)
 
-  def placeAsMonster(monster: Monster, locationPreference: Option[Location] = None): Location
-  def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, locationPreference: Option[Location] = None): Location
+  def placeAsMonster(monster: Monster, positionPreference: Option[Int] = None): InMonsterZone
+  def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, positionPreference: Option[Int] = None): InSpellTrapZone
+
+  /**
+    * All the actions associated with a field; may be empty.
+    */
+  def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) : Seq[Action]
 }
 
-// TODO: fill in stump impl
 class FieldImpl extends Field {
-  // override methods
-  override def placeAsMonster(monster: Monster, locationPreference: Option[Location]) = ???
+  override def placeAsMonster(monster: Monster, locationPreference: Option[Int]) = placeAsHelper(MonsterZones, InMonsterZone.MonsterZones) _
 
-  override def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, locationPreference: Option[Location]) = ???
+  override def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, locationPreference: Option[Int]) = placeAsHelper(SpellTrapZones, InSpellTrapZone.SpellTrapZones) _
+
+  private def placeAsHelper[C <: Card, Z <: InFieldZone](destinationArray: Array[Option[C]], destinationLocation: Seq[Z])
+                                                        (card: C, locationPreference: Option[Int]): Z = {
+    val position = locationPreference.getOrElse(PositionPriorities.filter(destinationArray(_).isEmpty).head)
+    destinationArray.update(position, Some(card))
+    destinationLocation(position)
+  }
+
+  override def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
+    ((MonsterZones ++ SpellTrapZones :+ FieldSpellZone :+ LeftInPendulumZone :+ RightPendulumZone).flatten
+      ++ Graveyard ++ Banished).flatMap(_.actions)
+  }
 }
 
 sealed trait Location
@@ -49,12 +72,20 @@ case object InMonster2 extends InMonsterZone
 case object InMonster3 extends InMonsterZone
 case object InMonster4 extends InMonsterZone
 
+object InMonsterZone {
+  val MonsterZones: Seq[InMonsterZone] = Seq(InMonster0, InMonster1, InMonster2, InMonster3, InMonster4)
+}
+
 sealed trait InSpellTrapZone extends InFieldZone
 case object InSpellTrap0 extends InSpellTrapZone
 case object InSpellTrap1 extends InSpellTrapZone
 case object InSpellTrap2 extends InSpellTrapZone
 case object InSpellTrap3 extends InSpellTrapZone
 case object InSpellTrap4 extends InSpellTrapZone
+
+object InSpellTrapZone {
+  val SpellTrapZones: Seq[InSpellTrapZone] = Seq(InSpellTrap0, InSpellTrap1, InSpellTrap2, InSpellTrap3, InSpellTrap4)
+}
 
 sealed trait InPendulumZone extends InFieldZone
 case object LeftInPendulumZone extends InPendulumZone
