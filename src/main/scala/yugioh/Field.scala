@@ -11,8 +11,8 @@ trait Field {
   // try to put things toward the center first
   protected val PositionPriorities = Seq(2, 1, 3, 0, 4)
 
-  val MonsterZones: Array[Option[Monster]] = new Array[Option[Monster]](5)
-  val SpellTrapZones: Array[Option[SpellOrTrap]] = new Array[Option[SpellOrTrap]](5)
+  val MonsterZones: Array[Option[Monster]] = Array.fill(5)(None)
+  val SpellTrapZones: Array[Option[SpellOrTrap]] = Array.fill(5)(None)
 
   val Graveyard = new ListBuffer[Card]
   val Banished = new ListBuffer[Card]
@@ -30,15 +30,19 @@ trait Field {
   def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, positionPreference: Option[Int] = None): InSpellTrapZone
 
   /**
-    * All the actions associated with a field; may be empty.
+    * All the actions associated with a field, which includes grave and banished; may be empty.
     */
-  def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) : Seq[Action]
+  def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null) : Seq[Action]
 }
 
 class FieldImpl extends Field {
-  override def placeAsMonster(monster: Monster, locationPreference: Option[Int]) = placeAsHelper(MonsterZones, InMonsterZone.MonsterZones) _
+  override def placeAsMonster(monster: Monster, locationPreference: Option[Int]) = {
+    placeAsHelper(MonsterZones, InMonsterZone.MonsterZones)(monster, locationPreference)
+  }
 
-  override def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, locationPreference: Option[Int]) = placeAsHelper(SpellTrapZones, InSpellTrapZone.SpellTrapZones) _
+  override def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, locationPreference: Option[Int]) = {
+    placeAsHelper(SpellTrapZones, InSpellTrapZone.SpellTrapZones)(spellOrTrap, locationPreference)
+  }
 
   private def placeAsHelper[C <: Card, Z <: InFieldZone](destinationArray: Array[Option[C]], destinationLocation: Seq[Z])
                                                         (card: C, locationPreference: Option[Int]): Z = {
@@ -48,7 +52,7 @@ class FieldImpl extends Field {
   }
 
   override def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
-    ((MonsterZones ++ SpellTrapZones :+ FieldSpellZone :+ LeftInPendulumZone :+ RightPendulumZone).flatten
+    ((MonsterZones ++ SpellTrapZones :+ FieldSpellZone :+ LeftPendulumZone :+ RightPendulumZone).flatten
       ++ Graveyard ++ Banished).flatMap(_.actions)
   }
 }

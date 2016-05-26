@@ -23,7 +23,7 @@ sealed trait FastEffectTiming {
     // field includes grave + banished
     Seq(new PassPriorityImpl) ++
       turnPlayer.hand.flatMap(_.actions) ++
-      turnPlayer.extraDeck.flatMap(_.actions)
+      turnPlayer.extraDeck.flatMap(_.actions) ++
       turnPlayer.field.actions ++
       turnPlayer.opponent.field.actions
   }

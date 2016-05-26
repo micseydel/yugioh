@@ -124,7 +124,7 @@ class CommandLineHumanPlayer(val name: String) extends Player {
     */
   override def consentToEnd(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step): Boolean = {
     phase match {
-      case MainPhase | BattlePhase | MainPhase2 | EndPhase =>
+      case MainPhase | BattlePhase | MainPhase2 | EndPhase if turnPlayer == this =>
         print(s"End ${Option(step).getOrElse(phase)}? ")
         StdIn.readBoolean()
       case _ =>
