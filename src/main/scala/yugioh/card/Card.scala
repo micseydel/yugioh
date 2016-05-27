@@ -9,7 +9,10 @@ trait Card {
   val printedName: String
   val owner: Player
 
+  var location: Location = InDeck
+
   def handState: Option[HandState] = None
+
   def fieldState: Option[FieldState] = None
 
   def controller: Player = owner
@@ -17,7 +20,6 @@ trait Card {
   def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null): Seq[Action]
 
   def name: String = printedName
-  def location: Location = InDeck
 }
 
 trait SpellOrTrap extends Card

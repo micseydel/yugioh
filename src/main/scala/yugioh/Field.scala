@@ -1,9 +1,9 @@
 package yugioh
 
 import yugioh.action.Action
-import yugioh.card.{Card, SpellOrTrap}
 import yugioh.card.monster.{Monster, PendulumMonster}
 import yugioh.card.spell.FieldSpell
+import yugioh.card.{Card, SpellOrTrap}
 
 import scala.collection.mutable.ListBuffer
 
@@ -11,20 +11,20 @@ trait Field {
   // try to put things toward the center first
   protected val PositionPriorities = Seq(2, 1, 3, 0, 4)
 
-  val MonsterZones: Array[Option[Monster]] = Array.fill(5)(None)
-  val SpellTrapZones: Array[Option[SpellOrTrap]] = Array.fill(5)(None)
+  val monsterZones: Array[Option[Monster]] = Array.fill(5)(None)
+  val spellTrapZones: Array[Option[SpellOrTrap]] = Array.fill(5)(None)
 
-  val Graveyard = new ListBuffer[Card]
-  val Banished = new ListBuffer[Card]
+  val graveyard = new ListBuffer[Card]
+  val banished = new ListBuffer[Card]
 
-  var FieldSpellZone: Option[FieldSpell] = None
+  var fieldSpellZone: Option[FieldSpell] = None
 
-  var LeftPendulumZone: Option[PendulumMonster] = None
-  var RightPendulumZone: Option[PendulumMonster] = None
+  var leftPendulumZone: Option[PendulumMonster] = None
+  var rightPendulumZone: Option[PendulumMonster] = None
 
-  def hasFreeMonsterZone: Boolean = MonsterZones.exists(_.isEmpty)
+  def hasFreeMonsterZone: Boolean = monsterZones.exists(_.isEmpty)
 
-  def hasFreeSpellOrTrapZone: Boolean = SpellTrapZones.exists(_.isEmpty)
+  def hasFreeSpellOrTrapZone: Boolean = spellTrapZones.exists(_.isEmpty)
 
   def placeAsMonster(monster: Monster, positionPreference: Option[Int] = None): InMonsterZone
   def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, positionPreference: Option[Int] = None): InSpellTrapZone
@@ -37,23 +37,58 @@ trait Field {
 
 class FieldImpl extends Field {
   override def placeAsMonster(monster: Monster, locationPreference: Option[Int]) = {
-    placeAsHelper(MonsterZones, InMonsterZone.MonsterZones)(monster, locationPreference)
+    placeAsHelper(monsterZones, InMonsterZone.MonsterZones)(monster, locationPreference)
   }
 
   override def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, locationPreference: Option[Int]) = {
-    placeAsHelper(SpellTrapZones, InSpellTrapZone.SpellTrapZones)(spellOrTrap, locationPreference)
+    placeAsHelper(spellTrapZones, InSpellTrapZone.SpellTrapZones)(spellOrTrap, locationPreference)
   }
 
   private def placeAsHelper[C <: Card, Z <: InFieldZone](destinationArray: Array[Option[C]], destinationLocation: Seq[Z])
                                                         (card: C, locationPreference: Option[Int]): Z = {
     val position = locationPreference.getOrElse(PositionPriorities.filter(destinationArray(_).isEmpty).head)
     destinationArray.update(position, Some(card))
-    destinationLocation(position)
+
+    // TODO LOW: want to make this an implicit in the utils, clean up the two deck situations
+    def remove[T](buffer: ListBuffer[T], element: T): Unit = buffer.remove(buffer.indexOf(element))
+
+    // remove it from its previous location
+    card.location match {
+      case InHand => remove(card.owner.hand, card)
+      case InGraveyard => remove(card.owner.field.graveyard, card)
+      case InBanished => remove(card.owner.field.banished, card)
+      case monsterZone: InMonsterZone => removeFromMonsterZone(monsterZone)
+      case spellTrapZone: InSpellTrapZone => removeFromSpellTrapZone(spellTrapZone)
+      case InFieldSpell => fieldSpellZone = None
+      case InLeftPendulumZone => leftPendulumZone = None
+      case InRightPendulumZone => rightPendulumZone = None
+      case InDeck =>
+        card.owner.deck.cards.remove(card.owner.deck.cards.indexOf(card))
+        card.owner.deck.shuffle()
+      case InExtraDeck =>
+        card.owner.extraDeck.remove(card.owner.extraDeck.indexOf(card))
+    }
+
+    val toWhere = destinationLocation(position)
+    card.location = toWhere
+    toWhere
+  }
+
+  def removeFromMonsterZone[Z <: InMonsterZone](monsterZone: Z) = {
+    removeFromHelper(monsterZones, monsterZone, InMonsterZone.MonsterZones)
+  }
+
+  def removeFromSpellTrapZone[Z <: InSpellTrapZone](spellTrapZone: Z) = {
+    removeFromHelper(spellTrapZones, spellTrapZone, InSpellTrapZone.SpellTrapZones)
+  }
+
+  private def removeFromHelper[T](removeFrom: Array[Option[T]], zone: InFieldZone, zones: Seq[InFieldZone]) = {
+    removeFrom.update(zones.indexOf(zone), None)
   }
 
   override def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
-    ((MonsterZones ++ SpellTrapZones :+ FieldSpellZone :+ LeftPendulumZone :+ RightPendulumZone).flatten
-      ++ Graveyard ++ Banished).flatMap(_.actions)
+    ((monsterZones ++ spellTrapZones :+ fieldSpellZone :+ leftPendulumZone :+ rightPendulumZone).flatten
+      ++ graveyard ++ banished).flatMap(_.actions)
   }
 }
 
@@ -91,14 +126,17 @@ object InSpellTrapZone {
   val SpellTrapZones: Seq[InSpellTrapZone] = Seq(InSpellTrap0, InSpellTrap1, InSpellTrap2, InSpellTrap3, InSpellTrap4)
 }
 
+sealed trait InExtraDeck extends InFieldZone
+object InExtraDeck extends InExtraDeck
+
 sealed trait InPendulumZone extends InFieldZone
-case object LeftInPendulumZone extends InPendulumZone
-case object RightInPendulumZone extends InPendulumZone
+case object InLeftPendulumZone extends InPendulumZone
+case object InRightPendulumZone extends InPendulumZone
 
 object Location {
   val MonsterZones = Set(InMonster0, InMonster1, InMonster2, InMonster3, InMonster4)
   val SpellTrapZones = Set(InSpellTrap0, InSpellTrap1, InSpellTrap2, InSpellTrap3, InSpellTrap4)
-  val PendulumZones = Set(LeftInPendulumZone, RightInPendulumZone)
+  val PendulumZones = Set(InLeftPendulumZone, InRightPendulumZone)
 
   val FieldZones = Seq(MonsterZones, SpellTrapZones, Set(InFieldSpell), PendulumZones).map(_.asInstanceOf[Set[InFieldZone]]).reduce(_ & _)
 

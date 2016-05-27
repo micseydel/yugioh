@@ -6,10 +6,10 @@ import java.util.Collections
 import yugioh.card.Card
 import yugioh.card.library._
 
-import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 trait Deck {
-  protected val cards: mutable.Buffer[Card]
+  val cards: ListBuffer[_ <: Card]
 
   val owner: Player
 
@@ -31,7 +31,7 @@ trait Deck {
 
 class TestDeck(val owner: Player) extends Deck {
   // TODO: spells+traps for the deck
-  val cards: mutable.Buffer[Card] = Seq(
+  val cards = ListBuffer(
     new AncientElf(owner),
     new Ansatsu(owner),
     new BaronOfTheFiendSword(owner),
@@ -61,5 +61,5 @@ class TestDeck(val owner: Player) extends Deck {
     new WallOfIllusion(owner),
     new WingedDragonGuardOftheFortressNo1(owner),
     new WittyPhantom(owner)
-  ).toBuffer
+  )
 }

@@ -26,9 +26,17 @@ trait Action {
 
 trait InherentAction extends Action
 
-trait Summon extends InherentAction
+trait Summon extends InherentAction {
+  def monster: Monster
+
+  override def toString = s"${this.getClass.getSimpleName}(${monster.getClass.getSimpleName})"
+}
 
 trait NormalSummon extends Summon
+
+trait SetAsMonster extends InherentAction
+
+trait TributeSetAsMonster extends SetAsMonster
 
 class NormalSummonImpl(val monster: Monster) extends NormalSummon {
   override protected def doAction()(implicit gameState: GameState, player: Player, phase: Phase, step: Step) = player.field.placeAsMonster(monster)
@@ -36,6 +44,7 @@ class NormalSummonImpl(val monster: Monster) extends NormalSummon {
 
 trait TributeSummon extends NormalSummon
 
+// TODO BUG: was offered during TurnPlayerFastEffects and resulted in a match exception
 class TributeSummonImpl(override val monster: Monster) extends NormalSummonImpl(monster) with TributeSummon {
   override protected def doAction()(implicit gameState: GameState, player: Player, phase: Phase, step: Step) = {
     // TODO: tribute
@@ -64,7 +73,7 @@ class DiscardImpl extends Discard {
   override protected def doAction()(implicit gameState: GameState, player: Player, phase: Phase, step: Step) = {
     val choice = player.cardToDiscardForHandSizeLimit
     val card = player.hand.remove(player.hand.indexOf(choice))
-    card.owner.field.Graveyard.append(card)
+    card.owner.field.graveyard.append(card)
   }
 }
 
