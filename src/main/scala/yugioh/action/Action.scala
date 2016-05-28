@@ -50,7 +50,7 @@ trait TributeSummon extends NormalSummon
 // TODO BUG: was offered during TurnPlayerFastEffects and resulted in a match exception
 class TributeSummonImpl(override val monster: Monster) extends NormalSummonImpl(monster) with TributeSummon {
   override protected def doAction()(implicit gameState: GameState, player: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
-    // TODO: tribute
+    val toTribute = player.selectSummonMaterial(monster, player.field.monsterZones.toSeq.flatten)
     super.doAction()
   }
 }

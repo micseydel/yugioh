@@ -29,6 +29,8 @@ trait Field {
   def placeAsMonster(monster: Monster, positionPreference: Option[Int] = None): InMonsterZone
   def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, positionPreference: Option[Int] = None): InSpellTrapZone
 
+  def sendToGrave(card: Card): Unit
+
   /**
     * All the actions associated with a field, which includes grave and banished; may be empty.
     */
@@ -89,6 +91,36 @@ class FieldImpl extends Field {
   override def actions(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
     ((monsterZones ++ spellTrapZones :+ fieldSpellZone :+ leftPendulumZone :+ rightPendulumZone).flatten
       ++ graveyard ++ banished).flatMap(_.actions)
+  }
+
+  override def sendToGrave(card: Card): Unit = {
+    // remove from current location
+    card.location match {
+      case InDeck =>
+        card.owner.deck.cards.remove(card.owner.deck.cards.indexOf(card))
+      case InHand =>
+        card.owner.hand.remove(card.owner.hand.indexOf(card))
+      case InBanished =>
+        card.owner.field.banished.remove(card.owner.field.banished.indexOf(card))
+      case InExtraDeck =>
+        card.owner.extraDeck.remove(card.owner.extraDeck.indexOf(card))
+      case InRightPendulumZone =>
+        rightPendulumZone = None
+      case InLeftPendulumZone =>
+        leftPendulumZone = None
+      case monsterZone: InMonsterZone =>
+        monsterZones.update(InMonsterZone.MonsterZones.indexOf(monsterZone), None)
+      case spellTrapZone: InSpellTrapZone =>
+        spellTrapZones.update(InSpellTrapZone.SpellTrapZones.indexOf(spellTrapZone), None)
+      case InFieldSpell =>
+        fieldSpellZone = None
+      case InGraveyard =>
+        throw new IllegalArgumentException(s"Can't send to grave a card already in grave, $card.")
+    }
+
+    // TODO: emit an event for sent to grave?
+    card.location = InGraveyard
+    graveyard.append(card)
   }
 }
 

@@ -2,7 +2,7 @@ package yugioh
 
 import yugioh.action.Action
 import yugioh.card.Card
-import yugioh.card.monster.ExtraDeckMonster
+import yugioh.card.monster.{ExtraDeckMonster, Monster}
 
 import scala.collection.mutable.ListBuffer
 import scala.io.StdIn
@@ -65,6 +65,11 @@ trait Player {
     myOpponent
   }
 
+  /**
+    * Ask a player what summon material (tribute, synchro, etc.) they wish to use for toSummon.
+    */
+  def selectSummonMaterial(toSummon: Monster, possibleMaterials: Seq[Monster]): Seq[Monster]
+
   override def toString = name
 }
 
@@ -81,6 +86,7 @@ private object SentinelOpponent extends Player {
   override def cardToDiscardForHandSizeLimit(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = fail
   override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step = null) = fail
   override def enterBattlePhase(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null): Boolean = fail
+  override def selectSummonMaterial(toSummon: Monster, possibleMaterials: Seq[Monster]) = fail
 }
 
 class CommandLineHumanPlayer(val name: String) extends Player {
@@ -139,6 +145,18 @@ class CommandLineHumanPlayer(val name: String) extends Player {
         true
     }
   }
+
+  // TODO: selecting summon material needs to enforce further constraints, e.g. level 5 cannot tribute 2 monsters
+  override def selectSummonMaterial(toSummon: Monster, possibleMaterials: Seq[Monster]) = {
+    println(s"To summon $toSummon, please enter comma separated monster(s) to use.")
+
+    for ((monster, i) <- possibleMaterials.zipWithIndex) {
+      println(s"($i) $monster")
+    }
+
+    val choices = StdIn.readLine("> ").split(",").map(_.toInt)
+    choices.map(possibleMaterials(_))
+  }
 }
 
 /**
@@ -153,4 +171,5 @@ class PassivePlayer extends Player {
   override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step ) = actions.head
   override def consentToEnd(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step): Boolean = true
   override def enterBattlePhase(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null): Boolean = false
+  override def selectSummonMaterial(toSummon: Monster, possibleMaterials: Seq[Monster]) = ???
 }

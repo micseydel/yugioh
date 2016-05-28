@@ -35,7 +35,18 @@ trait Monster extends Card {
               if (level <= 4) {
                 Seq(new NormalSummonImpl(this))
               } else {
-                Seq(new TributeSummonImpl(this))
+                val controlledMonsters = owner.field.monsterZones.count(_.isDefined)
+                val canTribute = if (level <= 6) {
+                  controlledMonsters >= 1
+                } else {
+                  controlledMonsters >= 2
+                }
+
+                if (canTribute) {
+                  Seq(new TributeSummonImpl(this))
+                } else {
+                  Seq()
+                }
               }
             }.getOrElse(Seq())
           case BattlePhase =>
