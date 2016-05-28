@@ -146,7 +146,7 @@ class CommandLineHumanPlayer(val name: String) extends Player {
     }
   }
 
-  // TODO: selecting summon material needs to enforce further constraints, e.g. level 5 cannot tribute 2 monsters
+  // TODO: selecting summon material needs to enforce further constraints, e.g. level 5 cannot tribute 2 monsters, 7 requires 2 not just 1
   override def selectSummonMaterial(toSummon: Monster, possibleMaterials: Seq[Monster]) = {
     println(s"To summon $toSummon, please enter comma separated monster(s) to use.")
 

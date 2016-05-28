@@ -16,11 +16,11 @@ class GameStateImpl(val players: Seq[Player]) extends GameState {
   private implicit val gameState = this
 
   def mainLoop() = {
-    players foreach {
-      _.draw(Constants.InitialHandSize)
+    for (player <- players) {
+      player.draw(Constants.InitialHandSize)
     }
 
-    playersCycle foreach { player =>
+    for (player <- playersCycle) {
       takeTurn(player)
     }
   }
