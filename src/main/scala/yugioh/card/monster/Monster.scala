@@ -25,7 +25,7 @@ trait Monster extends Card {
   /**
     * Default implementation of being able to normal/tribute summon during main phases, does not apply to (Semi-)Nomi.
     */
-  override def actions(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step = null) = {
+  override def actions(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step = null) = {
     fastEffectTiming match {
       case OpenGameState =>
         phase match {

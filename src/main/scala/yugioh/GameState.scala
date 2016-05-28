@@ -20,15 +20,15 @@ class GameStateImpl(val players: Seq[Player]) extends GameState {
       player.draw(Constants.InitialHandSize)
     }
 
-    for (player <- playersCycle) {
-      takeTurn(player)
+    for (players <- playersCycle) {
+      takeTurn(players)
     }
   }
 
-  private def takeTurn(implicit turnPlayer: Player) = {
+  private def takeTurn(implicit turnPlayers: TurnPlayers) = {
     turnCount += 1
 
-    println(s"Turn number $turnCount, turn player $turnPlayer.")
+    println(s"Turn number $turnCount, turn player ${turnPlayers.turnPlayer}.")
 
     hasNormalSummonedThisTurn = false // TODO: move this once an event based system is in place
 
@@ -42,7 +42,7 @@ class GameStateImpl(val players: Seq[Player]) extends GameState {
   /**
     * An infinite cycle alternating between the two players.
     */
-  private def playersCycle: Iterator[Player] = {
-    Iterator.continually(players).flatten
+  private def playersCycle: Iterator[TurnPlayers] = {
+    Iterator.continually(Seq(TurnPlayers(players(0), players(1)), TurnPlayers(players(1), players(0)))).flatten
   }
 }

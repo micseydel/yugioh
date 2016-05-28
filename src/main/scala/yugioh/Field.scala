@@ -34,7 +34,7 @@ trait Field {
   /**
     * All the actions associated with a field, which includes grave and banished; may be empty.
     */
-  def actions(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step = null) : Seq[Action]
+  def actions(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step = null) : Seq[Action]
 }
 
 class FieldImpl extends Field {
@@ -88,7 +88,7 @@ class FieldImpl extends Field {
     removeFrom.update(zones.indexOf(zone), None)
   }
 
-  override def actions(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
+  override def actions(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
     ((monsterZones ++ spellTrapZones :+ fieldSpellZone :+ leftPendulumZone :+ rightPendulumZone).flatten
       ++ graveyard ++ banished).flatMap(_.actions)
   }

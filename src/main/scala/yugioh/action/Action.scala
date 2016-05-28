@@ -6,7 +6,7 @@ import yugioh._
 trait Action {
   private var called = false
 
-  def execute()(implicit gameState: GameState, player: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step = null): Unit = {
+  def execute()(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step = null): Unit = {
     if (called) {
       throw new IllegalStateException("Action " + this + " was already executed.")
     }
@@ -21,7 +21,7 @@ trait Action {
 
   def redo()(implicit gameState: GameState): Unit = throw new NotImplementedError("Redo has not been implemented for " + this)
 
-  protected def doAction()(implicit gameState: GameState, player: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step): Unit
+  protected def doAction()(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step): Unit
 }
 
 trait InherentAction extends Action
@@ -39,8 +39,8 @@ trait SetAsMonster extends InherentAction
 trait TributeSetAsMonster extends SetAsMonster
 
 class NormalSummonImpl(val monster: Monster) extends NormalSummon {
-  override protected def doAction()(implicit gameState: GameState, player: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
-    player.field.placeAsMonster(monster)
+  override protected def doAction()(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
+    monster.owner.field.placeAsMonster(monster)
     gameState.hasNormalSummonedThisTurn = true // TODO: change this in an event-based system
   }
 }
@@ -49,8 +49,8 @@ trait TributeSummon extends NormalSummon
 
 // TODO BUG: was offered during TurnPlayerFastEffects and resulted in a match exception
 class TributeSummonImpl(override val monster: Monster) extends NormalSummonImpl(monster) with TributeSummon {
-  override protected def doAction()(implicit gameState: GameState, player: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
-    val toTribute = player.selectSummonMaterial(monster, player.field.monsterZones.toSeq.flatten)
+  override protected def doAction()(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
+    val toTribute = monster.owner.selectSummonMaterial(monster, monster.owner.field.monsterZones.toSeq.flatten)
     super.doAction()
   }
 }
@@ -65,7 +65,7 @@ trait PassPriority extends InherentAction {
 }
 
 class PassPriorityImpl extends PassPriority {
-  override def doAction()(implicit gameState: GameState, player: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = ()
+  override def doAction()(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = ()
 }
 
 trait Set extends InherentAction
@@ -73,7 +73,8 @@ trait Set extends InherentAction
 trait Discard extends InherentAction
 
 class DiscardImpl extends Discard {
-  override protected def doAction()(implicit gameState: GameState, player: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
+  override protected def doAction()(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
+    val player = turnPlayers.turnPlayer
     val choice = player.cardToDiscardForHandSizeLimit
     val card = player.hand.remove(player.hand.indexOf(choice))
     card.owner.field.graveyard.append(card)
@@ -85,8 +86,8 @@ trait Draw extends InherentAction
 trait DrawForTurn extends Draw
 
 class DrawForTurnImpl extends DrawForTurn {
-  override protected def doAction()(implicit gameState: GameState, player: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step): Unit = {
-    player.draw()
+  override protected def doAction()(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step): Unit = {
+    turnPlayers.turnPlayer.draw()
   }
 }
 

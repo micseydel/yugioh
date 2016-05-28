@@ -21,14 +21,14 @@ trait Player {
   /**
     * @param actions must contain at least one thing, typically an option to pass
     */
-  def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step = null): Action
+  def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step = null): Action
 
   /**
     * Called when MP1 is ended.
     *
     * @return true to enter BP, otherwise go to EP
     */
-  def enterBattlePhase(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null): Boolean
+  def enterBattlePhase(implicit gameState: GameState, turnPlayers: TurnPlayers, phase: Phase, step: Step = null): Boolean
 
   def draw(): Unit = draw(1)
   def draw(howMany: Int): Unit = {
@@ -40,30 +40,12 @@ trait Player {
     hand ++= toAdd
   }
 
-  def cardToDiscardForHandSizeLimit(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step = null): Card
+  def cardToDiscardForHandSizeLimit(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step = null): Card
 
   /**
     * Ask player if they wish to end the phase or step.
     */
-  def consentToEnd(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null): Boolean
-
-  private[this] var myOpponent: Player = SentinelOpponent
-
-  def opponent_=(player: Player) = {
-    if (myOpponent != SentinelOpponent) {
-      throw new IllegalStateException(s"Opponent has already been set once (to $myOpponent), cannot be set a second time.")
-    }
-
-    myOpponent = player
-  }
-
-  def opponent = {
-    if (myOpponent == SentinelOpponent) {
-      throw new IllegalStateException("Opponent has not been set yet.")
-    }
-
-    myOpponent
-  }
+  def consentToEnd(implicit gameState: GameState, turnPlayers: TurnPlayers, phase: Phase, step: Step = null): Boolean
 
   /**
     * Ask a player what summon material (tribute, synchro, etc.) they wish to use for toSummon.
@@ -73,26 +55,12 @@ trait Player {
   override def toString = name
 }
 
-/**
-  * A player used as a default value, trying to do anything with it will result in an UnsupportedOperationException.
-  */
-private object SentinelOpponent extends Player {
-  private def fail = throw new UnsupportedOperationException("Opponent was not set for a player.")
-
-  override val name = null
-  override val deck = null
-  override def opponent = fail
-  override def consentToEnd(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null) = fail
-  override def cardToDiscardForHandSizeLimit(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = fail
-  override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step = null) = fail
-  override def enterBattlePhase(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null): Boolean = fail
-  override def selectSummonMaterial(toSummon: Monster, possibleMaterials: Seq[Monster]) = fail
-}
+case class TurnPlayers(turnPlayer: Player, opponent: Player)
 
 class CommandLineHumanPlayer(val name: String) extends Player {
   override val deck: Deck = new TestDeck(this) // TODO: be more than just a stub
 
-  override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
+  override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
     if (actions.size == 1) {
       val action = actions.head
       println(s"Action $action was only option ($fastEffectTiming, $phase${Option(step).map(", " + _).getOrElse("")}), taking implicitly.")
@@ -102,11 +70,11 @@ class CommandLineHumanPlayer(val name: String) extends Player {
     }
   }
 
-  override def cardToDiscardForHandSizeLimit(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step): Card = {
+  override def cardToDiscardForHandSizeLimit(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step): Card = {
     select("Select a card to discard:", hand)
   }
 
-  override def enterBattlePhase(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
+  override def enterBattlePhase(implicit gameState: GameState, turnPlayers: TurnPlayers, phase: Phase, step: Step) = {
     print("MP1 is ending; enter BP? (If not, will go to EP) ")
     StdIn.readBoolean()
   }
@@ -115,7 +83,7 @@ class CommandLineHumanPlayer(val name: String) extends Player {
     * Ask the user for a specific element of a sequence.
     */
   private def select[A](prompt: String, options: Seq[A])
-                       (implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step): A = {
+                       (implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step): A = {
     println(prompt + s" ($fastEffectTiming, $phase${Option(step).map(", " + _).getOrElse("")})")
 
     for ((action, i) <- options.zipWithIndex) {
@@ -136,9 +104,9 @@ class CommandLineHumanPlayer(val name: String) extends Player {
   /**
     * After SP, will ask via StdIn, otherwise just consents.
     */
-  override def consentToEnd(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step): Boolean = {
+  override def consentToEnd(implicit gameState: GameState, turnPlayers: TurnPlayers, phase: Phase, step: Step): Boolean = {
     phase match {
-      case MainPhase | BattlePhase | MainPhase2 | EndPhase if turnPlayer == this =>
+      case MainPhase | BattlePhase | MainPhase2 | EndPhase if turnPlayers.turnPlayer == this =>
         print(s"End ${Option(step).getOrElse(phase)}? ")
         StdIn.readBoolean()
       case _ =>
@@ -167,9 +135,9 @@ class CommandLineHumanPlayer(val name: String) extends Player {
 class PassivePlayer extends Player {
   override val name = "PassivePlayer"
   override val deck = new TestDeck(this)
-  override def cardToDiscardForHandSizeLimit(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step): Card = hand.head
-  override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step ) = actions.head
-  override def consentToEnd(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step): Boolean = true
-  override def enterBattlePhase(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null): Boolean = false
+  override def cardToDiscardForHandSizeLimit(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step): Card = hand.head
+  override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step ) = actions.head
+  override def consentToEnd(implicit gameState: GameState, turnPlayers: TurnPlayers, phase: Phase, step: Step): Boolean = true
+  override def enterBattlePhase(implicit gameState: GameState, turnPlayers: TurnPlayers, phase: Phase, step: Step = null): Boolean = false
   override def selectSummonMaterial(toSummon: Monster, possibleMaterials: Seq[Monster]) = ???
 }
