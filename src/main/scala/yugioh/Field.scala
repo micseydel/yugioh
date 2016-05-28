@@ -120,6 +120,7 @@ class FieldImpl extends Field {
 
     // TODO: emit an event for sent to grave?
     card.location = InGraveyard
+    card.maybeControlledState = None // clear it out if it was present
     graveyard.append(card)
   }
 }

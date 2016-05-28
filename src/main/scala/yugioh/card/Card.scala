@@ -1,9 +1,9 @@
 package yugioh.card
 
 import yugioh._
-import yugioh.card.state.{FieldState, HandState}
 import yugioh.action.Action
 import yugioh.card.monster.Monster
+import yugioh.card.state.ControlledState
 
 trait Card {
   val printedName: String
@@ -11,9 +11,7 @@ trait Card {
 
   var location: Location = InDeck
 
-  def handState: Option[HandState] = None
-
-  def fieldState: Option[FieldState] = None
+  var maybeControlledState: Option[ControlledState] = None
 
   def controller: Player = owner
 

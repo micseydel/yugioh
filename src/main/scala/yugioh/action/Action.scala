@@ -1,6 +1,5 @@
 package yugioh.action
 
-import yugioh.card.monster.Monster
 import yugioh._
 
 trait Action {
@@ -25,34 +24,6 @@ trait Action {
 }
 
 trait InherentAction extends Action
-
-trait Summon extends InherentAction {
-  def monster: Monster
-
-  override def toString = s"${this.getClass.getSimpleName}(${monster.getClass.getSimpleName})"
-}
-
-trait NormalSummon extends Summon
-
-trait SetAsMonster extends InherentAction
-
-trait TributeSetAsMonster extends SetAsMonster
-
-class NormalSummonImpl(val monster: Monster) extends NormalSummon {
-  override protected def doAction()(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
-    monster.owner.field.placeAsMonster(monster)
-    gameState.hasNormalSummonedThisTurn = true // TODO: change this in an event-based system
-  }
-}
-
-trait TributeSummon extends NormalSummon
-
-class TributeSummonImpl(override val monster: Monster) extends NormalSummonImpl(monster) with TributeSummon {
-  override protected def doAction()(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
-    val toTribute = monster.owner.selectSummonMaterial(monster, monster.owner.field.monsterZones.toSeq.flatten)
-    super.doAction()
-  }
-}
 
 /**
   * Composition of InherentAction(s).

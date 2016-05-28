@@ -32,6 +32,11 @@ class GameStateImpl(val players: Seq[Player]) extends GameState {
 
     hasNormalSummonedThisTurn = false // TODO: move this once an event based system is in place
 
+    // TODO: this should be refactored once an event based system is used
+    for (monster <- turnPlayers.turnPlayer.field.monsterZones.toSeq.flatten) {
+      monster.maybeMonsterControlledState.get.manuallyChangedPositionsThisTurn = false
+    }
+
     implicit var phase: Phase = DrawPhase
     while (phase != EndTurn) {
       println(s"Entering $phase")

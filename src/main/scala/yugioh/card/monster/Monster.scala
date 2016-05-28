@@ -1,9 +1,9 @@
 package yugioh.card.monster
 
 import yugioh._
-import yugioh.action.{NormalSummonImpl, TributeSummonImpl}
+import yugioh.action.{FlipSummonImpl, NormalSummonImpl, SwitchPositionImpl, TributeSummonImpl}
 import yugioh.card.Card
-import yugioh.card.state.MonsterFieldState
+import yugioh.card.state.{MonsterControlledState, MonsterFieldState}
 
 trait Monster extends Card {
   val printedAttack: Int
@@ -13,6 +13,8 @@ trait Monster extends Card {
   val printedAttribute: Attribute
   val printedType: Type
 
+  override val toString = this.getClass.getSimpleName
+
   def attack: Int = printedAttack
   def defense: Int = printedDefense
   def maybeLevel: Option[Int] = maybePrintedLevel
@@ -20,7 +22,9 @@ trait Monster extends Card {
   def attribute: Attribute = printedAttribute
   def monsterType: Type = printedType
 
-  override def fieldState: Option[MonsterFieldState] = None
+  var maybeMonsterFieldState: Option[MonsterFieldState] = None
+
+  def maybeMonsterControlledState: Option[MonsterControlledState] = maybeControlledState.asInstanceOf[Option[MonsterControlledState]]
 
   /**
     * Default implementation of being able to normal/tribute summon during main phases, does not apply to (Semi-)Nomi.
@@ -29,29 +33,38 @@ trait Monster extends Card {
     fastEffectTiming match {
       case OpenGameState =>
         phase match {
-          case MainPhase | MainPhase2 if !gameState.hasNormalSummonedThisTurn && location == InHand =>
-            // TODO: need to be able to change position
-            maybeLevel.map { level =>
-              if (level <= 4) {
-                Seq(new NormalSummonImpl(this))
-              } else {
-                val controlledMonsters = owner.field.monsterZones.count(_.isDefined)
-                val canTribute = if (level <= 6) {
-                  controlledMonsters >= 1
-                } else {
-                  controlledMonsters >= 2
-                }
+          case MainPhase | MainPhase2 =>
+            location match {
+              case InHand if !gameState.hasNormalSummonedThisTurn =>
+                maybeLevel.map { level =>
+                  if (level <= 4) {
+                    Seq(new NormalSummonImpl(this))
+                  } else {
+                    val controlledMonsters = owner.field.monsterZones.count(_.isDefined)
+                    val canTribute = if (level <= 6) {
+                      controlledMonsters >= 1
+                    } else {
+                      controlledMonsters >= 2
+                    }
 
-                if (canTribute) {
-                  Seq(new TributeSummonImpl(this))
+                    if (canTribute) {
+                      Seq(new TributeSummonImpl(this))
+                    } else {
+                      Seq()
+                    }
+                  }
+                }.getOrElse(Seq())
+              case monsterZone: InMonsterZone if !maybeMonsterControlledState.get.manuallyChangedPositionsThisTurn =>
+                if (maybeControlledState.get.faceup) {
+                  Seq(new SwitchPositionImpl(this))
                 } else {
-                  Seq()
+                  Seq(new FlipSummonImpl(this))
                 }
-              }
-            }.getOrElse(Seq())
+              case _ =>
+                Seq()
+            }
           case BattlePhase =>
-            // TODO: BP actions
-            Seq()
+            Seq() // TODO: BP actions
           case _ =>
             Seq()
         }
