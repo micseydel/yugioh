@@ -17,6 +17,9 @@ import yugioh.action._
   * the end of a phase or step.
   */
 sealed trait FastEffectTiming {
+  protected implicit val implicitFastEffectTiming = this
+  override val toString = this.getClass.getSimpleName
+
   def next(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null): FastEffectTiming
 
   protected def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null) = {
@@ -55,7 +58,9 @@ object FastEffectTiming {
   */
 object OpenGameState extends FastEffectTiming {
   override def next(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
-    turnPlayer.chooseAction(actions) match {
+    val choice = turnPlayer.chooseAction(actions)
+    choice.execute()
+    choice match {
       case pass: PassPriority => TryToEnd
       case activation: Activation => ChainRules
       case action: InherentAction => CheckForTrigger
@@ -68,7 +73,9 @@ object OpenGameState extends FastEffectTiming {
   */
 object TurnPlayerFastEffects extends FastEffectTiming {
   override def next(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
-    turnPlayer.chooseAction(actions) match {
+    val choice = turnPlayer.chooseAction(actions)
+    choice.execute()
+    choice match {
       case pass: PassPriority => OpponentFastEffects
       case activation: Activation => ChainRules
     }
@@ -80,7 +87,9 @@ object TurnPlayerFastEffects extends FastEffectTiming {
   */
 object OpponentFastEffects extends FastEffectTiming {
   override def next(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
-    turnPlayer.opponent.chooseAction(opponentActions) match {
+    val choice = turnPlayer.opponent.chooseAction(opponentActions)
+    choice.execute()
+    choice match {
       case pass: PassPriority => OpenGameState
       case activation: Activation => ChainRules
     }
@@ -103,7 +112,9 @@ object ChainRules extends FastEffectTiming {
   */
 object TryToEnd extends FastEffectTiming {
   override def next(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
-    turnPlayer.opponent.chooseAction(opponentActions) match {
+    val choice = turnPlayer.opponent.chooseAction(opponentActions)
+    choice.execute()
+    choice match {
       case activation: Activation => ChainRules
       case pass: PassPriority =>
         if (turnPlayer.consentToEnd && turnPlayer.opponent.consentToEnd) {

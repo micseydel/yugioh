@@ -30,7 +30,7 @@ class GameStateImpl(val players: Seq[Player]) extends GameState {
 
     println(s"Turn number $turnCount, turn player $turnPlayer.")
 
-    hasNormalSummonedThisTurn = false
+    hasNormalSummonedThisTurn = false // TODO: move this once an event based system is in place
 
     implicit var phase: Phase = DrawPhase
     while (phase != EndTurn) {

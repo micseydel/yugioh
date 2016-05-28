@@ -21,19 +21,26 @@ trait Player {
   /**
     * @param actions must contain at least one thing, typically an option to pass
     */
-  def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null): Action
+  def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step = null): Action
 
   /**
     * Called when MP1 is ended.
     *
     * @return true to enter BP, otherwise go to EP
     */
-  def enterBattlePhase(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step=null): Boolean
+  def enterBattlePhase(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null): Boolean
 
   def draw(): Unit = draw(1)
-  def draw(howMany: Int): Unit = hand ++= deck.fromTop(howMany)
+  def draw(howMany: Int): Unit = {
+    val toAdd = deck.fromTop(howMany)
+    for (card <- toAdd) {
+      card.location = InHand
+    }
 
-  def cardToDiscardForHandSizeLimit(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step): Card
+    hand ++= toAdd
+  }
+
+  def cardToDiscardForHandSizeLimit(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step = null): Card
 
   /**
     * Ask player if they wish to end the phase or step.
@@ -71,25 +78,25 @@ private object SentinelOpponent extends Player {
   override val deck = null
   override def opponent = fail
   override def consentToEnd(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null) = fail
-  override def cardToDiscardForHandSizeLimit(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null) = fail
-  override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null) = fail
+  override def cardToDiscardForHandSizeLimit(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = fail
+  override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step = null) = fail
   override def enterBattlePhase(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null): Boolean = fail
 }
 
 class CommandLineHumanPlayer(val name: String) extends Player {
   override val deck: Deck = new TestDeck(this) // TODO: be more than just a stub
 
-  override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step) = {
+  override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
     if (actions.size == 1) {
       val action = actions.head
-      println(s"Action $action was only option (during phase $phase), taking implicitly.")
+      println(s"Action $action was only option ($fastEffectTiming, $phase${Option(step).map(", " + _).getOrElse("")}), taking implicitly.")
       action
     } else {
       select("Select an action:", actions)
     }
   }
 
-  override def cardToDiscardForHandSizeLimit(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step): Card = {
+  override def cardToDiscardForHandSizeLimit(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step): Card = {
     select("Select a card to discard:", hand)
   }
 
@@ -101,8 +108,9 @@ class CommandLineHumanPlayer(val name: String) extends Player {
   /**
     * Ask the user for a specific element of a sequence.
     */
-  private def select[A](prompt: String, options: Seq[A]): A = {
-    println(prompt)
+  private def select[A](prompt: String, options: Seq[A])
+                       (implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step): A = {
+    println(prompt + s" ($fastEffectTiming, $phase${Option(step).map(", " + _).getOrElse("")})")
 
     for ((action, i) <- options.zipWithIndex) {
       println(s"($i) $action")
@@ -141,8 +149,8 @@ class CommandLineHumanPlayer(val name: String) extends Player {
 class PassivePlayer extends Player {
   override val name = "PassivePlayer"
   override val deck = new TestDeck(this)
-  override def cardToDiscardForHandSizeLimit(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step): Card = hand.head
-  override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step ) = actions.head
+  override def cardToDiscardForHandSizeLimit(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step): Card = hand.head
+  override def chooseAction(actions: Seq[Action])(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step ) = actions.head
   override def consentToEnd(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step): Boolean = true
   override def enterBattlePhase(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null): Boolean = false
 }

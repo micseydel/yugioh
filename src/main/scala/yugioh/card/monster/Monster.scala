@@ -25,22 +25,26 @@ trait Monster extends Card {
   /**
     * Default implementation of being able to normal/tribute summon during main phases, does not apply to (Semi-)Nomi.
     */
-  override def actions(implicit gameState: GameState, turnPlayer: Player, phase: Phase, step: Step = null) = {
-    phase match {
-      case MainPhase | MainPhase2 if !gameState.hasNormalSummonedThisTurn =>
-        // TODO: need to be able to change position
-        maybeLevel.map { level =>
-          if (level <= 4) {
-            Seq(new NormalSummonImpl(this))
-          } else {
-            Seq(new TributeSummonImpl(this))
-          }
-        }.getOrElse(Seq())
-      case BattlePhase =>
-        // TODO: BP actions
-        Seq()
-      case _ =>
-        Seq()
+  override def actions(implicit gameState: GameState, turnPlayer: Player, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step = null) = {
+    fastEffectTiming match {
+      case OpenGameState =>
+        phase match {
+          case MainPhase | MainPhase2 if !gameState.hasNormalSummonedThisTurn && location == InHand =>
+            // TODO: need to be able to change position
+            maybeLevel.map { level =>
+              if (level <= 4) {
+                Seq(new NormalSummonImpl(this))
+              } else {
+                Seq(new TributeSummonImpl(this))
+              }
+            }.getOrElse(Seq())
+          case BattlePhase =>
+            // TODO: BP actions
+            Seq()
+          case _ =>
+            Seq()
+        }
+      case _ => Seq()
     }
   }
 }

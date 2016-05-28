@@ -1,6 +1,6 @@
 package yugioh
 
-import yugioh.action.{DiscardImpl, DrawForTurnImpl}
+import yugioh.action.DrawForTurnImpl
 
 /**
   * State machine.
@@ -15,6 +15,8 @@ sealed trait Phase {
 
 case object DrawPhase extends Phase {
   val abbreviation = "DP"
+
+  protected implicit val fastEffectTiming = OpenGameState
   override def next(implicit gameState: GameState, turnPlayer: Player): Phase = {
     if (gameState.turnCount > 1) {
       (new DrawForTurnImpl).execute()
@@ -67,11 +69,7 @@ case object MainPhase2 extends Phase {
 case object EndPhase extends Phase {
   val abbreviation = "EP"
   override def next(implicit gameState: GameState, turnPlayer: Player): Phase = {
-    while (turnPlayer.hand.size > Constants.HandSizeLimit) {
-      val action = turnPlayer.chooseAction(Seq(new DiscardImpl))
-      action.execute()
-    }
-
+    FastEffectTiming.loop()
     EndTurn
   }
 }
