@@ -1,7 +1,7 @@
 package yugioh.card.monster
 
 import yugioh._
-import yugioh.action.{FlipSummonImpl, NormalSummonImpl, SwitchPositionImpl, TributeSummonImpl}
+import yugioh.action._
 import yugioh.card.Card
 import yugioh.card.state.{MonsterControlledState, MonsterFieldState}
 
@@ -12,8 +12,6 @@ trait Monster extends Card {
   val maybePrintedRank: Option[Int] = None
   val printedAttribute: Attribute
   val printedType: Type
-
-  override val toString = this.getClass.getSimpleName
 
   def attack: Int = printedAttack
   def defense: Int = printedDefense
@@ -38,7 +36,7 @@ trait Monster extends Card {
               case InHand if !gameState.hasNormalSummonedThisTurn =>
                 maybeLevel.map { level =>
                   if (level <= 4) {
-                    Seq(new NormalSummonImpl(this))
+                    Seq(new NormalSummonImpl(this), new SetAsMonsterImpl(this))
                   } else {
                     val controlledMonsters = owner.field.monsterZones.count(_.isDefined)
                     val canTribute = if (level <= 6) {
@@ -48,7 +46,7 @@ trait Monster extends Card {
                     }
 
                     if (canTribute) {
-                      Seq(new TributeSummonImpl(this))
+                      Seq(new TributeSummonImpl(this), new TributeSetImpl(this))
                     } else {
                       Seq()
                     }

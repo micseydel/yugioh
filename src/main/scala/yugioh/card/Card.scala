@@ -8,7 +8,6 @@ import yugioh.card.state.ControlledState
 trait Card {
   val printedName: String
   val owner: Player
-
   var location: Location = InDeck
 
   var maybeControlledState: Option[ControlledState] = None
@@ -18,6 +17,8 @@ trait Card {
   def actions(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step = null): Seq[Action]
 
   def name: String = printedName
+
+  override def toString = name
 }
 
 trait SpellOrTrap extends Card

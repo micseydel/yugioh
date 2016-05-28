@@ -9,7 +9,7 @@ trait MonsterAction
 trait Summon extends InherentAction {
   def monster: Monster
 
-  override def toString = s"${this.getClass.getSimpleName}(${monster.getClass.getSimpleName})"
+  override def toString = s"${this.getClass.getSimpleName}($monster)"
 }
 
 trait NormalSummon extends Summon
@@ -69,9 +69,12 @@ class FlipSummonImpl(override val monster: Monster) extends FlipSummon {
   }
 }
 
-trait SetAsMonster extends InherentAction
+trait SetAsMonster extends InherentAction {
+  val monster: Monster
+  override def toString = s"${this.getClass.getSimpleName}($monster)"
+}
 
-class SetAsMonsterImpl(monster: Monster) extends SetAsMonster {
+class SetAsMonsterImpl(override val monster: Monster) extends SetAsMonster {
   override protected def doAction()(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
     monster.owner.field.placeAsMonster(monster)
     monster.maybeControlledState = Some(new MonsterControlledStateImpl(yugioh.card.monster.Set))
