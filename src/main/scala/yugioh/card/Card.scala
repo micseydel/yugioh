@@ -23,7 +23,7 @@ trait Card {
 
 trait SpellOrTrap extends Card
 
-trait Delegate
+sealed trait Delegate
 
 /**
   * This is a wrapper so that a Monster can be treated as a SpellOrTrap card.
