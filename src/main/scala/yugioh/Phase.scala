@@ -1,6 +1,8 @@
 package yugioh
 
 import yugioh.action.DrawForTurnImpl
+import yugioh.events.Observable.emit
+import yugioh.events._
 
 /**
   * State machine.
@@ -10,14 +12,15 @@ sealed trait Phase {
 
   protected implicit val phase = this
 
-  def next(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase
+  def next()(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase
 }
+
 
 case object DrawPhase extends Phase {
   val abbreviation = "DP"
 
   protected implicit val fastEffectTiming = OpenGameState
-  override def next(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase = {
+  override def next()(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase = {
     if (gameState.turnCount > 1) {
       (new DrawForTurnImpl).execute()
       FastEffectTiming.loop(start = CheckForTrigger)
@@ -31,7 +34,8 @@ case object DrawPhase extends Phase {
 
 case object StandbyPhase extends Phase {
   val abbreviation = "SP"
-  override def next(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase = {
+
+  override def next()(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase = {
     FastEffectTiming.loop()
     MainPhase
   }
@@ -43,7 +47,7 @@ case object MainPhase extends Phase {
   /**
     * If it's later than the first turn, ask the turn player if they want to go to BP. Otherwise go to EP.
     */
-  override def next(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase = {
+  override def next()(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase = {
     FastEffectTiming.loop()
     if (gameState.turnCount > 1 && turnPlayers.turnPlayer.enterBattlePhase) {
       BattlePhase
@@ -55,7 +59,8 @@ case object MainPhase extends Phase {
 
 case object BattlePhase extends Phase {
   val abbreviation = "BP"
-  override def next(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase = {
+
+  override def next()(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase = {
     BattlePhaseStep.loop()
     MainPhase2
   }
@@ -63,29 +68,54 @@ case object BattlePhase extends Phase {
 
 case object MainPhase2 extends Phase {
   val abbreviation = "MP2"
-  override def next(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase = EndPhase
+
+  override def next()(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase = {
+    FastEffectTiming.loop()
+    EndPhase
+  }
 }
 
 case object EndPhase extends Phase {
   val abbreviation = "EP"
-  override def next(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase = {
+
+  override def next()(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase = {
     FastEffectTiming.loop()
-    EndTurn
+    null
   }
 }
 
-/**
-  * State machine exit sentinel.
-  */
-case object EndTurn extends Phase {
-  override val abbreviation: String = "Sentinel"
-
-  override def next(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase = throw new UnsupportedOperationException
-}
 
 object Phase {
   val phases = Seq(DrawPhase, StandbyPhase, MainPhase, BattlePhase, MainPhase2, EndPhase)
   val mainPhases = Set(MainPhase, MainPhase2)
+
+  private val StartEvents: Map[Phase, PhaseStartEvent] = Map(
+    DrawPhase -> DrawPhaseStartEvent,
+    StandbyPhase -> StandbyPhaseStartEvent,
+    MainPhase -> MainPhaseStartEvent,
+    BattlePhase -> BattlePhaseStartEvent,
+    MainPhase2 -> MainPhase2StartEvent,
+    EndPhase -> EndPhaseStartEvent
+  )
+
+  private val EndEvents: Map[Phase, PhaseEndEvent] = Map(
+    DrawPhase -> DrawPhaseEndEvent,
+    StandbyPhase -> StandbyPhaseEndEvent,
+    MainPhase -> MainPhaseEndEvent,
+    BattlePhase -> BattlePhaseEndEvent,
+    MainPhase2 -> MainPhase2EndEvent,
+    EndPhase -> EndPhaseEndEvent
+  )
+
+  def loop()(implicit gameState: GameState, turnPlayers: TurnPlayers) = {
+    implicit var phase: Phase = DrawPhase
+    do {
+      emit(StartEvents(phase))
+      val nextPhase = phase.next
+      emit(EndEvents(phase))
+      phase = nextPhase
+    } while (phase != null)
+  }
 }
 
 
@@ -103,12 +133,28 @@ sealed trait BattlePhaseStep extends Step {
 }
 
 object BattlePhaseStep {
-  def loop()(implicit gameState: GameState, turnPlayers: TurnPlayers): Unit = {
+  private val StartEvents: Map[BattlePhaseStep, BattlePhaseStepStartEvent] = Map(
+    StartStep -> StartStepStepStartEvent,
+    BattleStep -> BattleStepStepStartEvent,
+    DamageStep -> DamageStepStepStartEvent,
+    EndStep -> EndStepStepStartEvent
+  )
 
+  private val EndEvents: Map[BattlePhaseStep, BattlePhaseStepEndEvent] = Map(
+    StartStep -> StartStepStepEndEvent,
+    BattleStep -> BattleStepStepEndEvent,
+    DamageStep -> DamageStepStepEndEvent,
+    EndStep -> EndStepStepEndEvent
+  )
+
+  def loop()(implicit gameState: GameState, turnPlayers: TurnPlayers) = {
     var battlePhaseStep: BattlePhaseStep = StartStep
-    while (battlePhaseStep != EndStep) {
-      battlePhaseStep = battlePhaseStep.next
-    }
+    do {
+      emit(StartEvents(battlePhaseStep))
+      val nextBattlePhaseStep = battlePhaseStep.next
+      emit(EndEvents(battlePhaseStep))
+      battlePhaseStep = nextBattlePhaseStep
+    } while (battlePhaseStep != null)
   }
 }
 
@@ -126,15 +172,7 @@ case object DamageStep extends BattlePhaseStep {
 }
 
 case object EndStep extends BattlePhaseStep {
-  override protected val nextStep: BattlePhaseStep = ExitBattlePhase
-}
-
-/**
-  * State machine exit sentinel.
-  */
-case object ExitBattlePhase extends BattlePhaseStep {
   override protected val nextStep: BattlePhaseStep = null
-  override def next(implicit gameState: GameState, turnPlayers: TurnPlayers) = throw new UnsupportedOperationException
 }
 
 
@@ -143,12 +181,22 @@ sealed trait DamageStepSubStep extends Step
 object DamageStepSubStep {
   private implicit val phase: Phase = BattlePhase
 
-  val subSteps = Seq(SubStep1, SubStep2, SubStep3, SubStep4, SubStep5, SubStep6, SubStep7)
+  val subStepsWithEvents: Seq[(DamageSubStepStartEvent, DamageStepSubStep, DamageSubStepEndEvent)] = Seq(
+    (DamageSubStep1StartEvent, SubStep1, DamageSubStep1EndEvent),
+    (DamageSubStep2StartEvent, SubStep2, DamageSubStep2EndEvent),
+    (DamageSubStep3StartEvent, SubStep3, DamageSubStep3EndEvent),
+    (DamageSubStep4StartEvent, SubStep4, DamageSubStep4EndEvent),
+    (DamageSubStep5StartEvent, SubStep5, DamageSubStep5EndEvent),
+    (DamageSubStep6StartEvent, SubStep6, DamageSubStep6EndEvent),
+    (DamageSubStep7StartEvent, SubStep7, DamageSubStep7EndEvent)
+  )
 
   def loop()(implicit gameState: GameState, turnPlayers: TurnPlayers): Unit = {
-    for (subStep <- subSteps) {
+    for ((startEvent, subStep, endEvent) <- subStepsWithEvents) {
       implicit val implicitSubStep = subStep
+      emit(startEvent)
       FastEffectTiming.loop()
+      emit(endEvent)
     }
   }
 }

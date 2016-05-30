@@ -1,9 +1,12 @@
 package yugioh
 
-import yugioh.action.Action
+import yugioh.action.{Action, NormalSummon, SetAsMonster}
+import yugioh.events.Observable._
+import yugioh.events.{TurnEndEvent, TurnStartEvent}
 
 trait GameState {
-  val players: Seq[Player]
+  val Players: (Player, Player)
+  val IterablePlayers = Seq(Players._1,Players._1)
 
   var turnCount = 0
   var hasNormalSummonedThisTurn: Boolean = false
@@ -12,42 +15,57 @@ trait GameState {
   def mainLoop(): Unit
 }
 
-class GameStateImpl(val players: Seq[Player]) extends GameState {
+class GameStateImpl(val Players: (Player, Player)) extends GameState {
   private implicit val gameState = this
 
   def mainLoop() = {
-    for (player <- players) {
+    setupObservables()
+
+    // before turns start, each player draws
+    for (player <- IterablePlayers) {
       player.draw(Constants.InitialHandSize)
     }
 
-    for (players <- playersCycle) {
-      takeTurn(players)
+    // loop until a game loss exception is thrown
+    // TODO LOW: catch the game loss exception here and do stuff based on it
+    for (turnPlayers <- playersCycle) {
+      takeTurn(turnPlayers)
     }
   }
 
   private def takeTurn(implicit turnPlayers: TurnPlayers) = {
     turnCount += 1
 
-    println(s"Turn number $turnCount, turn player ${turnPlayers.turnPlayer}.")
-
-    hasNormalSummonedThisTurn = false // TODO: move this once an event based system is in place
-
-    // TODO: this should be refactored once an event based system is used
-    for (monster <- turnPlayers.turnPlayer.field.monsterZones.toSeq.flatten) {
-      monster.maybeMonsterControlledState.get.manuallyChangedPositionsThisTurn = false
-    }
-
-    implicit var phase: Phase = DrawPhase
-    while (phase != EndTurn) {
-      println(s"Entering $phase")
-      phase = phase.next
-    }
+    emit(TurnStartEvent(turnPlayers, this))
+    Phase.loop()
+    emit(TurnEndEvent)
   }
 
   /**
     * An infinite cycle alternating between the two players.
     */
   private def playersCycle: Iterator[TurnPlayers] = {
-    Iterator.continually(Seq(TurnPlayers(players(0), players(1)), TurnPlayers(players(1), players(0)))).flatten
+    val (player1, player2) = Players
+    Iterator.continually(Seq(TurnPlayers(player1, player2), TurnPlayers(player2, player1))).flatten
+  }
+
+  private def setupObservables() = {
+    // set hook for clearing turn state
+    observe { event =>
+      event match {
+        case TurnStartEvent(_, _) =>
+          hasNormalSummonedThisTurn = false
+        case ignore =>
+      }
+    }
+
+    // listen for a normal summon or set, flag that it happened
+    observe { event =>
+      event match {
+        case _:NormalSummon | _:SetAsMonster =>
+          hasNormalSummonedThisTurn = true
+        case ignore =>
+      }
+    }
   }
 }

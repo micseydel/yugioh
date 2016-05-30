@@ -7,7 +7,7 @@ import yugioh.card.state._
 trait MonsterAction
 
 trait Summon extends InherentAction {
-  def monster: Monster
+  val monster: Monster
 
   override def toString = s"${this.getClass.getSimpleName}($monster)"
 }
@@ -20,7 +20,6 @@ class NormalSummonImpl(val monster: Monster) extends NormalSummon {
     monster.maybeControlledState = Some(new MonsterControlledStateImpl(Attack))
     monster.maybeMonsterControlledState.get.manuallyChangedPositionsThisTurn = true // TODO: consolidate
     monster.maybeMonsterFieldState = Some(new MonsterFieldStateImpl(NormalSummoned))
-    gameState.hasNormalSummonedThisTurn = true // TODO: change this in an event-based system
   }
 }
 
@@ -42,13 +41,13 @@ class TributeSummonImpl(override val monster: Monster) extends NormalSummonImpl(
 
 trait SwitchPosition extends InherentAction {
   val monster: Monster
-  override val toString = s"${this.getClass.getSimpleName}($monster)"
+  override val toString = s"${this.getClass.getSimpleName}($monster(${monster.maybeMonsterControlledState.get.position}))"
 }
 
 class SwitchPositionImpl(override val monster: Monster) extends SwitchPosition {
   override protected def doAction()(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
     for (controlledState <- monster.maybeMonsterControlledState) {
-      controlledState.manuallyChangedPositionsThisTurn = true // TODO HIGH: need to clear this
+      controlledState.manuallyChangedPositionsThisTurn = true
       controlledState.position match {
         case Attack => Defense
         case Defense => Attack
@@ -64,7 +63,7 @@ class FlipSummonImpl(override val monster: Monster) extends FlipSummon {
   override protected def doAction()(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
     for (state <- monster.maybeMonsterControlledState) {
       state.position = Attack
-      state.manuallyChangedPositionsThisTurn = true // TODO HIGH: need to clear this
+      state.manuallyChangedPositionsThisTurn = true
     }
   }
 }
@@ -80,7 +79,6 @@ class SetAsMonsterImpl(override val monster: Monster) extends SetAsMonster {
     monster.maybeControlledState = Some(new MonsterControlledStateImpl(yugioh.card.monster.Set))
     monster.maybeMonsterControlledState.get.manuallyChangedPositionsThisTurn = true // TODO: consolidate
     monster.maybeMonsterFieldState = Some(new MonsterFieldStateImpl(NotSummoned))
-    gameState.hasNormalSummonedThisTurn = true // TODO: change this in an event-based system
   }
 }
 

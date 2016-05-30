@@ -118,7 +118,7 @@ class FieldImpl extends Field {
         throw new IllegalArgumentException(s"Can't send to grave a card already in grave, $card.")
     }
 
-    // TODO: emit an event for sent to grave?
+    // TODO: emit an event for sent to grave
     card.location = InGraveyard
     card.maybeControlledState = None // clear it out if it was present
     graveyard.append(card)

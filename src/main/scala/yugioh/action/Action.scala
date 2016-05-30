@@ -1,8 +1,10 @@
 package yugioh.action
 
 import yugioh._
+import yugioh.events.Event
+import yugioh.events.Observable.emit
 
-trait Action {
+trait Action extends Event {
   private var called = false
 
   def execute()(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step = null): Unit = {
@@ -11,7 +13,7 @@ trait Action {
     }
 
     doAction()
-    // TODO: will want emit an event here
+    emit(this)
     gameState.history :+= this
     called = true
   }
