@@ -13,7 +13,7 @@ class SwitchPositionImpl(override val monster: Monster) extends SwitchPosition {
   override protected def doAction()(implicit gameState: GameState) = {
     for (controlledState <- monster.maybeMonsterControlledState) {
       controlledState.manuallyChangedPositionsThisTurn = true
-      controlledState.position match {
+      controlledState.position = controlledState.position match {
         case Attack => Defense
         case Defense => Attack
         case _ => throw new IllegalStateException("Shouldn't have tried to switch monster position.")
