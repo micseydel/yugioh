@@ -1,5 +1,7 @@
 package yugioh
 
+import scala.language.implicitConversions
+
 object Util {
   /**
     * Allows Scala syntax of

@@ -20,9 +20,11 @@ sealed trait FastEffectTiming {
   protected implicit val implicitFastEffectTiming = this
   override val toString = this.getClass.getSimpleName
 
-  def next(implicit gameState: GameState, turnPlayers: TurnPlayers, phase: Phase, step: Step = null): FastEffectTiming
+  def next(implicit gameState: GameState): FastEffectTiming
 
-  protected def actions(implicit gameState: GameState, turnPlayers: TurnPlayers, phase: Phase, step: Step = null) = {
+  protected def actions(implicit gameState: GameState) = {
+    val turnPlayers = gameState.turnPlayers
+
     // field includes grave + banished
     Seq(new PassPriorityImpl) ++
       turnPlayers.turnPlayer.hand.flatMap(_.actions) ++
@@ -31,7 +33,9 @@ sealed trait FastEffectTiming {
       turnPlayers.opponent.field.actions
   }
 
-  protected def opponentActions(implicit gameState: GameState, turnPlayers: TurnPlayers, phase: Phase, step: Step = null) = {
+  protected def opponentActions(implicit gameState: GameState) = {
+    val turnPlayers = gameState.turnPlayers
+
     // field includes grave + banished
     Seq(new PassPriorityImpl) ++
       turnPlayers.opponent.hand.flatMap(_.actions) ++
@@ -45,10 +49,10 @@ object FastEffectTiming {
     * Defaults to starting in open game state, but allows for starting elsewhere (e.g. CheckForTrigger at start of DP).
     */
   def loop(start: FastEffectTiming = OpenGameState)
-          (implicit gameState: GameState, turnPlayers: TurnPlayers, phase: Phase, step: Step = null): Unit = {
+          (gameState: GameState): Unit = {
     var state = start
     while (state != EndPhaseOrStep) {
-      state = state.next
+      state = state.next(gameState.copy(fastEffectTiming = state))
     }
   }
 }
@@ -57,8 +61,8 @@ object FastEffectTiming {
   * A in the fast effect timing chart.
   */
 object OpenGameState extends FastEffectTiming {
-  override def next(implicit gameState: GameState, turnPlayers: TurnPlayers, phase: Phase, step: Step) = {
-    val choice = turnPlayers.turnPlayer.chooseAction(actions)
+  override def next(implicit gameState: GameState) = {
+    val choice = gameState.turnPlayers.turnPlayer.chooseAction(actions)
     choice.execute()
     choice match {
       case pass: PassPriority => TryToEnd
@@ -72,8 +76,8 @@ object OpenGameState extends FastEffectTiming {
   * B in the fast effect timing chart. Turn player can use fast effects.
   */
 object TurnPlayerFastEffects extends FastEffectTiming {
-  override def next(implicit gameState: GameState, turnPlayers: TurnPlayers, phase: Phase, step: Step) = {
-    val choice = turnPlayers.turnPlayer.chooseAction(actions)
+  override def next(implicit gameState: GameState) = {
+    val choice = gameState.turnPlayers.turnPlayer.chooseAction(actions)
     choice.execute()
     choice match {
       case pass: PassPriority => OpponentFastEffects
@@ -86,8 +90,8 @@ object TurnPlayerFastEffects extends FastEffectTiming {
   * C in the fast effect timing chart. Opposing player can use fast effects.
   */
 object OpponentFastEffects extends FastEffectTiming {
-  override def next(implicit gameState: GameState, turnPlayers: TurnPlayers, phase: Phase, step: Step) = {
-    val choice = turnPlayers.opponent.chooseAction(opponentActions)
+  override def next(implicit gameState: GameState) = {
+    val choice = gameState.turnPlayers.opponent.chooseAction(opponentActions)
     choice.execute()
     choice match {
       case pass: PassPriority => OpenGameState
@@ -100,7 +104,7 @@ object OpponentFastEffects extends FastEffectTiming {
   * D in the fast effect timing chart. Build then resolve a chain.
   */
 object ChainRules extends FastEffectTiming {
-  override def next(implicit gameState: GameState, turnPlayers: TurnPlayers, phase: Phase, step: Step) = {
+  override def next(implicit gameState: GameState) = {
     CheckForTrigger // TODO: ChainRules
   }
 }
@@ -111,9 +115,12 @@ object ChainRules extends FastEffectTiming {
   * Opponent can use fast effects or pass, and if they pass, we check with both players to see if they wish to end turn.
   */
 object TryToEnd extends FastEffectTiming {
-  override def next(implicit gameState: GameState, turnPlayers: TurnPlayers, phase: Phase, step: Step) = {
+  override def next(implicit gameState: GameState) = {
+    val turnPlayers = gameState.turnPlayers
     val choice = turnPlayers.opponent.chooseAction(opponentActions)
+
     choice.execute()
+
     choice match {
       case activation: Activation => ChainRules
       case pass: PassPriority =>
@@ -130,7 +137,7 @@ object TryToEnd extends FastEffectTiming {
   * Represents the yellow box above B in the chart.
   */
 object CheckForTrigger extends FastEffectTiming {
-  override def next(implicit gameState: GameState, turnPlayers: TurnPlayers, phase: Phase, step: Step) = {
+  override def next(implicit gameState: GameState) = {
     TurnPlayerFastEffects // TODO: once a trigger system is in place, this will be able to go to ChainRules
   }
 }
@@ -139,7 +146,7 @@ object CheckForTrigger extends FastEffectTiming {
   * Signals the end of a phase or step.
   */
 object EndPhaseOrStep extends FastEffectTiming {
-  override def next(implicit gameState: GameState, turnPlayers: TurnPlayers, phase: Phase, step: Step) = {
+  override def next(implicit gameState: GameState) = {
     throw new UnsupportedOperationException("End.next should not be called.")
   }
 }

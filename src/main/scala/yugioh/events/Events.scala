@@ -3,9 +3,9 @@ package yugioh.events
 import yugioh._
 
 // makes IDE navigation easier
-trait Events
+private trait Events
 
-case class TurnStartEvent(turnPlayers: TurnPlayers, gameState: GameState) extends Event
+case class TurnStartEvent(turnPlayers: TurnPlayers, mutableGameState: MutableGameState) extends Event
 
 sealed trait PhaseStartEvent extends Event {
   val phase: Phase

@@ -18,7 +18,7 @@ trait MonsterControlledState extends ControlledState {
 }
 
 class MonsterControlledStateImpl(override var position: Position) extends MonsterControlledState {
-  observe { event =>
+  val subscription = observe { event =>
     event match {
       case TurnEndEvent =>
         attackedThisTurn = false

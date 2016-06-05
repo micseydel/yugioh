@@ -1,7 +1,9 @@
 package yugioh
 
 import yugioh.action.DrawForTurnImpl
-import yugioh.events.Observable.emit
+import yugioh.action.monster.{DeclareAttack, TargetedForAttack}
+import yugioh.card.monster.Monster
+import yugioh.events.Observable.{emit, observe}
 import yugioh.events._
 
 /**
@@ -12,7 +14,7 @@ sealed trait Phase {
 
   protected implicit val phase = this
 
-  def next()(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase
+  def next(gameState: GameState): Phase
 }
 
 
@@ -20,12 +22,14 @@ case object DrawPhase extends Phase {
   val abbreviation = "DP"
 
   protected implicit val fastEffectTiming = OpenGameState
-  override def next()(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase = {
-    if (gameState.turnCount > 1) {
-      (new DrawForTurnImpl).execute()
-      FastEffectTiming.loop(start = CheckForTrigger)
+  override def next(gameState: GameState): Phase = {
+    val newGameState = gameState.copy(phase = this)
+
+    if (gameState.mutableGameState.turnCount > 1) {
+      (new DrawForTurnImpl).execute()(newGameState)
+      FastEffectTiming.loop(start = CheckForTrigger)(newGameState)
     } else {
-      FastEffectTiming.loop()
+      FastEffectTiming.loop()(newGameState)
     }
 
     StandbyPhase
@@ -35,8 +39,8 @@ case object DrawPhase extends Phase {
 case object StandbyPhase extends Phase {
   val abbreviation = "SP"
 
-  override def next()(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase = {
-    FastEffectTiming.loop()
+  override def next(gameState: GameState): Phase = {
+    FastEffectTiming.loop()(gameState.copy(phase = this))
     MainPhase
   }
 }
@@ -47,9 +51,11 @@ case object MainPhase extends Phase {
   /**
     * If it's later than the first turn, ask the turn player if they want to go to BP. Otherwise go to EP.
     */
-  override def next()(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase = {
-    FastEffectTiming.loop()
-    if (gameState.turnCount > 1 && turnPlayers.turnPlayer.enterBattlePhase) {
+  override def next(gameState: GameState): Phase = {
+    implicit val newGameState = gameState.copy(phase = this)
+
+    FastEffectTiming.loop()(newGameState)
+    if (gameState.turnCount > 1 && gameState.turnPlayers.turnPlayer.enterBattlePhase) {
       BattlePhase
     } else {
       EndPhase
@@ -60,8 +66,8 @@ case object MainPhase extends Phase {
 case object BattlePhase extends Phase {
   val abbreviation = "BP"
 
-  override def next()(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase = {
-    BattlePhaseStep.loop()
+  override def next(gameState: GameState): Phase = {
+    BattlePhaseStep.loop()(gameState.copy(phase = this))
     MainPhase2
   }
 }
@@ -69,8 +75,8 @@ case object BattlePhase extends Phase {
 case object MainPhase2 extends Phase {
   val abbreviation = "MP2"
 
-  override def next()(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase = {
-    FastEffectTiming.loop()
+  override def next(gameState: GameState): Phase = {
+    FastEffectTiming.loop()(gameState.copy(phase = this))
     EndPhase
   }
 }
@@ -78,8 +84,8 @@ case object MainPhase2 extends Phase {
 case object EndPhase extends Phase {
   val abbreviation = "EP"
 
-  override def next()(implicit gameState: GameState, turnPlayers: TurnPlayers): Phase = {
-    FastEffectTiming.loop()
+  override def next(gameState: GameState): Phase = {
+    FastEffectTiming.loop()(gameState.copy(phase = this))
     null
   }
 }
@@ -107,11 +113,11 @@ object Phase {
     EndPhase -> EndPhaseEndEvent
   )
 
-  def loop()(implicit gameState: GameState, turnPlayers: TurnPlayers) = {
-    implicit var phase: Phase = DrawPhase
+  def loop(implicit gameState: GameState) = {
+    var phase: Phase = DrawPhase
     do {
       emit(StartEvents(phase))
-      val nextPhase = phase.next
+      val nextPhase = phase.next(gameState.copy(phase = phase))
       emit(EndEvents(phase))
       phase = nextPhase
     } while (phase != null)
@@ -121,14 +127,14 @@ object Phase {
 
 sealed trait Step
 
-sealed trait BattlePhaseStep extends Step {
-  protected implicit val phase: Phase = BattlePhase
-  protected val nextStep: BattlePhaseStep
-  protected implicit val implicitStep: Step = this
+case class BattlePhaseStepAndMonsters(step: BattlePhaseStep, attacker: Monster, target: Monster)
 
-  def next(implicit gameState: GameState, turnPlayers: TurnPlayers): BattlePhaseStep = {
-    FastEffectTiming.loop()
-    nextStep
+sealed trait BattlePhaseStep extends Step {
+  protected val nextStep: BattlePhaseStep
+
+  def next(attacker: Monster, target: Monster)(gameState: GameState): BattlePhaseStepAndMonsters = {
+    FastEffectTiming.loop()(gameState.copy(step = this))
+    BattlePhaseStepAndMonsters(nextStep, null, null)
   }
 }
 
@@ -147,14 +153,17 @@ object BattlePhaseStep {
     EndStep -> EndStepStepEndEvent
   )
 
-  def loop()(implicit gameState: GameState, turnPlayers: TurnPlayers) = {
-    var battlePhaseStep: BattlePhaseStep = StartStep
+  def loop()(gameState: GameState) = {
+    var battlePhaseStepAndMonster = BattlePhaseStepAndMonsters(StartStep, null, null)
     do {
-      emit(StartEvents(battlePhaseStep))
-      val nextBattlePhaseStep = battlePhaseStep.next
-      emit(EndEvents(battlePhaseStep))
-      battlePhaseStep = nextBattlePhaseStep
-    } while (battlePhaseStep != null)
+      battlePhaseStepAndMonster match {
+        case BattlePhaseStepAndMonsters(step, attacker, target) =>
+          emit(StartEvents(step))
+          val nextBattlePhaseStepAndMonster = step.next(attacker, target)(gameState)
+          emit(EndEvents(step))
+          battlePhaseStepAndMonster = nextBattlePhaseStepAndMonster
+      }
+    } while (battlePhaseStepAndMonster.step != null)
   }
 }
 
@@ -163,12 +172,43 @@ case object StartStep extends BattlePhaseStep {
 }
 
 case object BattleStep extends BattlePhaseStep {
-  // TODO: DamageStep is also possible from this state, must override next method
-  override protected val nextStep: BattlePhaseStep = EndStep
+  override protected val nextStep: BattlePhaseStep = null // not used here
+
+  override def next(attacker: Monster, target: Monster)
+                   (gameState: GameState): BattlePhaseStepAndMonsters = {
+    var attacker: Monster = null
+    var target: Monster = null
+    val subscription = observe { event =>
+      event match {
+        case targeted: TargetedForAttack =>
+          target = targeted.target
+        case declareAttack: DeclareAttack =>
+          attacker = declareAttack.attacker
+        case ignore =>
+      }
+    }
+
+    // listen for an attack declaration here
+    FastEffectTiming.loop()(gameState.copy(step = this))
+
+    subscription.dispose()
+
+    if (attacker != null) {
+      BattlePhaseStepAndMonsters(DamageStep, attacker, target)
+    } else {
+      BattlePhaseStepAndMonsters(EndStep, null, null)
+    }
+  }
 }
 
 case object DamageStep extends BattlePhaseStep {
   override protected val nextStep: BattlePhaseStep = BattleStep
+
+  override def next(attacker: Monster, target: Monster)
+                   (gameState: GameState): BattlePhaseStepAndMonsters = {
+    DamageStepSubStep.loop(attacker, target)(gameState.copy(step = this))
+    BattlePhaseStepAndMonsters(nextStep, null, null)
+  }
 }
 
 case object EndStep extends BattlePhaseStep {
@@ -191,11 +231,12 @@ object DamageStepSubStep {
     (DamageSubStep7StartEvent, SubStep7, DamageSubStep7EndEvent)
   )
 
-  def loop()(implicit gameState: GameState, turnPlayers: TurnPlayers): Unit = {
+  def loop(attacker: Monster, target: Monster)(implicit gameState: GameState): Unit = {
+    //TODO: damage step sub step loop
     for ((startEvent, subStep, endEvent) <- subStepsWithEvents) {
       implicit val implicitSubStep = subStep
       emit(startEvent)
-      FastEffectTiming.loop()
+      FastEffectTiming.loop()(gameState.copy(step = subStep))
       emit(endEvent)
     }
   }

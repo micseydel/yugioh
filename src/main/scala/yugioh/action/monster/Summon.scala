@@ -1,10 +1,10 @@
-package yugioh.action
+package yugioh.action.monster
 
 import yugioh._
-import yugioh.card.monster.{Attack, Defense, Monster}
+import yugioh.action.InherentAction
+import yugioh.card.monster.{Attack, Monster}
 import yugioh.card.state._
 
-trait MonsterAction
 
 trait Summon extends InherentAction {
   val monster: Monster
@@ -15,7 +15,7 @@ trait Summon extends InherentAction {
 trait NormalSummon extends Summon
 
 class NormalSummonImpl(val monster: Monster) extends NormalSummon {
-  override protected def doAction()(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
+  override protected def doAction()(implicit gameState: GameState) = {
     monster.owner.field.placeAsMonster(monster)
     monster.maybeControlledState = Some(new MonsterControlledStateImpl(Attack))
     monster.maybeMonsterControlledState.get.manuallyChangedPositionsThisTurn = true // TODO: consolidate
@@ -26,7 +26,7 @@ class NormalSummonImpl(val monster: Monster) extends NormalSummon {
 trait TributeSummon extends NormalSummon
 
 class TributeSummonImpl(override val monster: Monster) extends NormalSummonImpl(monster) with TributeSummon {
-  override protected def doAction()(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
+  override protected def doAction()(implicit gameState: GameState) = {
     val toTribute = monster.owner.selectSummonMaterial(monster, monster.owner.field.monsterZones.toSeq.flatten)
     for (tribute <- toTribute) {
       tribute.owner.field.sendToGrave(tribute)
@@ -39,28 +39,10 @@ class TributeSummonImpl(override val monster: Monster) extends NormalSummonImpl(
   }
 }
 
-trait SwitchPosition extends InherentAction {
-  val monster: Monster
-  override val toString = s"${this.getClass.getSimpleName}($monster(${monster.maybeMonsterControlledState.get.position}))"
-}
-
-class SwitchPositionImpl(override val monster: Monster) extends SwitchPosition {
-  override protected def doAction()(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
-    for (controlledState <- monster.maybeMonsterControlledState) {
-      controlledState.manuallyChangedPositionsThisTurn = true
-      controlledState.position match {
-        case Attack => Defense
-        case Defense => Attack
-        case _ => throw new IllegalStateException("Shouldn't have tried to switch monster position.")
-      }
-    }
-  }
-}
-
 trait FlipSummon extends Summon with SwitchPosition
 
 class FlipSummonImpl(override val monster: Monster) extends FlipSummon {
-  override protected def doAction()(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
+  override protected def doAction()(implicit gameState: GameState) = {
     for (state <- monster.maybeMonsterControlledState) {
       state.position = Attack
       state.manuallyChangedPositionsThisTurn = true
@@ -74,7 +56,7 @@ trait SetAsMonster extends InherentAction {
 }
 
 class SetAsMonsterImpl(override val monster: Monster) extends SetAsMonster {
-  override protected def doAction()(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
+  override protected def doAction()(implicit gameState: GameState) = {
     monster.owner.field.placeAsMonster(monster)
     monster.maybeControlledState = Some(new MonsterControlledStateImpl(yugioh.card.monster.Set))
     monster.maybeMonsterControlledState.get.manuallyChangedPositionsThisTurn = true // TODO: consolidate
@@ -85,7 +67,7 @@ class SetAsMonsterImpl(override val monster: Monster) extends SetAsMonster {
 trait TributeSet extends SetAsMonster
 
 class TributeSetImpl(monster: Monster) extends SetAsMonsterImpl(monster) with TributeSet {
-  override protected def doAction()(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step) = {
+  override protected def doAction()(implicit gameState: GameState) = {
     val toTribute = monster.owner.selectSummonMaterial(monster, monster.owner.field.monsterZones.toSeq.flatten)
     for (tribute <- toTribute) {
       tribute.owner.field.sendToGrave(tribute)

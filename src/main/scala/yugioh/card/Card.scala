@@ -14,7 +14,7 @@ trait Card {
 
   def controller: Player = owner
 
-  def actions(implicit gameState: GameState, turnPlayers: TurnPlayers, fastEffectTiming: FastEffectTiming, phase: Phase, step: Step = null): Seq[Action]
+  def actions(implicit gameState: GameState): Seq[Action]
 
   def name: String = printedName
 
