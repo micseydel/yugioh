@@ -27,9 +27,9 @@ case object DrawPhase extends Phase {
 
     if (gameState.mutableGameState.turnCount > 1) {
       (new DrawForTurnImpl).execute()(newGameState)
-      FastEffectTiming.loop(start = CheckForTrigger)(newGameState)
+      FastEffectTiming.loop(newGameState, start = CheckForTrigger)
     } else {
-      FastEffectTiming.loop()(newGameState)
+      FastEffectTiming.loop(newGameState)
     }
 
     StandbyPhase
@@ -40,7 +40,7 @@ case object StandbyPhase extends Phase {
   val abbreviation = "SP"
 
   override def next(gameState: GameState): Phase = {
-    FastEffectTiming.loop()(gameState.copy(phase = this))
+    FastEffectTiming.loop(gameState.copy(phase = this))
     MainPhase
   }
 }
@@ -54,7 +54,7 @@ case object MainPhase extends Phase {
   override def next(gameState: GameState): Phase = {
     implicit val newGameState = gameState.copy(phase = this)
 
-    FastEffectTiming.loop()(newGameState)
+    FastEffectTiming.loop(newGameState)
     if (gameState.turnCount > 1 && gameState.turnPlayers.turnPlayer.enterBattlePhase) {
       BattlePhase
     } else {
@@ -67,7 +67,7 @@ case object BattlePhase extends Phase {
   val abbreviation = "BP"
 
   override def next(gameState: GameState): Phase = {
-    BattlePhaseStep.loop()(gameState.copy(phase = this))
+    BattlePhaseStep.loop(gameState.copy(phase = this))
     MainPhase2
   }
 }
@@ -76,7 +76,7 @@ case object MainPhase2 extends Phase {
   val abbreviation = "MP2"
 
   override def next(gameState: GameState): Phase = {
-    FastEffectTiming.loop()(gameState.copy(phase = this))
+    FastEffectTiming.loop(gameState.copy(phase = this))
     EndPhase
   }
 }
@@ -85,7 +85,7 @@ case object EndPhase extends Phase {
   val abbreviation = "EP"
 
   override def next(gameState: GameState): Phase = {
-    FastEffectTiming.loop()(gameState.copy(phase = this))
+    FastEffectTiming.loop(gameState.copy(phase = this))
     null
   }
 }
@@ -131,7 +131,7 @@ sealed trait BattlePhaseStep extends Step {
   protected val nextStep: BattlePhaseStep
 
   def next(gameState: GameState): BattlePhaseStep = {
-    FastEffectTiming.loop()(gameState.copy(step = this))
+    FastEffectTiming.loop(gameState.copy(step = this))
     nextStep
   }
 
@@ -140,7 +140,7 @@ sealed trait BattlePhaseStep extends Step {
 }
 
 object BattlePhaseStep {
-  def loop()(gameState: GameState) = {
+  def loop(gameState: GameState) = {
     var battlePhaseStep: BattlePhaseStep = StartStep
     do {
       battlePhaseStep.emitStartEvent()
@@ -178,7 +178,7 @@ case object BattleStep extends BattlePhaseStep {
     }
 
     // listen for an attack declaration here
-    FastEffectTiming.loop()(gameState.copy(step = this))
+    FastEffectTiming.loop(gameState.copy(step = this))
 
     subscription.dispose()
 
@@ -230,7 +230,7 @@ object DamageStepSubStep {
     for ((startEvent, subStep, endEvent) <- subStepsWithEvents) {
       implicit val implicitSubStep = subStep
       emit(startEvent)
-      FastEffectTiming.loop()(gameState.copy(step = subStep))
+      FastEffectTiming.loop(gameState.copy(step = subStep))
       emit(endEvent)
     }
   }

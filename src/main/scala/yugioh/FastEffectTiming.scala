@@ -48,8 +48,7 @@ object FastEffectTiming {
   /**
     * Defaults to starting in open game state, but allows for starting elsewhere (e.g. CheckForTrigger at start of DP).
     */
-  def loop(start: FastEffectTiming = OpenGameState)
-          (gameState: GameState): Unit = {
+  def loop(gameState: GameState, start: FastEffectTiming = OpenGameState): Unit = {
     var state = start
     while (state != EndPhaseOrStep) {
       state = state.next(gameState.copy(fastEffectTiming = state))
