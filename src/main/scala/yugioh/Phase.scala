@@ -127,55 +127,44 @@ object Phase {
 
 sealed trait Step
 
-case class BattlePhaseStepAndMonsters(step: BattlePhaseStep, attacker: Monster, target: Monster)
-
 sealed trait BattlePhaseStep extends Step {
   protected val nextStep: BattlePhaseStep
 
-  def next(attacker: Monster, target: Monster)(gameState: GameState): BattlePhaseStepAndMonsters = {
+  def next(gameState: GameState): BattlePhaseStep = {
     FastEffectTiming.loop()(gameState.copy(step = this))
-    BattlePhaseStepAndMonsters(nextStep, null, null)
+    nextStep
   }
+
+  def emitStartEvent(): Unit
+  def emitEndEvent(): Unit
 }
 
 object BattlePhaseStep {
-  private val StartEvents: Map[BattlePhaseStep, BattlePhaseStepStartEvent] = Map(
-    StartStep -> StartStepStepStartEvent,
-    BattleStep -> BattleStepStepStartEvent,
-    DamageStep -> DamageStepStepStartEvent,
-    EndStep -> EndStepStepStartEvent
-  )
-
-  private val EndEvents: Map[BattlePhaseStep, BattlePhaseStepEndEvent] = Map(
-    StartStep -> StartStepStepEndEvent,
-    BattleStep -> BattleStepStepEndEvent,
-    DamageStep -> DamageStepStepEndEvent,
-    EndStep -> EndStepStepEndEvent
-  )
-
   def loop()(gameState: GameState) = {
-    var battlePhaseStepAndMonster = BattlePhaseStepAndMonsters(StartStep, null, null)
+    var battlePhaseStep: BattlePhaseStep = StartStep
     do {
-      battlePhaseStepAndMonster match {
-        case BattlePhaseStepAndMonsters(step, attacker, target) =>
-          emit(StartEvents(step))
-          val nextBattlePhaseStepAndMonster = step.next(attacker, target)(gameState)
-          emit(EndEvents(step))
-          battlePhaseStepAndMonster = nextBattlePhaseStepAndMonster
-      }
-    } while (battlePhaseStepAndMonster.step != null)
+      battlePhaseStep.emitStartEvent()
+      val nextBattlePhaseStepAndMonster = battlePhaseStep.next(gameState)
+      battlePhaseStep.emitEndEvent()
+      battlePhaseStep = nextBattlePhaseStepAndMonster
+    } while (battlePhaseStep != null)
   }
 }
 
 case object StartStep extends BattlePhaseStep {
   override protected val nextStep: BattlePhaseStep = BattleStep
+
+  override def emitStartEvent(): Unit = emit(StartStepStepStartEvent)
+  override def emitEndEvent(): Unit = emit(StartStepStepEndEvent)
 }
 
 case object BattleStep extends BattlePhaseStep {
   override protected val nextStep: BattlePhaseStep = null // not used here
 
-  override def next(attacker: Monster, target: Monster)
-                   (gameState: GameState): BattlePhaseStepAndMonsters = {
+  override def emitStartEvent(): Unit = emit(BattleStepStepStartEvent)
+  override def emitEndEvent(): Unit = emit(BattleStepStepEndEvent)
+
+  override def next(gameState: GameState): BattlePhaseStep = {
     var attacker: Monster = null
     var target: Monster = null
     val subscription = observe { event =>
@@ -194,25 +183,30 @@ case object BattleStep extends BattlePhaseStep {
     subscription.dispose()
 
     if (attacker != null) {
-      BattlePhaseStepAndMonsters(DamageStep, attacker, target)
+      DamageStep(attacker, target)
     } else {
-      BattlePhaseStepAndMonsters(EndStep, null, null)
+      EndStep
     }
   }
 }
 
-case object DamageStep extends BattlePhaseStep {
+case class DamageStep(attacker: Monster, target: Monster) extends BattlePhaseStep {
   override protected val nextStep: BattlePhaseStep = BattleStep
 
-  override def next(attacker: Monster, target: Monster)
-                   (gameState: GameState): BattlePhaseStepAndMonsters = {
+  override def emitStartEvent(): Unit = emit(DamageStepStepStartEvent)
+  override def emitEndEvent(): Unit = emit(DamageStepStepEndEvent)
+
+  override def next(gameState: GameState): BattlePhaseStep = {
     DamageStepSubStep.loop(attacker, target)(gameState.copy(step = this))
-    BattlePhaseStepAndMonsters(nextStep, null, null)
+    nextStep
   }
 }
 
 case object EndStep extends BattlePhaseStep {
   override protected val nextStep: BattlePhaseStep = null
+
+  override def emitStartEvent(): Unit = emit(EndStepStepStartEvent)
+  override def emitEndEvent(): Unit = emit(EndStepStepEndEvent)
 }
 
 
