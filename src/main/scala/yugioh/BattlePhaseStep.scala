@@ -32,15 +32,13 @@ object BattlePhaseStep {
 }
 
 case object StartStep extends BattlePhaseStep {
-  override protected val nextStep: BattlePhaseStep = BattleStepBeforeAttack
+  override protected val nextStep: BattlePhaseStep = BattleStep
 
   override def emitStartEvent(): Unit = emit(StartStepStepStartEvent)
   override def emitEndEvent(): Unit = emit(StartStepStepEndEvent)
 }
 
-trait BattleStep extends BattlePhaseStep
-
-case object BattleStepBeforeAttack extends BattleStep {
+case object BattleStep extends BattlePhaseStep {
   override protected val nextStep: BattlePhaseStep = null // not used here
 
   override def emitStartEvent(): Unit = emit(BattleStepStepStartEvent)
@@ -73,7 +71,7 @@ case object BattleStepBeforeAttack extends BattleStep {
 }
 
 case class DamageStep(attacker: Monster, target: Monster) extends BattlePhaseStep {
-  override protected val nextStep: BattlePhaseStep = BattleStepBeforeAttack
+  override protected val nextStep: BattlePhaseStep = BattleStep
 
   override def emitStartEvent(): Unit = emit(DamageStepStepStartEvent)
   override def emitEndEvent(): Unit = emit(DamageStepStepEndEvent)
