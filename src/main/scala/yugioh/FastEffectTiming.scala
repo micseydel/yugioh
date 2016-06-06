@@ -1,6 +1,7 @@
 package yugioh
 
 import yugioh.action._
+import yugioh.events.Event
 
 
 /**
@@ -17,7 +18,6 @@ import yugioh.action._
   * the end of a phase or step.
   */
 sealed trait FastEffectTiming {
-  protected implicit val implicitFastEffectTiming = this
   override val toString = this.getClass.getSimpleName
 
   def next(implicit gameState: GameState): FastEffectTiming
@@ -65,8 +65,8 @@ object OpenGameState extends FastEffectTiming {
     choice.execute()
     choice match {
       case pass: PassPriority => TryToEnd
-      case activation: Activation => ChainRules
-      case action: InherentAction => CheckForTrigger
+      case activation: Activation => ChainRules(None)
+      case action: InherentAction => CheckForTrigger(action)
     }
   }
 }
@@ -74,13 +74,15 @@ object OpenGameState extends FastEffectTiming {
 /**
   * B in the fast effect timing chart. Turn player can use fast effects.
   */
-object TurnPlayerFastEffects extends FastEffectTiming {
-  override def next(implicit gameState: GameState) = {
+case class TurnPlayerFastEffects(inResponseTo: Event) extends FastEffectTiming {
+  override def next(implicit gameState: GameState) = nextWithUpdatedGameState(gameState.copy(inResponseTo = inResponseTo))
+
+  private def nextWithUpdatedGameState(implicit gameState: GameState) = {
     val choice = gameState.turnPlayers.turnPlayer.chooseAction(actions)
     choice.execute()
     choice match {
       case pass: PassPriority => OpponentFastEffects
-      case activation: Activation => ChainRules
+      case activation: Activation => ChainRules(Some(inResponseTo))
     }
   }
 }
@@ -94,17 +96,23 @@ object OpponentFastEffects extends FastEffectTiming {
     choice.execute()
     choice match {
       case pass: PassPriority => OpenGameState
-      case activation: Activation => ChainRules
+      case activation: Activation => ChainRules(None)
     }
   }
 }
 
 /**
   * D in the fast effect timing chart. Build then resolve a chain.
+  *
+  * @param maybeInResponseTo MUST be provided when coming from an event which triggered an effect,
+  *                          or from B or C in the fast effect timing chart,
+  *                          and MUST be None coming from E.
   */
-object ChainRules extends FastEffectTiming {
-  override def next(implicit gameState: GameState) = {
-    CheckForTrigger // TODO: ChainRules
+case class ChainRules(maybeInResponseTo: Option[Event]) extends FastEffectTiming {
+  override def next(implicit gameState: GameState) = nextWithUpdatedGameState(gameState.copy(inResponseTo = maybeInResponseTo.orNull))
+
+  private def nextWithUpdatedGameState(implicit gameState: GameState) = {
+    CheckForTrigger(null) // TODO: ChainRules need to communicate last thing to happen here
   }
 }
 
@@ -121,7 +129,7 @@ object TryToEnd extends FastEffectTiming {
     choice.execute()
 
     choice match {
-      case activation: Activation => ChainRules
+      case activation: Activation => ChainRules(None)
       case pass: PassPriority =>
         if (turnPlayers.turnPlayer.consentToEnd && turnPlayers.opponent.consentToEnd) {
           EndPhaseOrStep
@@ -135,9 +143,11 @@ object TryToEnd extends FastEffectTiming {
 /**
   * Represents the yellow box above B in the chart.
   */
-object CheckForTrigger extends FastEffectTiming {
-  override def next(implicit gameState: GameState) = {
-    TurnPlayerFastEffects // TODO: once a trigger system is in place, this will be able to go to ChainRules
+case class CheckForTrigger(inResponseTo: Event) extends FastEffectTiming {
+  override def next(implicit gameState: GameState) = nextWithUpdatedGameState(gameState.copy(inResponseTo = inResponseTo))
+
+  private def nextWithUpdatedGameState(implicit gameState: GameState) = {
+    TurnPlayerFastEffects(inResponseTo) // TODO: once a proper trigger system is in place, this will be able to go to ChainRules
   }
 }
 
