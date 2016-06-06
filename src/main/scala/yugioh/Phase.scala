@@ -10,8 +10,6 @@ import yugioh.events._
 sealed trait Phase {
   val abbreviation: String
 
-  protected implicit val phase = this
-
   def next(gameState: GameState): Phase
 }
 
@@ -19,12 +17,11 @@ sealed trait Phase {
 case object DrawPhase extends Phase {
   val abbreviation = "DP"
 
-  protected implicit val fastEffectTiming = OpenGameState
   override def next(gameState: GameState): Phase = {
-    val newGameState = gameState.copy(phase = this)
+    implicit val newGameState = gameState.copy(phase = this)
 
     if (gameState.mutableGameState.turnCount > 1) {
-      (new DrawForTurnImpl).execute()(newGameState)
+      (new DrawForTurnImpl).execute()
       FastEffectTiming.loop(newGameState, start = CheckForTrigger)
     } else {
       FastEffectTiming.loop(newGameState)
