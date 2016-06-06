@@ -36,6 +36,7 @@ case object StartStep extends BattlePhaseStep {
   }
 }
 
+// TODO: replays
 case object BattleStep extends BattlePhaseStep {
   override def emitStartEvent(): Unit = emit(BattleStepStepStartEvent)
   override def emitEndEvent(): Unit = emit(BattleStepStepEndEvent)
@@ -90,34 +91,27 @@ case object EndStep extends BattlePhaseStep {
 sealed trait DamageStepSubStep extends Step
 
 object DamageStepSubStep {
-  private implicit val phase: Phase = BattlePhase
-
-  val subStepsWithEvents: Seq[(DamageSubStepStartEvent, DamageStepSubStep, DamageSubStepEndEvent)] = Seq(
-    (DamageSubStep1StartEvent, SubStep1, DamageSubStep1EndEvent),
-    (DamageSubStep2StartEvent, SubStep2, DamageSubStep2EndEvent),
-    (DamageSubStep3StartEvent, SubStep3, DamageSubStep3EndEvent),
-    (DamageSubStep4StartEvent, SubStep4, DamageSubStep4EndEvent),
-    (DamageSubStep5StartEvent, SubStep5, DamageSubStep5EndEvent),
-    (DamageSubStep6StartEvent, SubStep6, DamageSubStep6EndEvent),
-    (DamageSubStep7StartEvent, SubStep7, DamageSubStep7EndEvent)
+  val subSteps = Seq(
+    StartOfTheDamageStep,
+    BeforeDamageCalculation,
+    PerformDamageCalculation,
+    AfterDamageCalculation,
+    EndOfThDamageStep
   )
 
   def loop(attacker: Monster, target: Monster)(implicit gameState: GameState): Unit = {
-    //TODO: damage step sub step loop
-    for ((startEvent, subStep, endEvent) <- subStepsWithEvents) {
+    for (subStep <- subSteps) {
       implicit val implicitSubStep = subStep
-      emit(startEvent)
+      emit(DamageSubStepStartEvent(subStep))
       FastEffectTiming.loop(gameState.copy(step = subStep))
-      emit(endEvent)
+      emit(DamageSubStepEndEvent(subStep))
     }
   }
 }
 
-case object SubStep1 extends DamageStepSubStep
-case object SubStep2 extends DamageStepSubStep
-case object SubStep3 extends DamageStepSubStep
-case object SubStep4 extends DamageStepSubStep
-case object SubStep5 extends DamageStepSubStep
-case object SubStep6 extends DamageStepSubStep
-case object SubStep7 extends DamageStepSubStep
-
+// http://www.yugioh-card.com/uk/gameplay/damage.html
+case object StartOfTheDamageStep extends DamageStepSubStep
+case object BeforeDamageCalculation extends DamageStepSubStep
+case object PerformDamageCalculation extends DamageStepSubStep
+case object AfterDamageCalculation extends DamageStepSubStep
+case object EndOfThDamageStep extends DamageStepSubStep

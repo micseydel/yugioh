@@ -57,27 +57,17 @@ case object EndStepStepStartEvent extends BattlePhaseStepStartEvent
 case object EndStepStepEndEvent extends BattlePhaseStepEndEvent
 
 
-sealed trait DamageSubStepStartEvent extends BattlePhaseStepStartEvent
-sealed trait DamageSubStepEndEvent extends BattlePhaseStepEndEvent
+case class DamageSubStepStartEvent(damageStepSubStep: DamageStepSubStep) extends BattlePhaseStepStartEvent
+case class DamageSubStepEndEvent(damageStepStep: DamageStepSubStep) extends BattlePhaseStepEndEvent
 
-case object DamageSubStep1StartEvent extends DamageSubStepStartEvent
-case object DamageSubStep1EndEvent extends DamageSubStepEndEvent
+/**
+  * player is the player who is losting the life points.
+  */
+trait LifePointsLost {
+  val player: Player
+  val lifePoints: Int
+}
 
-case object DamageSubStep2StartEvent extends DamageSubStepStartEvent
-case object DamageSubStep2EndEvent extends DamageSubStepEndEvent
+trait LifePointsDamage extends LifePointsLost
 
-case object DamageSubStep3StartEvent extends DamageSubStepStartEvent
-case object DamageSubStep3EndEvent extends DamageSubStepEndEvent
-
-case object DamageSubStep4StartEvent extends DamageSubStepStartEvent
-case object DamageSubStep4EndEvent extends DamageSubStepEndEvent
-
-case object DamageSubStep5StartEvent extends DamageSubStepStartEvent
-case object DamageSubStep5EndEvent extends DamageSubStepEndEvent
-
-case object DamageSubStep6StartEvent extends DamageSubStepStartEvent
-case object DamageSubStep6EndEvent extends DamageSubStepEndEvent
-
-case object DamageSubStep7StartEvent extends DamageSubStepStartEvent
-case object DamageSubStep7EndEvent extends DamageSubStepEndEvent
-
+case class BattleDamage(override val player: Player, override val lifePoints: Int) extends LifePointsDamage
