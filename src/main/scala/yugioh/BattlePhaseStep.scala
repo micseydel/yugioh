@@ -101,7 +101,6 @@ object DamageStepSubStep {
 
   def loop(attacker: Monster, target: Monster)(implicit gameState: GameState): Unit = {
     for (subStep <- subSteps) {
-      implicit val implicitSubStep = subStep
       emit(DamageSubStepStartEvent(subStep))
       FastEffectTiming.loop(gameState.copy(step = subStep))
       emit(DamageSubStepEndEvent(subStep))
