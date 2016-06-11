@@ -62,8 +62,7 @@ object FastEffectTiming {
 object OpenGameState extends FastEffectTiming {
   override def next(implicit gameState: GameState) = {
     val choice = gameState.turnPlayers.turnPlayer.chooseAction(actions)
-    choice.execute()
-    choice match {
+    choice.execute() match {
       case pass: PassPriority => TryToEnd
       case activation: Activation => ChainRules(None)
       case action: InherentAction => CheckForTrigger(action)
@@ -79,8 +78,7 @@ case class TurnPlayerFastEffects(inResponseTo: Event) extends FastEffectTiming {
 
   private def nextWithUpdatedGameState(implicit gameState: GameState) = {
     val choice = gameState.turnPlayers.turnPlayer.chooseAction(actions)
-    choice.execute()
-    choice match {
+    choice.execute() match {
       case pass: PassPriority => OpponentFastEffects
       case activation: Activation => ChainRules(Some(inResponseTo))
     }
@@ -93,8 +91,7 @@ case class TurnPlayerFastEffects(inResponseTo: Event) extends FastEffectTiming {
 object OpponentFastEffects extends FastEffectTiming {
   override def next(implicit gameState: GameState) = {
     val choice = gameState.turnPlayers.opponent.chooseAction(opponentActions)
-    choice.execute()
-    choice match {
+    choice.execute() match {
       case pass: PassPriority => OpenGameState
       case activation: Activation => ChainRules(None)
     }
@@ -126,9 +123,7 @@ object TryToEnd extends FastEffectTiming {
     val turnPlayers = gameState.turnPlayers
     val choice = turnPlayers.opponent.chooseAction(opponentActions)
 
-    choice.execute()
-
-    choice match {
+    choice.execute() match {
       case activation: Activation => ChainRules(None)
       case pass: PassPriority =>
         if (turnPlayers.turnPlayer.consentToEnd && turnPlayers.opponent.consentToEnd) {

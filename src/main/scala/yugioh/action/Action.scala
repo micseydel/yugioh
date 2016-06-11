@@ -7,7 +7,7 @@ import yugioh.events.Observable.emit
 trait Action extends Event {
   private var previouslyCalled = false
 
-  def execute()(implicit gameState: GameState): Unit = {
+  def execute()(implicit gameState: GameState): Action = {
     if (previouslyCalled) {
       throw new IllegalStateException("Action " + this + " was already executed.")
     }
@@ -16,6 +16,8 @@ trait Action extends Event {
     emit(this)
     gameState.history.append(this)
     previouslyCalled = true
+
+    this
   }
 
   def undo()(implicit gameState: GameState): Unit = throw new NotImplementedError("Undo has not been implemented for " + this)
