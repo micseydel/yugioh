@@ -2,7 +2,7 @@ package yugioh.action.monster
 
 import yugioh._
 import yugioh.action.InherentAction
-import yugioh.card.monster.{Attack, Monster}
+import yugioh.card.monster.{Attack, Monster, Set}
 import yugioh.card.state._
 
 
@@ -17,7 +17,7 @@ trait NormalSummon extends Summon
 class NormalSummonImpl(val monster: Monster) extends NormalSummon {
   override protected def doAction()(implicit gameState: GameState) = {
     monster.owner.field.placeAsMonster(monster)
-    monster.maybeControlledState = Some(new MonsterControlledStateImpl(Attack))
+    monster.maybeControlledState = Some(new MonsterControlledState(Attack))
     monster.maybeMonsterControlledState.get.manuallyChangedPositionsThisTurn = true // TODO: consolidate
     monster.maybeMonsterFieldState = Some(new MonsterFieldStateImpl(NormalSummoned))
   }
@@ -30,6 +30,7 @@ class TributeSummonImpl(override val monster: Monster) extends NormalSummonImpl(
     val toTribute = monster.owner.selectSummonMaterial(monster, monster.owner.field.monsterZones.toSeq.flatten)
     for (tribute <- toTribute) {
       tribute.owner.field.sendToGrave(tribute)
+      // TODO: (create and) emit an event for UsedForTributeSummon or something
     }
 
     // TODO LOW: cleanup this kludge where useless operations are done
@@ -58,7 +59,7 @@ trait SetAsMonster extends InherentAction {
 class SetAsMonsterImpl(override val monster: Monster) extends SetAsMonster {
   override protected def doAction()(implicit gameState: GameState) = {
     monster.owner.field.placeAsMonster(monster)
-    monster.maybeControlledState = Some(new MonsterControlledStateImpl(yugioh.card.monster.Set))
+    monster.maybeControlledState = Some(new MonsterControlledState(Set))
     monster.maybeMonsterControlledState.get.manuallyChangedPositionsThisTurn = true // TODO: consolidate
     monster.maybeMonsterFieldState = Some(new MonsterFieldStateImpl(NotSummoned))
   }

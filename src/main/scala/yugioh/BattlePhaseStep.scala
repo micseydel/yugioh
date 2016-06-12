@@ -1,7 +1,7 @@
 package yugioh
 
-import yugioh.action.monster.{DeclareAttack, TargetedForAttack}
-import yugioh.card.monster.Monster
+import yugioh.action.monster.{Battle, DeclareAttack, TargetedForAttack}
+import yugioh.card.monster.{Attack, Defense, Monster, Set}
 import yugioh.events.Observable._
 import yugioh.events._
 
@@ -60,19 +60,19 @@ case object BattleStep extends BattlePhaseStep {
     subscription.dispose()
 
     if (attacker != null) {
-      DamageStep(attacker, target)
+      DamageStep(Battle(attacker, target))
     } else {
       EndStep
     }
   }
 }
 
-case class DamageStep(attacker: Monster, target: Monster) extends BattlePhaseStep {
+case class DamageStep(battle: Battle) extends BattlePhaseStep {
   override def emitStartEvent(): Unit = emit(DamageStepStepStartEvent)
   override def emitEndEvent(): Unit = emit(DamageStepStepEndEvent)
 
   override def next(gameState: GameState): BattlePhaseStep = {
-    DamageStepSubStep.loop(attacker, target)(gameState.copy(step = this))
+    DamageStepSubStep.loop(battle)(gameState.copy(step = this))
     BattleStep
   }
 }
@@ -88,29 +88,117 @@ case object EndStep extends BattlePhaseStep {
 }
 
 
-sealed trait DamageStepSubStep extends Step
+sealed trait DamageStepSubStep extends Step {
+  def performAndGetNext(battle: Battle)(implicit gameState: GameState): DamageStepSubStep
+}
 
 object DamageStepSubStep {
-  val subSteps = Seq(
-    StartOfTheDamageStep,
-    BeforeDamageCalculation,
-    PerformDamageCalculation,
-    AfterDamageCalculation,
-    EndOfThDamageStep
-  )
-
-  def loop(attacker: Monster, target: Monster)(implicit gameState: GameState): Unit = {
-    for (subStep <- subSteps) {
+  def loop(battle: Battle)(implicit gameState: GameState): Unit = {
+    var subStep: DamageStepSubStep = StartOfTheDamageStep
+    do {
       emit(DamageSubStepStartEvent(subStep))
-      FastEffectTiming.loop(gameState.copy(step = subStep))
+      val nextSubStep = subStep.performAndGetNext(battle)
       emit(DamageSubStepEndEvent(subStep))
-    }
+      subStep = nextSubStep
+    } while (subStep != null)
   }
 }
 
 // http://www.yugioh-card.com/uk/gameplay/damage.html
-case object StartOfTheDamageStep extends DamageStepSubStep
-case object BeforeDamageCalculation extends DamageStepSubStep
-case object PerformDamageCalculation extends DamageStepSubStep
-case object AfterDamageCalculation extends DamageStepSubStep
-case object EndOfThDamageStep extends DamageStepSubStep
+case object StartOfTheDamageStep extends DamageStepSubStep {
+  override def performAndGetNext(battle: Battle)(implicit gameState: GameState) = {
+    FastEffectTiming.loop(gameState.copy(step = this))
+    BeforeDamageCalculation
+  }
+}
+
+case object BeforeDamageCalculation extends DamageStepSubStep {
+  override def performAndGetNext(battle: Battle)(implicit gameState: GameState) = {
+    // flip the target if need be
+    battle match {
+      case Battle(_, target) if target != null =>
+        for (controlledState <- target.maybeMonsterControlledState)
+          if (controlledState.position == Set) {
+            controlledState.position = Defense
+            emit(FlippedRegular(target, battle))
+          }
+    }
+
+    FastEffectTiming.loop(gameState.copy(step = this))
+    PerformDamageCalculation
+  }
+}
+
+case object PerformDamageCalculation extends DamageStepSubStep {
+  override def performAndGetNext(battle: Battle)(implicit gameState: GameState) = {
+    FastEffectTiming.loop(gameState.copy(step = this))
+
+    var destroyed: Set[Monster] = collection.immutable.Set()
+    val subscription = observe { event =>
+      event match {
+        case DestroyedByBattle(monster, _) =>
+          destroyed += monster
+        case ignore =>
+      }
+    }
+
+    battle match {
+      case Battle(attacker, null) =>
+        emit(BattleDamage(gameState.turnPlayers.opponent, attacker.attack))
+      case Battle(attacker, target) =>
+        for (
+          monsterControlledState <- target.maybeMonsterControlledState;
+          position = monsterControlledState.position
+        ) {
+          position match {
+            case Defense =>
+              if (attacker.attack > target.defense) {
+                // TODO LOW: piercing damage?
+                emit(DestroyedByBattle(target, attacker))
+              }
+            case Attack =>
+              // if both have 0 attack, nothing happens here
+              if (attacker.attack != 0 || target.attack != 0) {
+                val difference = attacker.attack - target.attack
+                difference.signum match { // get the sign of the difference
+                  case -1 => // attacker destroyed
+                    emit(BattleDamage(gameState.turnPlayers.turnPlayer, -difference))
+                    emit(DestroyedByBattle(attacker, target))
+                  case 0 =>
+                    emit(DestroyedByBattle(attacker, target))
+                    emit(DestroyedByBattle(target, attacker))
+                  case 1 => // target destroyed
+                    emit(BattleDamage(gameState.turnPlayers.opponent, difference))
+                    emit(DestroyedByBattle(target, attacker))
+                }
+              }
+            case Set =>
+              throw new IllegalStateException("Attacked monster should have been flipped face up.")
+          }
+        }
+    }
+
+    subscription.dispose()
+
+    AfterDamageCalculation(destroyed)
+  }
+}
+
+case class AfterDamageCalculation(destroyed: Set[Monster]) extends DamageStepSubStep {
+  override def performAndGetNext(battle: Battle)(implicit gameState: GameState): DamageStepSubStep = {
+    // TODO: after damage calculation
+    FastEffectTiming.loop(gameState.copy(step = this))
+    EndOfTheDamageStep(destroyed)
+  }
+}
+
+case class EndOfTheDamageStep(destroyed: Set[Monster]) extends DamageStepSubStep {
+  override def performAndGetNext(battle: Battle)(implicit gameState: GameState) = {
+    for (monster <- destroyed) {
+      monster.owner.field.sendToGrave(monster)
+    }
+
+    FastEffectTiming.loop(gameState.copy(step = this))
+    null
+  }
+}

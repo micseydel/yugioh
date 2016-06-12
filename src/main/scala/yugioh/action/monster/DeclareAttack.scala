@@ -24,6 +24,9 @@ case class DeclareDirectAttack(attacker: Monster) extends DeclareAttack {
 
 case class TargetedForAttack(attacker: Monster, target: Monster) extends Event
 
+/**
+  * null target indicates a direct attack
+  */
 case class Battle(attacker: Monster, target: Monster) extends Event
 
 case class Replay(attacker: Monster) extends Event

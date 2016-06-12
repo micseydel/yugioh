@@ -109,7 +109,13 @@ case class ChainRules(maybeInResponseTo: Option[Event]) extends FastEffectTiming
   override def next(implicit gameState: GameState) = nextWithUpdatedGameState(gameState.copy(inResponseTo = maybeInResponseTo.orNull))
 
   private def nextWithUpdatedGameState(implicit gameState: GameState) = {
-    CheckForTrigger(null) // TODO: ChainRules need to communicate last thing to happen here
+    // in damage calculation, we only get a single chain
+    //   if this condition is true, we deviate from what the fast effect timing chart documents
+    if (gameState.step == PerformDamageCalculation) {
+      TryToEnd
+    } else {
+      CheckForTrigger(null) // TODO: ChainRules need to communicate last thing to happen here
+    }
   }
 }
 

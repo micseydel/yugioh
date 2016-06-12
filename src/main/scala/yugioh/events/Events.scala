@@ -1,6 +1,7 @@
 package yugioh.events
 
 import yugioh._
+import yugioh.card.monster.Monster
 
 // makes IDE navigation easier
 private trait Events
@@ -61,9 +62,9 @@ case class DamageSubStepStartEvent(damageStepSubStep: DamageStepSubStep) extends
 case class DamageSubStepEndEvent(damageStepStep: DamageStepSubStep) extends BattlePhaseStepEndEvent
 
 /**
-  * player is the player who is losting the life points.
+  * player is the player who is losing the life points.
   */
-trait LifePointsLost {
+trait LifePointsLost extends Event {
   val player: Player
   val lifePoints: Int
 }
@@ -71,3 +72,13 @@ trait LifePointsLost {
 trait LifePointsDamage extends LifePointsLost
 
 case class BattleDamage(override val player: Player, override val lifePoints: Int) extends LifePointsDamage
+
+trait Flipped extends Event {
+  val monster: Monster
+  val cause: Event
+}
+
+case class FlippedRegular(monster: Monster, cause: Event) extends Flipped
+case class FlipWithoutFlipEffects(monster: Monster, cause: Event) extends Flipped
+
+case class DestroyedByBattle(monster: Monster, by: Monster) extends Event
