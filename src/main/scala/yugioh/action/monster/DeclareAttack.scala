@@ -3,18 +3,17 @@ package yugioh.action.monster
 import yugioh._
 import yugioh.action.InherentAction
 import yugioh.card.monster.Monster
-import yugioh.events.Event
-import yugioh.events.Observable.emit
+import yugioh.events.{DefaultEventsComponent, Event}
 
 sealed trait DeclareAttack extends InherentAction {
   val attacker: Monster
 }
 
-case class DeclareAttackOnMonster(attacker: Monster) extends DeclareAttack {
+case class DeclareAttackOnMonster(attacker: Monster) extends DeclareAttack with DefaultEventsComponent {
   override protected def doAction()(implicit gameState: GameState): Unit = {
     val turnPlayers = gameState.turnPlayers
     val attackTarget = turnPlayers.turnPlayer.selectAttackTarget(attacker, turnPlayers.opponent.field.monsterZones.toSeq.flatten)
-    emit(TargetedForAttack(attacker, attackTarget))
+    events.emit(TargetedForAttack(attacker, attackTarget))
   }
 }
 

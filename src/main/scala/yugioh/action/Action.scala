@@ -1,10 +1,11 @@
 package yugioh.action
 
 import yugioh._
-import yugioh.events.Event
-import yugioh.events.Observable.emit
+import yugioh.events.{DefaultEventsComponent, Event, EventsComponent}
 
 trait Action extends Event {
+  self: EventsComponent =>
+
   private var previouslyCalled = false
 
   def execute()(implicit gameState: GameState): Action = {
@@ -13,7 +14,7 @@ trait Action extends Event {
     }
 
     doAction()
-    emit(this)
+    events.emit(this)
     gameState.history.append(this)
     previouslyCalled = true
 
@@ -27,12 +28,14 @@ trait Action extends Event {
   protected def doAction()(implicit gameState: GameState): Unit
 }
 
-trait InherentAction extends Action
+trait InherentAction extends Action with DefaultEventsComponent
 
 /**
   * Composition of InherentAction(s).
+  *
+  * TODO: should also have activation condition, cost, and effect.
   */
-trait Activation extends Action
+trait Activation extends Action with DefaultEventsComponent
 
 trait PassPriority extends InherentAction {
   override def toString = "PassPriority"

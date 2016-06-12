@@ -1,8 +1,7 @@
 package yugioh
 
 import yugioh.action.monster.{NormalSummon, SetAsMonster}
-import yugioh.events.Observable._
-import yugioh.events.{TurnEndEvent, TurnStartEvent}
+import yugioh.events.{EventsComponent, TurnEndEvent, TurnStartEvent}
 
 trait PlayGame {
   val Players: (Player, Player)
@@ -14,6 +13,7 @@ trait PlayGame {
 }
 
 class PlayGameImpl(val Players: (Player, Player)) extends PlayGame {
+  self: EventsComponent =>
 
   override val mutableGameState = new MutableGameState
 
@@ -35,9 +35,9 @@ class PlayGameImpl(val Players: (Player, Player)) extends PlayGame {
   private def takeTurn(turnPlayers: TurnPlayers) = {
     mutableGameState.turnCount += 1
 
-    emit(TurnStartEvent(turnPlayers, mutableGameState))
+    events.emit(TurnStartEvent(turnPlayers, mutableGameState))
     Phase.loop(new GameState(mutableGameState, turnPlayers))
-    emit(TurnEndEvent)
+    events.emit(TurnEndEvent)
   }
 
   /**
@@ -50,7 +50,7 @@ class PlayGameImpl(val Players: (Player, Player)) extends PlayGame {
 
   private def setupObservables() = {
     // set hook for clearing turn state
-    observe { event =>
+    events.observe { event =>
       event match {
         case TurnStartEvent(_, _) =>
           mutableGameState.hasNormalSummonedThisTurn = false
@@ -59,7 +59,7 @@ class PlayGameImpl(val Players: (Player, Player)) extends PlayGame {
     }
 
     // listen for a normal summon or set, flag that it happened
-    observe { event =>
+    events.observe { event =>
       event match {
         case _:NormalSummon | _:SetAsMonster =>
           mutableGameState.hasNormalSummonedThisTurn = true

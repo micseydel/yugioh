@@ -2,7 +2,6 @@ package yugioh
 
 import yugioh.action.monster.{Battle, DeclareAttack, TargetedForAttack}
 import yugioh.card.monster.{Attack, Defense, Monster, Set}
-import yugioh.events.Observable._
 import yugioh.events._
 
 sealed trait Step
@@ -26,9 +25,10 @@ object BattlePhaseStep {
   }
 }
 
-case object StartStep extends BattlePhaseStep {
-  override def emitStartEvent(): Unit = emit(StartStepStepStartEvent)
-  override def emitEndEvent(): Unit = emit(StartStepStepEndEvent)
+case object StartStep extends BattlePhaseStep with DefaultEventsComponent {
+
+  override def emitStartEvent(): Unit = events.emit(StartStepStepStartEvent)
+  override def emitEndEvent(): Unit = events.emit(StartStepStepEndEvent)
 
   override def next(gameState: GameState): BattlePhaseStep = {
     FastEffectTiming.loop(gameState.copy(step = this))
@@ -37,14 +37,14 @@ case object StartStep extends BattlePhaseStep {
 }
 
 // TODO: replays
-case object BattleStep extends BattlePhaseStep {
-  override def emitStartEvent(): Unit = emit(BattleStepStepStartEvent)
-  override def emitEndEvent(): Unit = emit(BattleStepStepEndEvent)
+case object BattleStep extends BattlePhaseStep with DefaultEventsComponent {
+  override def emitStartEvent(): Unit = events.emit(BattleStepStepStartEvent)
+  override def emitEndEvent(): Unit = events.emit(BattleStepStepEndEvent)
 
   override def next(gameState: GameState): BattlePhaseStep = {
     var attacker: Monster = null
     var target: Monster = null
-    val subscription = observe { event =>
+    val subscription = events.observe { event =>
       event match {
         case targeted: TargetedForAttack =>
           target = targeted.target
@@ -67,9 +67,9 @@ case object BattleStep extends BattlePhaseStep {
   }
 }
 
-case class DamageStep(battle: Battle) extends BattlePhaseStep {
-  override def emitStartEvent(): Unit = emit(DamageStepStepStartEvent)
-  override def emitEndEvent(): Unit = emit(DamageStepStepEndEvent)
+case class DamageStep(battle: Battle) extends BattlePhaseStep with DefaultEventsComponent {
+  override def emitStartEvent(): Unit = events.emit(DamageStepStepStartEvent)
+  override def emitEndEvent(): Unit = events.emit(DamageStepStepEndEvent)
 
   override def next(gameState: GameState): BattlePhaseStep = {
     DamageStepSubStep.loop(battle)(gameState.copy(step = this))
@@ -77,9 +77,9 @@ case class DamageStep(battle: Battle) extends BattlePhaseStep {
   }
 }
 
-case object EndStep extends BattlePhaseStep {
-  override def emitStartEvent(): Unit = emit(EndStepStepStartEvent)
-  override def emitEndEvent(): Unit = emit(EndStepStepEndEvent)
+case object EndStep extends BattlePhaseStep with DefaultEventsComponent {
+  override def emitStartEvent(): Unit = events.emit(EndStepStepStartEvent)
+  override def emitEndEvent(): Unit = events.emit(EndStepStepEndEvent)
 
   override def next(gameState: GameState): BattlePhaseStep = {
     FastEffectTiming.loop(gameState.copy(step = this))
@@ -92,13 +92,13 @@ sealed trait DamageStepSubStep extends Step {
   def performAndGetNext(battle: Battle)(implicit gameState: GameState): DamageStepSubStep
 }
 
-object DamageStepSubStep {
+object DamageStepSubStep extends DefaultEventsComponent {
   def loop(battle: Battle)(implicit gameState: GameState): Unit = {
     var subStep: DamageStepSubStep = StartOfTheDamageStep
     do {
-      emit(DamageSubStepStartEvent(subStep))
+      events.emit(DamageSubStepStartEvent(subStep))
       val nextSubStep = subStep.performAndGetNext(battle)
-      emit(DamageSubStepEndEvent(subStep))
+      events.emit(DamageSubStepEndEvent(subStep))
       subStep = nextSubStep
     } while (subStep != null)
   }
@@ -112,7 +112,7 @@ case object StartOfTheDamageStep extends DamageStepSubStep {
   }
 }
 
-case object BeforeDamageCalculation extends DamageStepSubStep {
+case object BeforeDamageCalculation extends DamageStepSubStep with DefaultEventsComponent {
   override def performAndGetNext(battle: Battle)(implicit gameState: GameState) = {
     // flip the target if need be
     battle match {
@@ -120,7 +120,7 @@ case object BeforeDamageCalculation extends DamageStepSubStep {
         for (controlledState <- target.maybeMonsterControlledState)
           if (controlledState.position == Set) {
             controlledState.position = Defense
-            emit(FlippedRegular(target, battle))
+            events.emit(FlippedRegular(target, battle))
           }
     }
 
@@ -129,12 +129,12 @@ case object BeforeDamageCalculation extends DamageStepSubStep {
   }
 }
 
-case object PerformDamageCalculation extends DamageStepSubStep {
+case object PerformDamageCalculation extends DamageStepSubStep with DefaultEventsComponent {
   override def performAndGetNext(battle: Battle)(implicit gameState: GameState) = {
     FastEffectTiming.loop(gameState.copy(step = this))
 
     var destroyed: Set[Monster] = collection.immutable.Set()
-    val subscription = observe { event =>
+    val subscription = events.observe { event =>
       event match {
         case DestroyedByBattle(monster, _) =>
           destroyed += monster
@@ -144,7 +144,7 @@ case object PerformDamageCalculation extends DamageStepSubStep {
 
     battle match {
       case Battle(attacker, null) =>
-        emit(BattleDamage(gameState.turnPlayers.opponent, attacker.attack))
+        events.emit(BattleDamage(gameState.turnPlayers.opponent, attacker.attack))
       case Battle(attacker, target) =>
         for (
           monsterControlledState <- target.maybeMonsterControlledState;
@@ -154,7 +154,7 @@ case object PerformDamageCalculation extends DamageStepSubStep {
             case Defense =>
               if (attacker.attack > target.defense) {
                 // TODO LOW: piercing damage?
-                emit(DestroyedByBattle(target, attacker))
+                events.emit(DestroyedByBattle(target, attacker))
               }
             case Attack =>
               // if both have 0 attack, nothing happens here
@@ -162,14 +162,14 @@ case object PerformDamageCalculation extends DamageStepSubStep {
                 val difference = attacker.attack - target.attack
                 difference.signum match { // get the sign of the difference
                   case -1 => // attacker destroyed
-                    emit(BattleDamage(gameState.turnPlayers.turnPlayer, -difference))
-                    emit(DestroyedByBattle(attacker, target))
+                    events.emit(BattleDamage(gameState.turnPlayers.turnPlayer, -difference))
+                    events.emit(DestroyedByBattle(attacker, target))
                   case 0 =>
-                    emit(DestroyedByBattle(attacker, target))
-                    emit(DestroyedByBattle(target, attacker))
+                    events.emit(DestroyedByBattle(attacker, target))
+                    events.emit(DestroyedByBattle(target, attacker))
                   case 1 => // target destroyed
-                    emit(BattleDamage(gameState.turnPlayers.opponent, difference))
-                    emit(DestroyedByBattle(target, attacker))
+                    events.emit(BattleDamage(gameState.turnPlayers.opponent, difference))
+                    events.emit(DestroyedByBattle(target, attacker))
                 }
               }
             case Set =>

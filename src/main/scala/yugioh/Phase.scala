@@ -1,7 +1,6 @@
 package yugioh
 
 import yugioh.action.DrawForTurnImpl
-import yugioh.events.Observable.emit
 import yugioh.events._
 
 /**
@@ -87,7 +86,7 @@ case object EndPhase extends Phase {
 }
 
 
-object Phase {
+object Phase extends DefaultEventsComponent {
   val phases = Seq(DrawPhase, StandbyPhase, MainPhase, BattlePhase, MainPhase2, EndPhase)
   val mainPhases = Set(MainPhase, MainPhase2)
 
@@ -112,9 +111,9 @@ object Phase {
   def loop(implicit gameState: GameState) = {
     var phase: Phase = DrawPhase
     do {
-      emit(StartEvents(phase))
+      events.emit(StartEvents(phase))
       val nextPhase = phase.next(gameState.copy(phase = phase))
-      emit(EndEvents(phase))
+      events.emit(EndEvents(phase))
       phase = nextPhase
     } while (phase != null)
   }

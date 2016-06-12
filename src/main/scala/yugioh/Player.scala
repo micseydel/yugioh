@@ -3,8 +3,7 @@ package yugioh
 import yugioh.action.Action
 import yugioh.card.Card
 import yugioh.card.monster.{ExtraDeckMonster, Monster}
-import yugioh.events.Observable.observe
-import yugioh.events.{PhaseStartEvent, TurnStartEvent}
+import yugioh.events.{EventsComponent, PhaseStartEvent, TurnStartEvent}
 
 import scala.collection.mutable.ListBuffer
 import scala.io.StdIn
@@ -62,9 +61,11 @@ trait Player {
 case class TurnPlayers(turnPlayer: Player, opponent: Player)
 
 class CommandLineHumanPlayer(val name: String) extends Player {
+  self: EventsComponent =>
+
   override val deck: Deck = new TestDeck(this) // TODO: be more than just a stub
 
-  observe { event =>
+  events.observe { event =>
     event match {
       case TurnStartEvent(turnPlayers, mutableGameState) =>
         println(s"Turn number ${mutableGameState.turnCount}, turn player ${turnPlayers.turnPlayer}.")
