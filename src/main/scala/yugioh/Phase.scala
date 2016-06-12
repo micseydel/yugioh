@@ -90,30 +90,12 @@ object Phase extends DefaultEventsComponent {
   val phases = Seq(DrawPhase, StandbyPhase, MainPhase, BattlePhase, MainPhase2, EndPhase)
   val mainPhases = Set(MainPhase, MainPhase2)
 
-  private val StartEvents: Map[Phase, PhaseStartEvent] = Map(
-    DrawPhase -> DrawPhaseStartEvent,
-    StandbyPhase -> StandbyPhaseStartEvent,
-    MainPhase -> MainPhaseStartEvent,
-    BattlePhase -> BattlePhaseStartEvent,
-    MainPhase2 -> MainPhase2StartEvent,
-    EndPhase -> EndPhaseStartEvent
-  )
-
-  private val EndEvents: Map[Phase, PhaseEndEvent] = Map(
-    DrawPhase -> DrawPhaseEndEvent,
-    StandbyPhase -> StandbyPhaseEndEvent,
-    MainPhase -> MainPhaseEndEvent,
-    BattlePhase -> BattlePhaseEndEvent,
-    MainPhase2 -> MainPhase2EndEvent,
-    EndPhase -> EndPhaseEndEvent
-  )
-
   def loop(implicit gameState: GameState) = {
     var phase: Phase = DrawPhase
     do {
-      events.emit(StartEvents(phase))
+      events.emit(PhaseChangeEvent.StartEvents(phase))
       val nextPhase = phase.next(gameState.copy(phase = phase))
-      events.emit(EndEvents(phase))
+      events.emit(PhaseChangeEvent.EndEvents(phase))
       phase = nextPhase
     } while (phase != null)
   }
