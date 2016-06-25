@@ -68,11 +68,41 @@ class CommandLineHumanPlayer(val name: String) extends Player {
   events.observe { event =>
     event match {
       case TurnStartEvent(turnPlayers, mutableGameState) =>
-        println(s"Turn number ${mutableGameState.turnCount}, turn player ${turnPlayers.turnPlayer}.")
+        showField(turnPlayers, mutableGameState)
       case phaseStart: PhaseStartEvent =>
         println(s"Entering ${phaseStart.phase}")
       case ignore =>
     }
+  }
+
+  private def showField(implicit turnPlayers: TurnPlayers, mutableGameState: MutableGameState) = {
+    // TODO: this should happen after any change to the board, and should include field zone and pendulums
+
+    println(s"\nOpponent ${turnPlayers.opponent} (${turnPlayers.opponent.lifePoints})")
+    print(s"Deck (${turnPlayers.opponent.deck.remaining}) | ")
+    print(s"Hand (${turnPlayers.opponent.hand.size}) | ")
+    print(s"Grave (${turnPlayers.opponent.grave.size}) | ")
+    print(s"Banished (${turnPlayers.opponent.banished.size}) | ")
+    println(s"Extra Deck (${turnPlayers.opponent.extraDeck.size})")
+
+    for (cards <- Seq(turnPlayers.opponent.field.spellTrapZones, turnPlayers.opponent.field.monsterZones)) {
+      println(cards.map(_.map(_.toString(this)).getOrElse("Empty")).mkString(" | "))
+    }
+
+    println("   ---")
+
+    for (cards <- Seq(turnPlayers.turnPlayer.field.monsterZones, turnPlayers.turnPlayer.field.spellTrapZones)) {
+      println(cards.map(_.map(_.toString(this)).getOrElse("Empty")).mkString(" | "))
+    }
+
+    print(s"Hand (${turnPlayers.turnPlayer.hand.size}): ")
+    println(turnPlayers.turnPlayer.hand.map(_.name).mkString(" | "))
+
+    print(s"Deck (${turnPlayers.turnPlayer.deck.remaining}) | ")
+    print(s"Grave (${turnPlayers.turnPlayer.grave.size}) | ")
+    print(s"Banished (${turnPlayers.turnPlayer.banished.size}) | ")
+    println(s"Extra Deck (${turnPlayers.turnPlayer.extraDeck.size})")
+    println(s"Turn player ${turnPlayers.turnPlayer} (${turnPlayers.turnPlayer.lifePoints})\n")
   }
 
   override def chooseAction(actions: Seq[Action])(implicit gameState: GameState) = {

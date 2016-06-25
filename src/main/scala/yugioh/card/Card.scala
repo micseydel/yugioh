@@ -19,6 +19,20 @@ trait Card {
   def name: String = printedName
 
   override def toString = name
+
+  def toString(viewer: Player): String = {
+    maybeControlledState.map { controlledState =>
+      if (controlledState.faceup) {
+        name
+      } else {
+        if (viewer == owner) {
+          s"Set($this)"
+        } else {
+          "<Set>"
+        }
+      }
+    }.getOrElse(name)
+  }
 }
 
 trait SpellOrTrap extends Card

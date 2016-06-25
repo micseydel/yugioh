@@ -17,6 +17,8 @@ trait Deck {
 
   def fromTop(): Card = fromTop(1).head
 
+  def remaining = cards.size
+
   /**
     * An EmptyDeck GameLoss exception will be thrown if the deck is empty.
     */
