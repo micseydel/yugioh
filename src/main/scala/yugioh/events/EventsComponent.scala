@@ -25,7 +25,7 @@ trait EventsComponent {
 }
 
 trait DefaultEventsComponent extends EventsComponent {
-  val events = new Events {
+  def events = new Events {
     val observers = new ListBuffer[Observer[_ <: Event]]
 
     def observe[E <: Event](observer: Observer[E]): Subscription = {
