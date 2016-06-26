@@ -23,22 +23,9 @@ sealed trait StepStartEvent extends Event
 sealed trait StepEndEvent extends Event
 
 
-sealed trait BattlePhaseStepStartEvent extends StepStartEvent
-sealed trait BattlePhaseStepEndEvent extends StepEndEvent
-
-// I am so sorry for these names
-case object StartStepStepStartEvent extends BattlePhaseStepStartEvent
-case object StartStepStepEndEvent extends BattlePhaseStepEndEvent
-
-case object BattleStepStepStartEvent extends BattlePhaseStepStartEvent
-case object BattleStepStepEndEvent extends BattlePhaseStepEndEvent
-
-case object DamageStepStepStartEvent extends BattlePhaseStepStartEvent
-case object DamageStepStepEndEvent extends BattlePhaseStepEndEvent
-
-case object EndStepStepStartEvent extends BattlePhaseStepStartEvent
-case object EndStepStepEndEvent extends BattlePhaseStepEndEvent
+sealed case class BattlePhaseStepStartEvent(step: BattlePhaseStep) extends StepStartEvent
+sealed case class BattlePhaseStepEndEvent(step: BattlePhaseStep) extends StepEndEvent
 
 
-case class DamageSubStepStartEvent(damageStepSubStep: DamageStepSubStep) extends BattlePhaseStepStartEvent
-case class DamageSubStepEndEvent(damageStepStep: DamageStepSubStep) extends BattlePhaseStepEndEvent
+case class DamageSubStepStartEvent(damageStepSubStep: DamageStepSubStep) extends StepStartEvent
+case class DamageSubStepEndEvent(damageStepStep: DamageStepSubStep) extends StepEndEvent

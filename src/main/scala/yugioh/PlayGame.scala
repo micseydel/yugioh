@@ -1,7 +1,7 @@
 package yugioh
 
-import yugioh.action.monster.{NormalSummon, SetAsMonster}
-import yugioh.events.{EventsComponent, TurnEndEvent, TurnStartEvent}
+import yugioh.action.monster.{DeclareAttack, NormalSummon, SetAsMonster}
+import yugioh.events.{BattleDamage, EventsComponent, TurnEndEvent, TurnStartEvent}
 
 trait PlayGame {
   val Players: (Player, Player)
@@ -63,6 +63,29 @@ class PlayGameImpl(val Players: (Player, Player)) extends PlayGame {
       event match {
         case _:NormalSummon | _:SetAsMonster =>
           mutableGameState.hasNormalSummonedThisTurn = true
+        case ignore =>
+      }
+    }
+
+    // listen for an attack declaration, tag that monster as having attacked
+    events.observe { event =>
+      event match {
+        case attackDeclaration: DeclareAttack =>
+          for (monsterControlledState <- attackDeclaration.attacker.maybeMonsterControlledState) {
+            monsterControlledState.attackedThisTurn = true
+          }
+        case ignore =>
+      }
+    }
+
+    // listen for and handle life point damage
+    events.observe { event =>
+      event match {
+        case BattleDamage(player, damage) =>
+          player.lifePoints -= damage
+          if (player.lifePoints <= 0) {
+            throw OutOfLifepoints(player)
+          }
         case ignore =>
       }
     }

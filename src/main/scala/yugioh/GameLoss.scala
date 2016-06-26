@@ -1,11 +1,8 @@
 package yugioh
 
-trait GameLoss extends Exception
+trait GameLoss extends Exception {
+  val loser: Player
+}
 
-trait OutOfLifepoints extends GameLoss
-trait EmptyDeck extends GameLoss
-
-object GameLossImpl extends GameLoss
-
-object OutOfLifepointsImpl extends OutOfLifepoints
-object EmptyDeckImpl extends EmptyDeck
+case class OutOfLifepoints(loser: Player) extends GameLoss
+case class EmptyDeck(loser: Player) extends GameLoss

@@ -8,6 +8,11 @@ object Main {
     val player2 = new PassivePlayer
 
     val gameState = new PlayGameImpl((player1, player2)) with DefaultEventsComponent
-    gameState.mainLoop()
+    try {
+      gameState.mainLoop()
+    } catch {
+      case gameLoss: GameLoss =>
+        println(s"${gameLoss.loser} has lost! " + gameLoss)
+    }
   }
 }

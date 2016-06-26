@@ -30,14 +30,14 @@ trait Monster extends Card {
     */
   override def actions(implicit gameState: GameState) = {
     gameState match {
-      case GameState(MutableGameState(_, hasNormalSummonedThisTurn, _), turnPlayers, fastEffectTiming, phase, step, _) =>
+      case gameState@GameState(MutableGameState(_, hasNormalSummonedThisTurn, _), turnPlayers, fastEffectTiming, phase, step, _) =>
         fastEffectTiming match {
           case OpenGameState =>
             phase match {
               case MainPhase | MainPhase2 =>
                 mainPhaseActions(hasNormalSummonedThisTurn)
               case BattlePhase =>
-                battlePhaseActions(turnPlayers.opponent.field.monsterZones.toSeq.flatten)
+                battlePhaseActions(gameState)
               case _ =>
                 Seq()
             }
@@ -67,7 +67,7 @@ trait Monster extends Card {
             }
           }
         }.getOrElse(Seq())
-      case monsterZone: InMonsterZone if !maybeMonsterControlledState.get.manuallyChangedPositionsThisTurn =>
+      case monsterZone: InMonsterZone if canSwitchPositions =>
         if (maybeControlledState.get.faceup) {
           Seq(new SwitchPositionImpl(this))
         } else {
@@ -78,18 +78,29 @@ trait Monster extends Card {
     }
   }
 
-  private def battlePhaseActions(potentialTargets: Seq[Monster]): Seq[Action] = {
-    maybeMonsterControlledState.map { controlledState =>
-      if (!controlledState.attackedThisTurn && controlledState.position == Attack) {
-        if (potentialTargets.nonEmpty) {
-          Seq(new DeclareAttackOnMonster(this))
-        } else {
-          Seq(new DeclareDirectAttack(this))
-        }
-      } else {
-        Seq()
-      }
-    }.getOrElse(Seq())
+  private def canSwitchPositions: Boolean = {
+    maybeMonsterControlledState.exists { monsterControlledState =>
+      !monsterControlledState.manuallyChangedPositionsThisTurn && !monsterControlledState.attackedThisTurn
+    }
+  }
+
+  private def battlePhaseActions(gameState: GameState): Seq[Action] = {
+    gameState match {
+      case GameState(_, TurnPlayers(_, opponent), OpenGameState, _, BattleStep, null) =>
+        maybeMonsterControlledState.map { controlledState =>
+          if (!controlledState.attackedThisTurn && controlledState.position == Attack) {
+            val potentialTargets = opponent.field.monsterZones.toSeq.flatten
+            if (potentialTargets.nonEmpty) {
+              Seq(new DeclareAttackOnMonster(this))
+            } else {
+              Seq(new DeclareDirectAttack(this))
+            }
+          } else {
+            Seq()
+          }
+        }.getOrElse(Seq())
+      case _ => Seq()
+    }
   }
 }
 

@@ -26,7 +26,7 @@ trait Deck {
     try {
       for (_ <- 1 to howMany) yield cards.remove(0)
     } catch {
-      case outOfBounds: IndexOutOfBoundsException => throw EmptyDeckImpl
+      case outOfBounds: IndexOutOfBoundsException => throw EmptyDeck(owner)
     }
   }
 }

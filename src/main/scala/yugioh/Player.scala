@@ -61,7 +61,7 @@ trait Player {
 case class TurnPlayers(turnPlayer: Player, opponent: Player)
 
 class CommandLineHumanPlayer(val name: String) extends Player {
-  self: EventsComponent =>
+  Me: EventsComponent =>
 
   override val deck: Deck = new TestDeck(this) // TODO: be more than just a stub
 
@@ -154,14 +154,10 @@ class CommandLineHumanPlayer(val name: String) extends Player {
     */
   override def consentToEnd(implicit gameState: GameState): Boolean = {
     gameState match {
-      case GameState(_, TurnPlayers(turnPlayer, _), _, phase, step, _) =>
-        phase match {
-          case (MainPhase | BattlePhase | MainPhase2 | EndPhase) if turnPlayer == this =>
-            print(s"End ${Option(step).getOrElse(phase)}? ")
-            StdIn.readBoolean()
-          case _ =>
-            true
-        }
+      case GameState(_, TurnPlayers(Me, _), _, phase@(MainPhase | BattlePhase | MainPhase2 | EndPhase), step, _) if !step.isInstanceOf[DamageStepSubStep] && !step.isInstanceOf[BattleStepWithPendingAttack] =>
+        print(s"End ${Option(step).getOrElse(phase)}? ")
+        StdIn.readBoolean()
+      case _ => true
     }
   }
 

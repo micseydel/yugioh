@@ -1,6 +1,7 @@
 package yugioh
 
 import yugioh.action._
+import yugioh.action.monster.DeclareAttack
 import yugioh.events.Event
 
 
@@ -50,7 +51,7 @@ object FastEffectTiming {
     */
   def loop(gameState: GameState, start: FastEffectTiming = OpenGameState): Unit = {
     var state = start
-    while (state != EndPhaseOrStep) {
+    while (state != null) {
       state = state.next(gameState.copy(fastEffectTiming = state))
     }
   }
@@ -65,6 +66,7 @@ object OpenGameState extends FastEffectTiming {
     choice.execute() match {
       case pass: PassPriority => TryToEnd
       case activation: Activation => ChainRules(None)
+      case attackDeclaration: DeclareAttack => null // BattlePhaseStep will change, manually go to ChainRules
       case action: InherentAction => CheckForTrigger(action)
     }
   }
@@ -133,7 +135,7 @@ object TryToEnd extends FastEffectTiming {
       case activation: Activation => ChainRules(None)
       case pass: PassPriority =>
         if (turnPlayers.turnPlayer.consentToEnd && turnPlayers.opponent.consentToEnd) {
-          EndPhaseOrStep
+          null
         } else {
           OpenGameState
         }
@@ -149,14 +151,5 @@ case class CheckForTrigger(inResponseTo: Event) extends FastEffectTiming {
 
   private def nextWithUpdatedGameState(implicit gameState: GameState) = {
     TurnPlayerFastEffects(inResponseTo) // TODO: once a proper trigger system is in place, this will be able to go to ChainRules
-  }
-}
-
-/**
-  * Signals the end of a phase or step.
-  */
-object EndPhaseOrStep extends FastEffectTiming {
-  override def next(implicit gameState: GameState) = {
-    throw new UnsupportedOperationException("End.next should not be called.")
   }
 }

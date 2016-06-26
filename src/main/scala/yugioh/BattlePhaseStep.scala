@@ -7,8 +7,10 @@ import yugioh.events._
 sealed trait Step
 
 sealed trait BattlePhaseStep extends Step {
-  protected def emitStartEvent(): Unit
-  protected def emitEndEvent(): Unit
+  self: EventsComponent =>
+
+  protected def emitStartEvent(): Unit = events.emit(BattlePhaseStepStartEvent(this))
+  protected def emitEndEvent(): Unit = events.emit(BattlePhaseStepEndEvent(this))
 
   def next(gameState: GameState): BattlePhaseStep
 }
@@ -26,21 +28,13 @@ object BattlePhaseStep {
 }
 
 case object StartStep extends BattlePhaseStep with DefaultEventsComponent {
-
-  override def emitStartEvent(): Unit = events.emit(StartStepStepStartEvent)
-  override def emitEndEvent(): Unit = events.emit(StartStepStepEndEvent)
-
   override def next(gameState: GameState): BattlePhaseStep = {
     FastEffectTiming.loop(gameState.copy(step = this))
     BattleStep
   }
 }
 
-// TODO: replays
 case object BattleStep extends BattlePhaseStep with DefaultEventsComponent {
-  override def emitStartEvent(): Unit = events.emit(BattleStepStepStartEvent)
-  override def emitEndEvent(): Unit = events.emit(BattleStepStepEndEvent)
-
   override def next(gameState: GameState): BattlePhaseStep = {
     var attacker: Monster = null
     var target: Monster = null
@@ -60,17 +54,22 @@ case object BattleStep extends BattlePhaseStep with DefaultEventsComponent {
     subscription.dispose()
 
     if (attacker != null) {
-      DamageStep(Battle(attacker, target))
+      BattleStepWithPendingAttack(Battle(attacker, target))
     } else {
       EndStep
     }
   }
 }
 
-case class DamageStep(battle: Battle) extends BattlePhaseStep with DefaultEventsComponent {
-  override def emitStartEvent(): Unit = events.emit(DamageStepStepStartEvent)
-  override def emitEndEvent(): Unit = events.emit(DamageStepStepEndEvent)
+case class BattleStepWithPendingAttack(battle: Battle) extends BattlePhaseStep with DefaultEventsComponent {
+  override def next(gameState: GameState): BattlePhaseStep = {
+    FastEffectTiming.loop(gameState.copy(step = this), start = ChainRules(None))
+    // TODO: replays - BattleStepWithPendingAttack -> BattleStep instead of DamageStep
+    DamageStep(battle)
+  }
+}
 
+case class DamageStep(battle: Battle) extends BattlePhaseStep with DefaultEventsComponent {
   override def next(gameState: GameState): BattlePhaseStep = {
     DamageStepSubStep.loop(battle)(gameState.copy(step = this))
     BattleStep
@@ -78,9 +77,6 @@ case class DamageStep(battle: Battle) extends BattlePhaseStep with DefaultEvents
 }
 
 case object EndStep extends BattlePhaseStep with DefaultEventsComponent {
-  override def emitStartEvent(): Unit = events.emit(EndStepStepStartEvent)
-  override def emitEndEvent(): Unit = events.emit(EndStepStepEndEvent)
-
   override def next(gameState: GameState): BattlePhaseStep = {
     FastEffectTiming.loop(gameState.copy(step = this))
     null
@@ -122,6 +118,7 @@ case object BeforeDamageCalculation extends DamageStepSubStep with DefaultEvents
             controlledState.position = Defense
             events.emit(FlippedRegular(target, battle))
           }
+      case ignore =>
     }
 
     FastEffectTiming.loop(gameState.copy(step = this))
