@@ -135,6 +135,10 @@ object TryToEnd extends FastEffectTiming {
       case activation: Activation => ChainRules(None)
       case pass: PassPriority =>
         if (turnPlayers.turnPlayer.consentToEnd && turnPlayers.opponent.consentToEnd) {
+          if (gameState.phase == EndPhase && turnPlayers.turnPlayer.hand.size > Constants.HandSizeLimit) {
+            // TODO LOW: discarding for turn may result in trigger effects; this should be updated once the trigger effect system is in place
+            new DiscardForHandSizeLimitImpl().execute()
+          }
           null
         } else {
           OpenGameState

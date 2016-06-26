@@ -49,12 +49,16 @@ trait Set extends InherentAction
 
 trait Discard extends InherentAction
 
-class DiscardImpl extends Discard {
+trait DiscardForHandSizeLimit extends Discard
+
+class DiscardForHandSizeLimitImpl extends DiscardForHandSizeLimit {
   override protected def doAction()(implicit gameState: GameState) = {
     val player = gameState.turnPlayers.turnPlayer
-    val choice = player.cardToDiscardForHandSizeLimit
-    val card = player.hand.remove(player.hand.indexOf(choice))
-    card.owner.field.graveyard.append(card)
+
+    for (choice <- player.cardToDiscardForHandSizeLimit) {
+      val card = player.hand.remove(player.hand.indexOf(choice))
+      card.owner.field.graveyard.append(card)
+    }
   }
 }
 

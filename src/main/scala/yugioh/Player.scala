@@ -39,7 +39,7 @@ trait Player {
     hand ++= toAdd
   }
 
-  def cardToDiscardForHandSizeLimit(implicit gameState: GameState): Card
+  def cardToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[Card]
 
   /**
     * Ask player if they wish to end the phase or step.
@@ -117,8 +117,9 @@ class CommandLineHumanPlayer(val name: String) extends Player {
     }
   }
 
-  override def cardToDiscardForHandSizeLimit(implicit gameState: GameState): Card = {
-    select("Select a card to discard:", hand)
+  override def cardToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[Card] = {
+    val criteria = CountCriteria(hand.size - Constants.HandSizeLimit)
+    selectMultiple(s"Must discard for hand size limit ($criteria):", hand, CountCriteria(hand.size - Constants.HandSizeLimit))
   }
 
   override def enterBattlePhase(implicit gameState: GameState) = {
@@ -129,23 +130,42 @@ class CommandLineHumanPlayer(val name: String) extends Player {
   /**
     * Ask the user for a specific element of a sequence.
     */
-  private def select[A](prompt: String, options: Seq[A])
+  private def select[A](prompt: String, choices: Seq[A])
                        (implicit gameState: GameState): A = {
     println(prompt + s" (${gameState.fastEffectTiming}, ${gameState.phase}${Option(gameState.step).map(", " + _).getOrElse("")})")
 
-    for ((action, i) <- options.zipWithIndex) {
+    for ((action, i) <- choices.zipWithIndex) {
       println(s"($i) $action")
     }
 
     print("> ")
     var choice = StdIn.readInt()
-    while (choice < 0 || choice >= options.size) {
+    while (choice < 0 || choice >= choices.size) {
       println("Not a valid option.")
       print("> ")
       choice = StdIn.readInt()
     }
 
-    options(choice)
+    choices(choice)
+  }
+
+  /**
+    * Get some of the values from the choices.
+    */
+  private def selectMultiple[A](prompt: String, choices: Seq[A], criteria: Criteria[A])
+                               (implicit gameState: GameState): Seq[A] = {
+    println(prompt)
+
+    for ((choice, i) <- choices.zipWithIndex) {
+      println(s"($i) $choice")
+    }
+
+    var selection = StdIn.readLine("> ").split(",").map(_.toInt).map(choices(_))
+    while (!criteria.validSelection(selection)) {
+      println(s"Selection was not valid, criteria is: $criteria.")
+      selection = StdIn.readLine("> ").split(",").map(_.toInt).map(choices(_))
+    }
+    selection
   }
 
   /**
@@ -166,21 +186,8 @@ class CommandLineHumanPlayer(val name: String) extends Player {
         println("Singular choice, automatically tributing " + possibleMaterials)
         possibleMaterials
       case _ =>
-        println(s"To summon $toSummon, please enter comma separated monster(s) to use.")
-
-        for ((monster, i) <- possibleMaterials.zipWithIndex) {
-          println(s"($i) $monster")
-        }
-
-        var choices = StdIn.readLine("> ").split(",").map(_.toInt).map(possibleMaterials(_))
-        while (!summonCriteria.validSelection(choices)) {
-          println(s"Selection $choices was not valid for $summonCriteria.")
-          choices = StdIn.readLine("> ").split(",").map(_.toInt).map(possibleMaterials(_))
-        }
-
-        choices
+        selectMultiple(s"To summon $toSummon, please enter comma separated monster(s) to use ($summonCriteria).", possibleMaterials, summonCriteria)
     }
-
   }
 
   override def selectAttackTarget(attacker: Monster, potentialTargets: Seq[Monster])(implicit gameState: GameState): Monster = {
@@ -196,7 +203,7 @@ class CommandLineHumanPlayer(val name: String) extends Player {
 class PassivePlayer extends Player {
   override val name = "PassivePlayer"
   override val deck = new TestDeck(this)
-  override def cardToDiscardForHandSizeLimit(implicit gameState: GameState): Card = hand.head
+  override def cardToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[Card] = Seq(hand.head)
   override def chooseAction(actions: Seq[Action])(implicit gameState: GameState) = actions.head
   override def consentToEnd(implicit gameState: GameState): Boolean = true
   override def enterBattlePhase(implicit gameState: GameState): Boolean = false
