@@ -119,13 +119,13 @@ trait FlipMonster extends EffectMonster
   * Cannot be Normal Summoned, Set or Special Summoned, except by fulfilling a special requirement.
   * e.g. Sephylon, the Ultimate Timelord & ritual monsters
   */
-trait Nomi extends EffectMonster // TODO
+trait Nomi extends EffectMonster // TODO LOW
 
 /**
   * "Cannot be Normal Summoned/Set. Must first be Special Summoned..." (or an older variant).
   *   e.g. BLS
   */
-trait SemiNomi extends EffectMonster // TODO
+trait SemiNomi extends EffectMonster // TODO LOW
 
 trait RitualMonster extends SemiNomi
 
@@ -136,7 +136,7 @@ trait SynchroMonster extends ExtraDeckMonster
 
 trait XyzMonster extends ExtraDeckMonster {
   override val maybePrintedLevel = None
-  override val maybePrintedRank = ??? // TODO: nicer way to be convenient elsewhere but force rank definition here?
+  override val maybePrintedRank = ??? // TODO LOW: nicer way to be convenient elsewhere but force rank definition here?
 }
 
 trait PendulumMonster extends Monster

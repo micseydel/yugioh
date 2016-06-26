@@ -150,6 +150,7 @@ case class CheckForTrigger(inResponseTo: Event) extends FastEffectTiming {
   override def next(implicit gameState: GameState) = nextWithUpdatedGameState(gameState.copy(inResponseTo = inResponseTo))
 
   private def nextWithUpdatedGameState(implicit gameState: GameState) = {
-    TurnPlayerFastEffects(inResponseTo) // TODO: once a proper trigger system is in place, this will be able to go to ChainRules
+    // TODO: once a proper trigger system is in place, this will be able to go to ChainRules
+    TurnPlayerFastEffects(inResponseTo)
   }
 }

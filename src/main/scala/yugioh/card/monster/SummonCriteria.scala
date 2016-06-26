@@ -17,10 +17,10 @@ case class TributeSummonCriteria(count: Int) extends SummonCriteria {
   }
 }
 
-case class SynchroSummonCriteria() extends SummonCriteria { // TODO
+case class SynchroSummonCriteria() extends SummonCriteria { // TODO LOW
   override def validSelection(monsters: Seq[Monster]): Boolean = ???
 }
 
-case class XyzSummonCriteria() extends SummonCriteria { // TODO
+case class XyzSummonCriteria() extends SummonCriteria { // TODO LOW
 override def validSelection(monsters: Seq[Monster]): Boolean = ???
 }

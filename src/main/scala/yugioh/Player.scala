@@ -75,7 +75,7 @@ class CommandLineHumanPlayer(val name: String) extends Player {
   }
 
   private def showField(implicit turnPlayers: TurnPlayers, mutableGameState: MutableGameState) = {
-    // TODO: this should happen after any change to the board, and should include field zone and pendulums
+    // TODO LOW: this should happen after any change to the board, and should include field zone and pendulums
 
     println(s"\nOpponent ${turnPlayers.opponent} (${turnPlayers.opponent.lifePoints})")
     print(s"Deck (${turnPlayers.opponent.deck.remaining}) | ")
