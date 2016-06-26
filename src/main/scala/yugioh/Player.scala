@@ -2,7 +2,7 @@ package yugioh
 
 import yugioh.action.Action
 import yugioh.card.Card
-import yugioh.card.monster.{ExtraDeckMonster, Monster}
+import yugioh.card.monster.{ExtraDeckMonster, Monster, SummonCriteria, TributeSummonCriteria}
 import yugioh.events.{EventsComponent, PhaseStartEvent, TurnStartEvent}
 
 import scala.collection.mutable.ListBuffer
@@ -13,8 +13,6 @@ trait Player {
   val deck: Deck
   val extraDeck: ListBuffer[ExtraDeckMonster] = new ListBuffer[ExtraDeckMonster]
   val field: Field = new FieldImpl
-  val grave: ListBuffer[Card] = new ListBuffer[Card]
-  val banished: ListBuffer[Card] = new ListBuffer[Card]
   val hand: ListBuffer[Card] = new ListBuffer[Card]
 
   var lifePoints: Int = Constants.InitialLifePoints
@@ -51,7 +49,8 @@ trait Player {
   /**
     * Ask a player what summon material (tribute, synchro, etc.) they wish to use for toSummon.
     */
-  def selectSummonMaterial(toSummon: Monster, possibleMaterials: Seq[Monster])(implicit gameState: GameState): Seq[Monster]
+  def selectSummonMaterial(toSummon: Monster, summonCriteria: SummonCriteria, possibleMaterials: Seq[Monster])
+                          (implicit gameState: GameState): Seq[Monster]
 
   def selectAttackTarget(attacker: Monster, potentialTargets: Seq[Monster])(implicit gameState: GameState): Monster
 
@@ -81,8 +80,8 @@ class CommandLineHumanPlayer(val name: String) extends Player {
     println(s"\nOpponent ${turnPlayers.opponent} (${turnPlayers.opponent.lifePoints})")
     print(s"Deck (${turnPlayers.opponent.deck.remaining}) | ")
     print(s"Hand (${turnPlayers.opponent.hand.size}) | ")
-    print(s"Grave (${turnPlayers.opponent.grave.size}) | ")
-    print(s"Banished (${turnPlayers.opponent.banished.size}) | ")
+    print(s"Grave (${turnPlayers.opponent.field.graveyard.size}) | ")
+    print(s"Banished (${turnPlayers.opponent.field.banished.size}) | ")
     println(s"Extra Deck (${turnPlayers.opponent.extraDeck.size})")
 
     for (cards <- Seq(turnPlayers.opponent.field.spellTrapZones, turnPlayers.opponent.field.monsterZones)) {
@@ -99,8 +98,8 @@ class CommandLineHumanPlayer(val name: String) extends Player {
     println(turnPlayers.turnPlayer.hand.map(_.name).mkString(" | "))
 
     print(s"Deck (${turnPlayers.turnPlayer.deck.remaining}) | ")
-    print(s"Grave (${turnPlayers.turnPlayer.grave.size}) | ")
-    print(s"Banished (${turnPlayers.turnPlayer.banished.size}) | ")
+    print(s"Grave (${turnPlayers.turnPlayer.field.graveyard.size}) | ")
+    print(s"Banished (${turnPlayers.turnPlayer.field.banished.size}) | ")
     println(s"Extra Deck (${turnPlayers.turnPlayer.extraDeck.size})")
     println(s"Turn player ${turnPlayers.turnPlayer} (${turnPlayers.turnPlayer.lifePoints})\n")
   }
@@ -162,15 +161,27 @@ class CommandLineHumanPlayer(val name: String) extends Player {
   }
 
   // TODO: selecting summon material needs to enforce further constraints, e.g. level 5 cannot tribute 2 monsters, 7 requires 2 not just 1
-  override def selectSummonMaterial(toSummon: Monster, possibleMaterials: Seq[Monster])(implicit gameState: GameState) = {
-    println(s"To summon $toSummon, please enter comma separated monster(s) to use.")
+  override def selectSummonMaterial(toSummon: Monster, summonCriteria: SummonCriteria, possibleMaterials: Seq[Monster])(implicit gameState: GameState) = {
+    summonCriteria match {
+      case TributeSummonCriteria(count) if possibleMaterials.size == count =>
+        println("Singular choice, automatically tributing " + possibleMaterials)
+        possibleMaterials
+      case _ =>
+        println(s"To summon $toSummon, please enter comma separated monster(s) to use.")
 
-    for ((monster, i) <- possibleMaterials.zipWithIndex) {
-      println(s"($i) $monster")
+        for ((monster, i) <- possibleMaterials.zipWithIndex) {
+          println(s"($i) $monster")
+        }
+
+        var choices = StdIn.readLine("> ").split(",").map(_.toInt).map(possibleMaterials(_))
+        while (!summonCriteria.validSelection(choices)) {
+          println(s"Selection $choices was not valid for $summonCriteria.")
+          choices = StdIn.readLine("> ").split(",").map(_.toInt).map(possibleMaterials(_))
+        }
+
+        choices
     }
 
-    val choices = StdIn.readLine("> ").split(",").map(_.toInt)
-    choices.map(possibleMaterials(_))
   }
 
   override def selectAttackTarget(attacker: Monster, potentialTargets: Seq[Monster])(implicit gameState: GameState): Monster = {
@@ -190,6 +201,6 @@ class PassivePlayer extends Player {
   override def chooseAction(actions: Seq[Action])(implicit gameState: GameState) = actions.head
   override def consentToEnd(implicit gameState: GameState): Boolean = true
   override def enterBattlePhase(implicit gameState: GameState): Boolean = false
-  override def selectSummonMaterial(toSummon: Monster, possibleMaterials: Seq[Monster])(implicit gameState: GameState) = ???
+  override def selectSummonMaterial(toSummon: Monster, summonCriteria: SummonCriteria, possibleMaterials: Seq[Monster])(implicit gameState: GameState) = ???
   override def selectAttackTarget(attacker: Monster, potentialTargets: Seq[Monster])(implicit gameState: GameState): Monster = ???
 }

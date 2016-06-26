@@ -51,7 +51,11 @@ trait Monster extends Card {
       case InHand if !hasNormalSummonedThisTurn =>
         maybeLevel.map { level =>
           if (level <= 4) {
-            Seq(new NormalSummonImpl(this), new SetAsMonsterImpl(this))
+            if (owner.field.hasFreeMonsterZone) {
+              Seq(new NormalSummonImpl(this), new SetAsMonsterImpl(this))
+            } else {
+              Seq()
+            }
           } else {
             val controlledMonsters = owner.field.monsterZones.count(_.isDefined)
             val canTribute = if (level <= 6) {
