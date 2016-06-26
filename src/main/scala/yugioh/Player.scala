@@ -160,7 +160,6 @@ class CommandLineHumanPlayer(val name: String) extends Player {
     }
   }
 
-  // TODO: selecting summon material needs to enforce further constraints, e.g. level 5 cannot tribute 2 monsters, 7 requires 2 not just 1
   override def selectSummonMaterial(toSummon: Monster, summonCriteria: SummonCriteria, possibleMaterials: Seq[Monster])(implicit gameState: GameState) = {
     summonCriteria match {
       case TributeSummonCriteria(count) if possibleMaterials.size == count =>
