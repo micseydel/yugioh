@@ -30,19 +30,16 @@ trait Monster extends Card {
     */
   override def actions(implicit gameState: GameState) = {
     gameState match {
-      case gameState@GameState(MutableGameState(_, hasNormalSummonedThisTurn, _), turnPlayers, fastEffectTiming, phase, step, _) =>
-        fastEffectTiming match {
-          case OpenGameState =>
-            phase match {
-              case MainPhase | MainPhase2 =>
-                mainPhaseActions(hasNormalSummonedThisTurn)
-              case BattlePhase =>
-                battlePhaseActions(gameState)
-              case _ =>
-                Seq()
-            }
-          case _ => Seq()
+      case GameState(MutableGameState(_, hasNormalSummonedThisTurn, _), _, OpenGameState, phase, _, _) =>
+        phase match {
+          case MainPhase | MainPhase2 =>
+            mainPhaseActions(hasNormalSummonedThisTurn)
+          case BattlePhase =>
+            battlePhaseActions
+          case _ =>
+            Seq()
         }
+      case _ => Seq()
     }
   }
 
@@ -88,7 +85,7 @@ trait Monster extends Card {
     }
   }
 
-  private def battlePhaseActions(gameState: GameState): Seq[Action] = {
+  private def battlePhaseActions(implicit gameState: GameState): Seq[Action] = {
     gameState match {
       case GameState(_, TurnPlayers(_, opponent), OpenGameState, _, BattleStep, null) =>
         maybeMonsterControlledState.map { controlledState =>

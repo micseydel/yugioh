@@ -57,6 +57,7 @@ class DiscardForHandSizeLimitImpl extends DiscardForHandSizeLimit {
 
     for (choice <- player.cardToDiscardForHandSizeLimit) {
       val card = player.hand.remove(player.hand.indexOf(choice))
+      card.location = InGraveyard
       card.owner.field.graveyard.append(card)
     }
   }

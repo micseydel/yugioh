@@ -67,6 +67,8 @@ class CommandLineHumanPlayer(val name: String) extends Player {
   events.observe { event =>
     event match {
       case TurnStartEvent(turnPlayers, mutableGameState) =>
+        println(s"\nTurn #${mutableGameState.turnCount}")
+        println("================================")
         showField(turnPlayers, mutableGameState)
       case phaseStart: PhaseStartEvent =>
         println(s"Entering ${phaseStart.phase}")
