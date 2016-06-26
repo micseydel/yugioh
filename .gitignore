@@ -6,3 +6,6 @@ yugioh.iml
 # filename I use to review diffs between commits
 checkit.diff
 
+# grep'd TODOs
+checkit.todo
+
