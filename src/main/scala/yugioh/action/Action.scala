@@ -1,16 +1,19 @@
 package yugioh.action
 
 import yugioh._
+import yugioh.card.{Card, Effect}
 import yugioh.events.{DefaultEventsComponent, Event, EventsComponent}
 
 trait Action extends Event {
   self: EventsComponent =>
 
+  val player: Player
+
   private var previouslyCalled = false
 
   def execute()(implicit gameState: GameState): Action = {
     if (previouslyCalled) {
-      throw new IllegalStateException("Action " + this + " was already executed.")
+      throw new IllegalStateException(s"Action $this was already executed.")
     }
 
     doAction()
@@ -21,9 +24,9 @@ trait Action extends Event {
     this
   }
 
-  def undo()(implicit gameState: GameState): Unit = throw new NotImplementedError("Undo has not been implemented for " + this)
+  def undo()(implicit gameState: GameState): Unit = throw new NotImplementedError(s"Undo has not been implemented for $this")
 
-  def redo()(implicit gameState: GameState): Unit = throw new NotImplementedError("Redo has not been implemented for " + this)
+  def redo()(implicit gameState: GameState): Unit = throw new NotImplementedError(s"Redo has not been implemented for $this")
 
   protected def doAction()(implicit gameState: GameState): Unit
 }
@@ -31,17 +34,31 @@ trait Action extends Event {
 trait InherentAction extends Action with DefaultEventsComponent
 
 /**
-  * Composition of InherentAction(s).
-  *
-  * TODO: should also have activation condition, cost, and effect.
+  * This can either be a card or an effect activation (the former may include the latter).
   */
-trait Activation extends Action with DefaultEventsComponent
-
-trait PassPriority extends InherentAction {
-  override def toString = "PassPriority"
+sealed trait ExistsInAChainAction extends Action with DefaultEventsComponent {
+  val card: Card
+  def resolve()(implicit gameState: GameState)
 }
 
-class PassPriorityImpl extends PassPriority {
+/**
+  * Effect does not have to be activated for some continuous spells and traps.
+  */
+case class CardActivation(card: Card, maybeEffect: Option[Effect]) extends ExistsInAChainAction {
+  override protected def doAction()(implicit gameState: GameState): Unit = maybeEffect.foreach(_.Activation.activate())
+  override val player = card.owner
+
+  override def resolve()(implicit gameState: GameState): Unit = maybeEffect.foreach(effect => effect.Resolution.resolve())
+}
+
+case class EffectActivation(card: Card, effect: Effect, player: Player) extends ExistsInAChainAction {
+  override protected def doAction()(implicit gameState: GameState): Unit = effect.Activation.activate()
+
+  override def resolve()(implicit gameState: GameState): Unit = effect.Resolution.resolve()
+}
+
+case class PassPriority(player: Player) extends InherentAction {
+  override def toString = "PassPriority"
   override def doAction()(implicit gameState: GameState) = ()
 }
 
@@ -51,14 +68,12 @@ trait Discard extends InherentAction
 
 trait DiscardForHandSizeLimit extends Discard
 
-class DiscardForHandSizeLimitImpl extends DiscardForHandSizeLimit {
-  override protected def doAction()(implicit gameState: GameState) = {
-    val player = gameState.turnPlayers.turnPlayer
+class DiscardForHandSizeLimitImpl(implicit gameState: GameState) extends DiscardForHandSizeLimit {
+  val player = gameState.turnPlayers.turnPlayer
 
+  override protected def doAction()(implicit gameState: GameState) = {
     for (choice <- player.cardToDiscardForHandSizeLimit) {
-      val card = player.hand.remove(player.hand.indexOf(choice))
-      card.location = InGraveyard
-      card.owner.field.graveyard.append(card)
+      choice.sendToGrave()
     }
   }
 }
@@ -67,9 +82,10 @@ trait Draw extends InherentAction
 
 trait DrawForTurn extends Draw
 
-class DrawForTurnImpl extends DrawForTurn {
+class DrawForTurnImpl(implicit gameState: GameState) extends DrawForTurn {
+  val player = gameState.turnPlayers.turnPlayer
+
   override protected def doAction()(implicit gameState: GameState): Unit = {
     gameState.turnPlayers.turnPlayer.draw()
   }
 }
-

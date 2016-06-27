@@ -7,19 +7,19 @@ import yugioh.card.Card
 import yugioh.card.state.{MonsterControlledState, MonsterFieldState}
 
 trait Monster extends Card {
-  val printedAttack: Int
-  val printedDefense: Int
-  val maybePrintedLevel: Option[Int]
-  val maybePrintedRank: Option[Int] = None
-  val printedAttribute: Attribute
-  val printedType: Type
+  val PrintedAttack: Int
+  val PrintedDefense: Int
+  val MaybePrintedLevel: Option[Int]
+  val MaybePrintedRank: Option[Int] = None
+  val PrintedAttribute: Attribute
+  val PrintedType: Type
 
-  def attack: Int = printedAttack
-  def defense: Int = printedDefense
-  def maybeLevel: Option[Int] = maybePrintedLevel
-  def maybeRank: Option[Int] = maybePrintedRank
-  def attribute: Attribute = printedAttribute
-  def monsterType: Type = printedType
+  def attack: Int = PrintedAttack
+  def defense: Int = PrintedDefense
+  def maybeLevel: Option[Int] = MaybePrintedLevel
+  def maybeRank: Option[Int] = MaybePrintedRank
+  def attribute: Attribute = PrintedAttribute
+  def monsterType: Type = PrintedType
 
   var maybeMonsterFieldState: Option[MonsterFieldState] = None
 
@@ -86,8 +86,9 @@ trait Monster extends Card {
   }
 
   private def battlePhaseActions(implicit gameState: GameState): Seq[Action] = {
+    val Controller = controller // for pattern matching
     gameState match {
-      case GameState(_, TurnPlayers(_, opponent), OpenGameState, _, BattleStep, null) =>
+      case GameState(_, TurnPlayers(Controller, opponent), OpenGameState, _, BattleStep, _) =>
         maybeMonsterControlledState.map { controlledState =>
           if (!controlledState.attackedThisTurn && controlledState.position == Attack) {
             val potentialTargets = opponent.field.monsterZones.toSeq.flatten
@@ -132,8 +133,8 @@ trait FusionMonster extends ExtraDeckMonster
 trait SynchroMonster extends ExtraDeckMonster
 
 trait XyzMonster extends ExtraDeckMonster {
-  override val maybePrintedLevel = None
-  override val maybePrintedRank = ??? // TODO LOW: nicer way to be convenient elsewhere but force rank definition here?
+  override val MaybePrintedLevel = None
+  override val MaybePrintedRank = ??? // TODO LOW: nicer way to be convenient elsewhere but force rank definition here?
 }
 
 trait PendulumMonster extends Monster

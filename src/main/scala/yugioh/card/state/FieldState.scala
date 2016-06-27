@@ -5,11 +5,7 @@ package yugioh.card.state
   */
 trait FieldState
 
-trait MonsterFieldState extends FieldState {
-  var howSummoned: HowSummoned = NotSummoned
-}
-
-class MonsterFieldStateImpl(howSummoned: HowSummoned) extends MonsterFieldState
+case class MonsterFieldState(var howSummoned: HowSummoned) extends FieldState
 
 
 sealed trait HowSummoned

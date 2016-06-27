@@ -22,7 +22,7 @@ case object DrawPhase extends Phase {
     if (gameState.mutableGameState.turnCount > 1) {
       val drawForTurn = new DrawForTurnImpl
       drawForTurn.execute()
-      FastEffectTiming.loop(newGameState, start = CheckForTrigger(drawForTurn))
+      FastEffectTiming.loop(newGameState, start = CheckForTrigger(List(drawForTurn)))
     } else {
       FastEffectTiming.loop(newGameState)
     }

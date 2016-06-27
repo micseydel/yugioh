@@ -6,17 +6,15 @@ import yugioh.card.monster.Monster
 import yugioh.card.state.ControlledState
 
 trait Card {
-  val printedName: String
+  val PrintedName: String
   val owner: Player
   var location: Location = InDeck
 
+  var controller: Player = owner
   var maybeControlledState: Option[ControlledState] = None
-
-  def controller: Player = owner
-
   def actions(implicit gameState: GameState): Seq[Action]
 
-  def name: String = printedName
+  def name: String = PrintedName
 
   override def toString = name
 
@@ -33,9 +31,13 @@ trait Card {
       }
     }.getOrElse(name)
   }
+
+  def sendToGrave() = owner.field.sendToGrave(this)
 }
 
-trait SpellOrTrap extends Card
+trait SpellOrTrap extends Card {
+  val effects: List[Effect]
+}
 
 sealed trait Delegate
 

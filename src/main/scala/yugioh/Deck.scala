@@ -34,6 +34,7 @@ trait Deck {
 class TestDeck(val owner: Player) extends Deck {
   // TODO: spells+traps for the deck
   val cards = ListBuffer(
+    // Monsters
     AncientElf,
     Ansatsu,
     BaronOfTheFiendSword,
@@ -62,6 +63,28 @@ class TestDeck(val owner: Player) extends Deck {
     TrapMaster,
     WallOfIllusion,
     WingedDragonGuardOftheFortressNo1,
-    WittyPhantom
+    WittyPhantom,
+    // Traps
+    //CastleWalls
+    //DragonCaptureJar
+    //Reinforcements
+    //ReverseTrap
+    //TrapHole
+    //UltimateOffering
+    //Waboku
+    // Spells
+    //BookOfSecretArts
+    //CardDestruction
+    //ChangeOfHeart
+    //DarkHole
+    //DeSpell
+    DianKetoTheCureMaster
+    //Fissure
+    //LastWill
+    //MonsterReborn
+    //RemoveTrap
+    //SoulExchange
+    //SwordOfDarkDestruction
+    //Yami
   ).map(_(owner))
 }

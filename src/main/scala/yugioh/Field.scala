@@ -1,8 +1,9 @@
 package yugioh
 
 import yugioh.action.Action
-import yugioh.card.monster.{Monster, PendulumMonster}
+import yugioh.card.monster.{Monster, PendulumMonster, Position}
 import yugioh.card.spell.FieldSpell
+import yugioh.card.state.{HowSummoned, MonsterControlledState, MonsterFieldState, SpellTrapControlledState}
 import yugioh.card.{Card, SpellOrTrap}
 
 import scala.collection.mutable.ListBuffer
@@ -26,8 +27,8 @@ trait Field {
 
   def hasFreeSpellOrTrapZone: Boolean = spellTrapZones.exists(_.isEmpty)
 
-  def placeAsMonster(monster: Monster, positionPreference: Option[Int] = None): InMonsterZone
-  def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, positionPreference: Option[Int] = None): InSpellTrapZone
+  def placeAsMonster(monster: Monster, position: Position, howSummoned: HowSummoned, positionPreference: Option[Int] = None): InMonsterZone
+  def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, faceup: Boolean, positionPreference: Option[Int] = None): InSpellTrapZone
 
   def sendToGrave(card: Card): Unit
 
@@ -38,11 +39,14 @@ trait Field {
 }
 
 class FieldImpl extends Field {
-  override def placeAsMonster(monster: Monster, locationPreference: Option[Int]) = {
+  override def placeAsMonster(monster: Monster, position: Position, howSummoned: HowSummoned, locationPreference: Option[Int]) = {
+    monster.maybeControlledState = Some(new MonsterControlledState(position))
+    monster.maybeMonsterFieldState = Some(new MonsterFieldState(howSummoned))
     placeAsHelper(monsterZones, InMonsterZone.MonsterZones)(monster, locationPreference)
   }
 
-  override def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, locationPreference: Option[Int]) = {
+  override def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, faceup: Boolean, locationPreference: Option[Int]) = {
+    spellOrTrap.maybeControlledState = Some(SpellTrapControlledState(faceup))
     placeAsHelper(spellTrapZones, InSpellTrapZone.SpellTrapZones)(spellOrTrap, locationPreference)
   }
 
@@ -127,11 +131,17 @@ class FieldImpl extends Field {
 
 sealed trait Location
 
+/**
+  * Makes the objects callable to see if a card has them as the location or not.
+  */
+private trait SimpleLocationChecker {
+  def apply(card: Card): Boolean = card.location == this
+}
 
-case object InDeck extends Location
-case object InHand extends Location
-case object InGraveyard extends Location
-case object InBanished extends Location
+case object InDeck extends Location with SimpleLocationChecker
+case object InHand extends Location with SimpleLocationChecker
+case object InGraveyard extends Location with SimpleLocationChecker
+case object InBanished extends Location with SimpleLocationChecker
 
 sealed trait InFieldZone extends Location
 
@@ -146,6 +156,7 @@ case object InMonster4 extends InMonsterZone
 
 object InMonsterZone {
   val MonsterZones: Seq[InMonsterZone] = Seq(InMonster0, InMonster1, InMonster2, InMonster3, InMonster4)
+  def apply(location: Location): Boolean = MonsterZones.contains(location)
 }
 
 sealed trait InSpellTrapZone extends InFieldZone
@@ -157,6 +168,7 @@ case object InSpellTrap4 extends InSpellTrapZone
 
 object InSpellTrapZone {
   val SpellTrapZones: Seq[InSpellTrapZone] = Seq(InSpellTrap0, InSpellTrap1, InSpellTrap2, InSpellTrap3, InSpellTrap4)
+  def apply(card: Card): Boolean = SpellTrapZones.contains(card.location)
 }
 
 sealed trait InExtraDeck extends InFieldZone

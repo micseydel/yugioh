@@ -10,6 +10,7 @@ trait SwitchPosition extends InherentAction {
 }
 
 class SwitchPositionImpl(override val monster: Monster) extends SwitchPosition {
+  val player = monster.owner
   override protected def doAction()(implicit gameState: GameState) = {
     for (controlledState <- monster.maybeMonsterControlledState) {
       controlledState.manuallyChangedPositionsThisTurn = true

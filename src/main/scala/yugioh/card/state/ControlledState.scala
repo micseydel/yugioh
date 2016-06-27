@@ -7,6 +7,8 @@ trait ControlledState {
   def faceup: Boolean
 }
 
+case class SpellTrapControlledState(var faceup: Boolean) extends ControlledState
+
 case class MonsterControlledState(
   var position: Position,
   var attackedThisTurn: Boolean = false,

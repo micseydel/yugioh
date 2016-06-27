@@ -63,7 +63,7 @@ case object BattleStep extends BattlePhaseStep with DefaultEventsComponent {
 
 case class BattleStepWithPendingAttack(battle: Battle) extends BattlePhaseStep with DefaultEventsComponent {
   override def next(gameState: GameState): BattlePhaseStep = {
-    FastEffectTiming.loop(gameState.copy(step = this), start = ChainRules(None))
+    FastEffectTiming.loop(gameState.copy(step = this), start = CheckForTrigger(Nil))
     // TODO: replays - BattleStepWithPendingAttack -> BattleStep instead of DamageStep
     DamageStep(battle)
   }
@@ -192,7 +192,7 @@ case class AfterDamageCalculation(destroyed: Set[Monster]) extends DamageStepSub
 case class EndOfTheDamageStep(destroyed: Set[Monster]) extends DamageStepSubStep {
   override def performAndGetNext(battle: Battle)(implicit gameState: GameState) = {
     for (monster <- destroyed) {
-      monster.owner.field.sendToGrave(monster)
+      monster.sendToGrave()
     }
 
     FastEffectTiming.loop(gameState.copy(step = this))

@@ -6,6 +6,7 @@ import yugioh.card.monster.Monster
 import yugioh.events.{DefaultEventsComponent, Event}
 
 sealed trait DeclareAttack extends InherentAction {
+  val player = attacker.controller
   val attacker: Monster
 }
 

@@ -8,44 +8,44 @@ object EffectMonsters
 
 object TheSternMystic extends InstantiableCard[TheSternMystic]
 class TheSternMystic(val owner: Player) extends FlipMonster {
-  override val printedName = "The Stern Mystic"
-  override val printedAttack = 1500
-  override val printedDefense = 1200
-  override val maybePrintedLevel = Some(4)
-  override val printedAttribute = Light
-  override val printedType = Spellcaster
+  override val PrintedName = "The Stern Mystic"
+  override val PrintedAttack = 1500
+  override val PrintedDefense = 1200
+  override val MaybePrintedLevel = Some(4)
+  override val PrintedAttribute = Light
+  override val PrintedType = Spellcaster
   // TODO: TheSternMystic effect implementation - http://yugioh.wikia.com/wiki/The_Stern_Mystic
 }
 
 object WallOfIllusion extends InstantiableCard[WallOfIllusion]
 class WallOfIllusion(val owner: Player) extends EffectMonster {
-  override val printedName = "Wall of Illusion"
-  override val printedAttack = 1000
-  override val printedDefense = 1850
-  override val maybePrintedLevel = Some(4)
-  override val printedAttribute = Dark
-  override val printedType = Fiend
+  override val PrintedName = "Wall of Illusion"
+  override val PrintedAttack = 1000
+  override val PrintedDefense = 1850
+  override val MaybePrintedLevel = Some(4)
+  override val PrintedAttribute = Dark
+  override val PrintedType = Fiend
   // TODO: WallOfIllusion effect implementation - http://yugioh.wikia.com/wiki/The_Stern_Mystic
 }
 
 object TrapMaster extends InstantiableCard[TrapMaster]
 class TrapMaster(val owner: Player) extends FlipMonster {
-  override val printedName = "Trap Master"
-  override val printedAttack = 500
-  override val printedDefense = 1100
-  override val maybePrintedLevel = Some(3)
-  override val printedAttribute = Earth
-  override val printedType = Warrior
+  override val PrintedName = "Trap Master"
+  override val PrintedAttack = 500
+  override val PrintedDefense = 1100
+  override val MaybePrintedLevel = Some(3)
+  override val PrintedAttribute = Earth
+  override val PrintedType = Warrior
   // TODO: TrapMaster effect implementation - http://yugioh.wikia.com/wiki/Trap_Master
 }
 
 object ManEaterBug extends InstantiableCard[ManEaterBug]
 class ManEaterBug(val owner: Player) extends FlipMonster {
-  override val printedName = "Man-Eater Bug"
-  override val printedAttack = 450
-  override val printedDefense = 600
-  override val maybePrintedLevel = Some(2)
-  override val printedAttribute = Earth
-  override val printedType = Insect
+  override val PrintedName = "Man-Eater Bug"
+  override val PrintedAttack = 450
+  override val PrintedDefense = 600
+  override val MaybePrintedLevel = Some(2)
+  override val PrintedAttribute = Earth
+  override val PrintedType = Insect
   // TODO: ManEaterBug effect implementation - http://yugioh.wikia.com/wiki/Man-Eater_Bug
 }

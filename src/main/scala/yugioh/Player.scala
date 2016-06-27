@@ -57,7 +57,17 @@ trait Player {
   override def toString = name
 }
 
-case class TurnPlayers(turnPlayer: Player, opponent: Player)
+case class TurnPlayers(turnPlayer: Player, opponent: Player) {
+  def other(player: Player): Player = {
+    if (player == turnPlayer) {
+      opponent
+    } else if (player == opponent) {
+      turnPlayer
+    } else {
+      throw new IllegalArgumentException("Must be called with a turn player.")
+    }
+  }
+}
 
 class CommandLineHumanPlayer(val name: String) extends Player {
   Me: EventsComponent =>
