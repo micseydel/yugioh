@@ -134,7 +134,7 @@ sealed trait Location
 /**
   * Makes the objects callable to see if a card has them as the location or not.
   */
-private trait SimpleLocationChecker {
+sealed trait SimpleLocationChecker extends Location {
   def apply(card: Card): Boolean = card.location == this
 }
 
