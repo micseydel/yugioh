@@ -100,7 +100,7 @@ class CommandLineHumanPlayer(val name: String) extends Player {
       println(cards.map(_.map(_.toString(this)).getOrElse("Empty")).mkString(" | "))
     }
 
-    println("   ---")
+    println("                 ---")
 
     for (cards <- Seq(turnPlayers.turnPlayer.field.monsterZones, turnPlayers.turnPlayer.field.spellTrapZones)) {
       println(cards.map(_.map(_.toString(this)).getOrElse("Empty")).mkString(" | "))
