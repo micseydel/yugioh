@@ -99,3 +99,13 @@ class DrawForTurnImpl(implicit gameState: GameState) extends DrawForTurn {
     gameState.turnPlayers.turnPlayer.draw()
   }
 }
+
+trait Destroy extends InherentAction {
+  val card: Card
+}
+
+case class DestroyImpl(override val player: Player, override val card: Card) extends Destroy {
+  override protected def doAction()(implicit gameState: GameState): Unit = {
+    card.destroy()
+  }
+}
