@@ -65,26 +65,26 @@ class TestDeck(val owner: Player) extends Deck {
     WingedDragonGuardOftheFortressNo1,
     WittyPhantom,
     // Traps
-    //CastleWalls
-    //DragonCaptureJar
-    //Reinforcements
-    //ReverseTrap
-    //TrapHole
-    //UltimateOffering
-    //Waboku
+    //CastleWalls,
+    //DragonCaptureJar,
+    //Reinforcements,
+    //ReverseTrap,
+    //TrapHole,
+    //UltimateOffering,
+    //Waboku,
     // Spells
-    //BookOfSecretArts
-    //CardDestruction
+    //BookOfSecretArts,
+    CardDestruction,
     //ChangeOfHeart
-    //DarkHole
+    DarkHole,
     //DeSpell
     DianKetoTheCureMaster,
     //Fissure
     //LastWill
     MonsterReborn
-    //RemoveTrap
-    //SoulExchange
-    //SwordOfDarkDestruction
+    //RemoveTrap,
+    //SoulExchange,
+    //SwordOfDarkDestruction,
     //Yami
   ).map(_(owner))
 }

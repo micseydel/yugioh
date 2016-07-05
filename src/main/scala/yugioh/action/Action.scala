@@ -66,6 +66,12 @@ trait SetCard extends InherentAction
 
 trait Discard extends InherentAction
 
+class DiscardImpl(card: Card) extends Discard {
+  override val player: Player = card.controller
+
+  override protected def doAction()(implicit gameState: GameState): Unit = card.discard()
+}
+
 trait DiscardForHandSizeLimit extends Discard
 
 class DiscardForHandSizeLimitImpl(implicit gameState: GameState) extends DiscardForHandSizeLimit {
@@ -79,6 +85,10 @@ class DiscardForHandSizeLimitImpl(implicit gameState: GameState) extends Discard
 }
 
 trait Draw extends InherentAction
+
+class DrawImpl(override val player: Player, howMany: Int = 1) extends Draw {
+  override protected def doAction()(implicit gameState: GameState): Unit = player.draw(howMany)
+}
 
 trait DrawForTurn extends Draw
 

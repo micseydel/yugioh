@@ -32,6 +32,8 @@ trait Field {
 
   def destroy(card: Card): Unit = sendToGrave(card) // TODO: this should *also* emit an event about destruction; must consider Bottomless Trap Hole
 
+  def discard(card: Card): Unit = sendToGrave(card)
+
   def sendToGrave(card: Card): Unit
 
   /**
