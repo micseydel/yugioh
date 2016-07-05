@@ -30,6 +30,8 @@ trait Field {
   def placeAsMonster(monster: Monster, position: Position, howSummoned: HowSummoned, positionPreference: Option[Int] = None): InMonsterZone
   def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, faceup: Boolean, positionPreference: Option[Int] = None): InSpellTrapZone
 
+  def destroy(card: Card): Unit = sendToGrave(card) // TODO: this should *also* emit an event about destruction; must consider Bottomless Trap Hole
+
   def sendToGrave(card: Card): Unit
 
   /**

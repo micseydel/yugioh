@@ -32,6 +32,7 @@ trait Card {
     }.getOrElse(name)
   }
 
+  def destroy() = Owner.field.destroy(this)
   def sendToGrave() = Owner.field.sendToGrave(this)
 }
 

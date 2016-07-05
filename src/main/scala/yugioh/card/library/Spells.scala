@@ -8,7 +8,30 @@ import yugioh.{Criteria, GameState, InGraveyard, Player}
 
 
 // this just makes IDE navigation easier
-object Spells
+private object Spells
+
+object DarkHole extends InstantiableCard[DarkHole]
+class DarkHole(val Owner: Player) extends Spell {
+  override val PrintedName = "Dark Hole"
+
+  override val effects: List[Effect] = List(new SpellEffect {
+    override val Card: Card = DarkHole.this
+
+    override val Conditions = new Conditions {
+      override def met(implicit gameState: GameState): Boolean = {
+        gameState.turnPlayers.both.flatMap(_.field.monsterZones).flatten.nonEmpty
+      }
+    }
+
+    override val Resolution = new Resolution {
+      override def resolve()(implicit gameState: GameState): Unit = {
+        for (monster <- gameState.turnPlayers.both.flatMap(_.field.monsterZones).flatten) {
+          monster.destroy()
+        }
+      }
+    }
+  })
+}
 
 object DianKetoTheCureMaster extends InstantiableCard[DianKetoTheCureMaster]
 class DianKetoTheCureMaster(val Owner: Player) extends Spell {
