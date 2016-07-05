@@ -46,7 +46,7 @@ sealed trait ExistsInAChainAction extends Action with DefaultEventsComponent {
   */
 case class CardActivation(card: Card, maybeEffect: Option[Effect]) extends ExistsInAChainAction {
   override protected def doAction()(implicit gameState: GameState): Unit = maybeEffect.foreach(_.Activation.activate())
-  override val player = card.owner
+  override val player = card.Owner
 
   override def resolve()(implicit gameState: GameState): Unit = maybeEffect.foreach(effect => effect.Resolution.resolve())
 }
@@ -62,7 +62,7 @@ case class PassPriority(player: Player) extends InherentAction {
   override def doAction()(implicit gameState: GameState) = ()
 }
 
-trait Set extends InherentAction
+trait SetCard extends InherentAction
 
 trait Discard extends InherentAction
 

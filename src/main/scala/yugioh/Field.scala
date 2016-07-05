@@ -60,19 +60,19 @@ class FieldImpl extends Field {
 
     // remove it from its previous location
     card.location match {
-      case InHand => remove(card.owner.hand, card)
-      case InGraveyard => remove(card.owner.field.graveyard, card)
-      case InBanished => remove(card.owner.field.banished, card)
+      case InHand => remove(card.Owner.hand, card)
+      case InGraveyard => remove(card.Owner.field.graveyard, card)
+      case InBanished => remove(card.Owner.field.banished, card)
       case monsterZone: InMonsterZone => removeFromMonsterZone(monsterZone)
       case spellTrapZone: InSpellTrapZone => removeFromSpellTrapZone(spellTrapZone)
       case InFieldSpell => fieldSpellZone = None
       case InLeftPendulumZone => leftPendulumZone = None
       case InRightPendulumZone => rightPendulumZone = None
       case InDeck =>
-        card.owner.deck.cards.remove(card.owner.deck.cards.indexOf(card))
-        card.owner.deck.shuffle()
+        card.Owner.deck.cards.remove(card.Owner.deck.cards.indexOf(card))
+        card.Owner.deck.shuffle()
       case InExtraDeck =>
-        card.owner.extraDeck.remove(card.owner.extraDeck.indexOf(card))
+        card.Owner.extraDeck.remove(card.Owner.extraDeck.indexOf(card))
     }
 
     val toWhere = destinationLocation(position)
@@ -101,13 +101,13 @@ class FieldImpl extends Field {
     // remove from current location
     card.location match {
       case InDeck =>
-        card.owner.deck.cards.remove(card.owner.deck.cards.indexOf(card))
+        card.Owner.deck.cards.remove(card.Owner.deck.cards.indexOf(card))
       case InHand =>
-        card.owner.hand.remove(card.owner.hand.indexOf(card))
+        card.Owner.hand.remove(card.Owner.hand.indexOf(card))
       case InBanished =>
-        card.owner.field.banished.remove(card.owner.field.banished.indexOf(card))
+        card.Owner.field.banished.remove(card.Owner.field.banished.indexOf(card))
       case InExtraDeck =>
-        card.owner.extraDeck.remove(card.owner.extraDeck.indexOf(card))
+        card.Owner.extraDeck.remove(card.Owner.extraDeck.indexOf(card))
       case InRightPendulumZone =>
         rightPendulumZone = None
       case InLeftPendulumZone =>

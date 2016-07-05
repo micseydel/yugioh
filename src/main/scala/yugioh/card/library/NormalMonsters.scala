@@ -7,7 +7,7 @@ import yugioh.card.monster._
 object NormalMonsters
 
 object MysticalElf extends InstantiableCard[MysticalElf]
-class MysticalElf(val owner: Player) extends NormalMonster {
+class MysticalElf(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Mystical Elf"
   override val PrintedAttack = 800
   override val PrintedDefense = 2000
@@ -17,7 +17,7 @@ class MysticalElf(val owner: Player) extends NormalMonster {
 }
 
 object FeralImp extends InstantiableCard[FeralImp]
-class FeralImp(val owner: Player) extends NormalMonster {
+class FeralImp(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Feral Imp"
   override val PrintedAttack = 1300
   override val PrintedDefense = 1400
@@ -27,7 +27,7 @@ class FeralImp(val owner: Player) extends NormalMonster {
 }
 
 object WingedDragonGuardOftheFortressNo1 extends InstantiableCard[WingedDragonGuardOftheFortressNo1]
-class WingedDragonGuardOftheFortressNo1(val owner: Player) extends NormalMonster {
+class WingedDragonGuardOftheFortressNo1(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Winged Dragon, Guardian of the Fortress #1"
   override val PrintedAttack = 1400
   override val PrintedDefense = 1200
@@ -37,7 +37,7 @@ class WingedDragonGuardOftheFortressNo1(val owner: Player) extends NormalMonster
 }
 
 object SummonedSkull extends InstantiableCard[SummonedSkull]
-class SummonedSkull(val owner: Player) extends NormalMonster {
+class SummonedSkull(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Summoned Skull"
   override val PrintedAttack = 2500
   override val PrintedDefense = 1200
@@ -47,7 +47,7 @@ class SummonedSkull(val owner: Player) extends NormalMonster {
 }
 
 object BeaverWarrior extends InstantiableCard[BeaverWarrior]
-class BeaverWarrior(val owner: Player) extends NormalMonster {
+class BeaverWarrior(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Beaver Warrior"
   override val PrintedAttack = 1200
   override val PrintedDefense = 1500
@@ -57,7 +57,7 @@ class BeaverWarrior(val owner: Player) extends NormalMonster {
 }
 
 object DarkMagician extends InstantiableCard[DarkMagician]
-class DarkMagician(val owner: Player) extends NormalMonster {
+class DarkMagician(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Dark Magician"
   override val PrintedAttack = 2500
   override val PrintedDefense = 2100
@@ -67,7 +67,7 @@ class DarkMagician(val owner: Player) extends NormalMonster {
 }
 
 object GaiaTheFierceKnight extends InstantiableCard[GaiaTheFierceKnight]
-class GaiaTheFierceKnight(val owner: Player) extends NormalMonster {
+class GaiaTheFierceKnight(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Gaia The Fierce Knight"
   override val PrintedAttack = 2300
   override val PrintedDefense = 2100
@@ -77,7 +77,7 @@ class GaiaTheFierceKnight(val owner: Player) extends NormalMonster {
 }
 
 object CurseOfDragon extends InstantiableCard[CurseOfDragon]
-class CurseOfDragon(val owner: Player) extends NormalMonster {
+class CurseOfDragon(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Curse of Dragon"
   override val PrintedAttack = 2000
   override val PrintedDefense = 1500
@@ -87,7 +87,7 @@ class CurseOfDragon(val owner: Player) extends NormalMonster {
 }
 
 object CelticGuard extends InstantiableCard[CelticGuard]
-class CelticGuard(val owner: Player) extends NormalMonster {
+class CelticGuard(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Celtic Guard"
   override val PrintedAttack = 1400
   override val PrintedDefense = 1200
@@ -97,7 +97,7 @@ class CelticGuard(val owner: Player) extends NormalMonster {
 }
 
 object MammothGraveyard extends InstantiableCard[MammothGraveyard]
-class MammothGraveyard(val owner: Player) extends NormalMonster {
+class MammothGraveyard(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Mammoth Graveyard"
   override val PrintedAttack = 1200
   override val PrintedDefense = 800
@@ -107,7 +107,7 @@ class MammothGraveyard(val owner: Player) extends NormalMonster {
 }
 
 object GreatWhite extends InstantiableCard[GreatWhite]
-class GreatWhite(val owner: Player) extends NormalMonster {
+class GreatWhite(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Great White"
   override val PrintedAttack = 1600
   override val PrintedDefense = 800
@@ -117,7 +117,7 @@ class GreatWhite(val owner: Player) extends NormalMonster {
 }
 
 object SilverFang extends InstantiableCard[SilverFang]
-class SilverFang(val owner: Player) extends NormalMonster {
+class SilverFang(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Silver Fang"
   override val PrintedAttack = 1200
   override val PrintedDefense = 800
@@ -127,7 +127,7 @@ class SilverFang(val owner: Player) extends NormalMonster {
 }
 
 object GiantSoldierOfStone extends InstantiableCard[GiantSoldierOfStone]
-class GiantSoldierOfStone(val owner: Player) extends NormalMonster {
+class GiantSoldierOfStone(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Giant Soldier of Stone"
   override val PrintedAttack = 1300
   override val PrintedDefense = 2000
@@ -137,7 +137,7 @@ class GiantSoldierOfStone(val owner: Player) extends NormalMonster {
 }
 
 object DragonZombie extends InstantiableCard[DragonZombie]
-class DragonZombie(val owner: Player) extends NormalMonster {
+class DragonZombie(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Dragon Zombie"
   override val PrintedAttack = 1600
   override val PrintedDefense = 0
@@ -147,7 +147,7 @@ class DragonZombie(val owner: Player) extends NormalMonster {
 }
 
 object DomaTheAngelOfSilence extends InstantiableCard[DomaTheAngelOfSilence]
-class DomaTheAngelOfSilence(val owner: Player) extends NormalMonster {
+class DomaTheAngelOfSilence(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Doma the Angel of Silence"
   override val PrintedAttack = 1600
   override val PrintedDefense = 1400
@@ -157,7 +157,7 @@ class DomaTheAngelOfSilence(val owner: Player) extends NormalMonster {
 }
 
 object Ansatsu extends InstantiableCard[Ansatsu]
-class Ansatsu(val owner: Player) extends NormalMonster {
+class Ansatsu(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Ansatsu"
   override val PrintedAttack = 1700
   override val PrintedDefense = 1200
@@ -167,7 +167,7 @@ class Ansatsu(val owner: Player) extends NormalMonster {
 }
 
 object WittyPhantom extends InstantiableCard[WittyPhantom]
-class WittyPhantom(val owner: Player) extends NormalMonster {
+class WittyPhantom(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Witty Phantom"
   override val PrintedAttack = 1400
   override val PrintedDefense = 1300
@@ -177,7 +177,7 @@ class WittyPhantom(val owner: Player) extends NormalMonster {
 }
 
 object ClawReacher extends InstantiableCard[ClawReacher]
-class ClawReacher(val owner: Player) extends NormalMonster {
+class ClawReacher(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Claw Reacher"
   override val PrintedAttack = 1000
   override val PrintedDefense = 800
@@ -187,7 +187,7 @@ class ClawReacher(val owner: Player) extends NormalMonster {
 }
 
 object MysticClown extends InstantiableCard[MysticClown]
-class MysticClown(val owner: Player) extends NormalMonster {
+class MysticClown(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Mystic Clown"
   override val PrintedAttack = 1500
   override val PrintedDefense = 1000
@@ -197,7 +197,7 @@ class MysticClown(val owner: Player) extends NormalMonster {
 }
 
 object AncientElf extends InstantiableCard[AncientElf]
-class AncientElf(val owner: Player) extends NormalMonster {
+class AncientElf(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Ancient Elf"
   override val PrintedAttack = 1450
   override val PrintedDefense = 1200
@@ -207,7 +207,7 @@ class AncientElf(val owner: Player) extends NormalMonster {
 }
 
 object MagicalGhost extends InstantiableCard[MagicalGhost]
-class MagicalGhost(val owner: Player) extends NormalMonster {
+class MagicalGhost(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Magical Ghost"
   override val PrintedAttack = 1300
   override val PrintedDefense = 1400
@@ -217,7 +217,7 @@ class MagicalGhost(val owner: Player) extends NormalMonster {
 }
 
 object NeoTheMagicSwordsman extends InstantiableCard[NeoTheMagicSwordsman]
-class NeoTheMagicSwordsman(val owner: Player) extends NormalMonster {
+class NeoTheMagicSwordsman(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Neo the Magic Swordsman"
   override val PrintedAttack = 1700
   override val PrintedDefense = 1000
@@ -227,7 +227,7 @@ class NeoTheMagicSwordsman(val owner: Player) extends NormalMonster {
 }
 
 object BaronOfTheFiendSword extends InstantiableCard[BaronOfTheFiendSword]
-class BaronOfTheFiendSword(val owner: Player) extends NormalMonster {
+class BaronOfTheFiendSword(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Baron of the Fiend Sword"
   override val PrintedAttack = 1550
   override val PrintedDefense = 800
@@ -237,7 +237,7 @@ class BaronOfTheFiendSword(val owner: Player) extends NormalMonster {
 }
 
 object ManEatingTreasureChest extends InstantiableCard[ManEatingTreasureChest]
-class ManEatingTreasureChest(val owner: Player) extends NormalMonster {
+class ManEatingTreasureChest(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Man-Eating Treasure Chest"
   override val PrintedAttack = 1600
   override val PrintedDefense = 1000
@@ -247,7 +247,7 @@ class ManEatingTreasureChest(val owner: Player) extends NormalMonster {
 }
 
 object SorcererOfTheDoomed extends InstantiableCard[SorcererOfTheDoomed]
-class SorcererOfTheDoomed(val owner: Player) extends NormalMonster {
+class SorcererOfTheDoomed(val Owner: Player) extends NormalMonster {
   override val PrintedName = "Sorcerer of the Doomed"
   override val PrintedAttack = 1450
   override val PrintedDefense = 1200

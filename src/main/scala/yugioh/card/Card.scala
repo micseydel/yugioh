@@ -1,16 +1,16 @@
 package yugioh.card
 
 import yugioh._
-import yugioh.action.Action
+import yugioh.action.{Action, SetCard}
 import yugioh.card.monster.Monster
 import yugioh.card.state.ControlledState
 
 trait Card {
   val PrintedName: String
-  val owner: Player
+  val Owner: Player
   var location: Location = InDeck
 
-  var controller: Player = owner
+  var controller: Player = Owner
   var maybeControlledState: Option[ControlledState] = None
   def actions(implicit gameState: GameState): Seq[Action]
 
@@ -23,7 +23,7 @@ trait Card {
       if (controlledState.faceup) {
         name
       } else {
-        if (viewer == owner) {
+        if (viewer == Owner) {
           s"Set($this)"
         } else {
           "<Set>"
@@ -32,11 +32,37 @@ trait Card {
     }.getOrElse(name)
   }
 
-  def sendToGrave() = owner.field.sendToGrave(this)
+  def sendToGrave() = Owner.field.sendToGrave(this)
 }
 
 trait SpellOrTrap extends Card {
   val effects: List[Effect]
+
+  override def actions(implicit gameState: GameState): Seq[Action] = {
+    gameState match {
+      case GameState(_, TurnPlayers(Owner, _), OpenGameState, MainPhase | MainPhase2, _, _) if InHand(this) =>
+        Seq(new SetAsSpellOrTrapImpl(this)) // TODO: decouple
+      case _ => Seq()
+    }
+  }
+}
+
+trait SetAsSpellOrTrap extends SetCard {
+  val spellOrTrap: SpellOrTrap
+}
+
+class SetAsSpellOrTrapImpl(override val spellOrTrap: SpellOrTrap) extends SetAsSpellOrTrap {
+  override val player: Player = spellOrTrap.Owner
+
+  override val toString = s"SetAsSpellOrTrap($spellOrTrap)"
+
+  override protected def doAction()(implicit gameState: GameState): Unit = {
+    if (player.field.hasFreeSpellOrTrapZone) {
+      player.field.placeAsSpellOrTrap(spellOrTrap, faceup = false)
+    } else {
+      throw new IllegalStateException(s"Tried to set $spellOrTrap but there was no space.")
+    }
+  }
 }
 
 sealed trait Delegate

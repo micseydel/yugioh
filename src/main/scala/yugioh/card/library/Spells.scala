@@ -11,7 +11,7 @@ import yugioh.{Criteria, GameState, InGraveyard, Player}
 object Spells
 
 object DianKetoTheCureMaster extends InstantiableCard[DianKetoTheCureMaster]
-class DianKetoTheCureMaster(val owner: Player) extends Spell {
+class DianKetoTheCureMaster(val Owner: Player) extends Spell {
   override val PrintedName = "Dian Keto the Cure Master"
 
   override val effects: List[Effect] = List(new SpellEffect {
@@ -19,14 +19,14 @@ class DianKetoTheCureMaster(val owner: Player) extends Spell {
 
     override val Resolution = new Resolution {
       override def resolve()(implicit gameState: GameState): Unit = {
-        Card.owner.lifePoints += 1000
+        Card.Owner.lifePoints += 1000
       }
     }
   })
 }
 
 object MonsterReborn extends InstantiableCard[MonsterReborn]
-class MonsterReborn(val owner: Player) extends Spell {
+class MonsterReborn(val Owner: Player) extends Spell {
   override val PrintedName = "Monster Reborn"
 
   override val effects: List[Effect] = List(new SpellEffect {
@@ -53,7 +53,7 @@ class MonsterReborn(val owner: Player) extends Spell {
       override def resolve()(implicit gameState: GameState): Unit = {
         val target = selectedTargets.head.asInstanceOf[Monster]
 
-        val position = owner.selectSpecialSummonPosition(target, Seq(Attack, Defense))
+        val position = Owner.selectSpecialSummonPosition(target, Seq(Attack, Defense))
         if (target.location == InGraveyard && controller.field.hasFreeMonsterZone) {
           SpecialSummonImpl(controller, target, position).execute() // TODO: decouple from implementation somehow
         } // else fizzle

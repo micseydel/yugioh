@@ -21,5 +21,5 @@ trait SwitchPosition extends InherentAction {
 }
 
 class SwitchPositionImpl(override val monster: Monster) extends SwitchPosition {
-  val player = monster.owner
+  val player = monster.Owner
 }

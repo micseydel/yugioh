@@ -2,15 +2,13 @@ package yugioh.card.spell
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 import yugioh._
-import yugioh.action.CardActivation
+import yugioh.action.{Action, CardActivation}
 import yugioh.card.state.SpellTrapControlledState
 import yugioh.card._
 
 trait Spell extends SpellOrTrap {
-  private[this] val Owner = owner // for pattern matching
-
-  override def actions(implicit gameState: GameState) = {
-    if (effects.size == 1) {
+  override def actions(implicit gameState: GameState): Seq[Action] = {
+    val maybeActivation = if (effects.size == 1) {
       gameState match {
         case GameState(_, TurnPlayers(Owner, _), OpenGameState, MainPhase | MainPhase2, _, _) if canActivate =>
           Seq(CardActivation(this, Some(effects.head)))
@@ -19,11 +17,15 @@ trait Spell extends SpellOrTrap {
     } else {
       throw new NotImplementedException()
     }
+
+    // super allows setting
+    super.actions ++ maybeActivation
   }
 
   private def canActivate(implicit gameState: GameState): Boolean = {
     // also assumes a single effect
-    InSpellTrapZone(this) || (InHand(this) && controller.field.hasFreeSpellOrTrapZone) && effects.head.Conditions.met
+    // if activation condition is met, and the spell is either already on the field or it's in hand and there's space to place it...
+    effects.head.Conditions.met && (InSpellTrapZone(this) || (InHand(this) && controller.field.hasFreeSpellOrTrapZone))
   }
 }
 
@@ -34,7 +36,7 @@ trait SpellEffect extends Effect {
       */
     override def met(implicit gameState: GameState): Boolean = {
       gameState match {
-        case GameState(_, TurnPlayers(Card.owner, _), OpenGameState, MainPhase | MainPhase2, _, _) => true
+        case GameState(_, TurnPlayers(Card.Owner, _), OpenGameState, MainPhase | MainPhase2, _, _) => true
         case _ => false
       }
     }
