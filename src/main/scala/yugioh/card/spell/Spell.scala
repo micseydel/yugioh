@@ -4,7 +4,7 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException
 import yugioh._
 import yugioh.action.CardActivation
 import yugioh.card.state.SpellTrapControlledState
-import yugioh.card.{Activation, Conditions, Effect, SpellOrTrap}
+import yugioh.card._
 
 trait Spell extends SpellOrTrap {
   private[this] val Owner = owner // for pattern matching
@@ -21,8 +21,9 @@ trait Spell extends SpellOrTrap {
     }
   }
 
-  private def canActivate: Boolean = {
-    InSpellTrapZone(this) || (InHand(this) && owner.field.hasFreeSpellOrTrapZone)
+  private def canActivate(implicit gameState: GameState): Boolean = {
+    // also assumes a single effect
+    InSpellTrapZone(this) || (InHand(this) && controller.field.hasFreeSpellOrTrapZone) && effects.head.Conditions.met
   }
 }
 
@@ -46,11 +47,15 @@ trait SpellEffect extends Effect {
     override def activate()(implicit gameState: GameState): Unit = {
       Card.location match {
         case InHand =>
-          Card.owner.field.placeAsSpellOrTrap(Card.asInstanceOf[SpellOrTrap], faceup = true)
+          Card.controller.field.placeAsSpellOrTrap(Card.asInstanceOf[SpellOrTrap], faceup = true)
         case _: InSpellTrapZone =>
           Card.maybeControlledState.get.asInstanceOf[SpellTrapControlledState].faceup = true
         case _ =>
           throw new IllegalStateException("A regular spell should not be activated from anywhere except the hand or set Spell/Trap zones.")
+      }
+
+      if (doesTarget) {
+        selectedTargets = Card.controller.selectEffectTargets(availableTargets, targetCriteria)
       }
     }
   }

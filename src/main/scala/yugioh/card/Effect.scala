@@ -1,6 +1,6 @@
 package yugioh.card
 
-import yugioh.GameState
+import yugioh.{Criteria, GameState}
 
 
 /**
@@ -11,6 +11,23 @@ trait Effect {
   val Conditions: Conditions
   val Activation: Activation
   val Resolution: Resolution
+
+  protected[this] var selectedTargets: Seq[Card] = null
+
+  /**
+    * Helper method for determining if an effect targets or not.
+    */
+  final def doesTarget(implicit gameState: GameState) = targetCriteria != null
+
+  /**
+    * Criteria to determine if target(s) are valid.
+    */
+  def targetCriteria[C <: Card](implicit gameState: GameState): Criteria[C] = null
+
+  /**
+    * Available targets to choose from, based on the targetCriteria.
+    */
+  def availableTargets(implicit gameState: GameState): Seq[Card] = null
 }
 
 /**

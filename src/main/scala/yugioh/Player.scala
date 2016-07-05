@@ -2,7 +2,7 @@ package yugioh
 
 import yugioh.action.Action
 import yugioh.card.Card
-import yugioh.card.monster.{ExtraDeckMonster, Monster, SummonCriteria, TributeSummonCriteria}
+import yugioh.card.monster._
 import yugioh.events.{EventsComponent, PhaseStartEvent, TurnStartEvent}
 
 import scala.collection.mutable.ListBuffer
@@ -54,6 +54,16 @@ trait Player {
 
   def selectAttackTarget(attacker: Monster, potentialTargets: Seq[Monster])(implicit gameState: GameState): Monster
 
+  /**
+    * When an effect needs to select a target, this is how an activation asks a player what targets to use.
+    */
+  def selectEffectTargets[C <: Card](targets: Seq[C], criteria: Criteria[C])(implicit gameState: GameState): Seq[C]
+
+  /**
+    * For a monster in the process of being special summoned, select from positions options which position to SS in.
+    */
+  def selectSpecialSummonPosition(monster: Monster, positions: Seq[Position])(implicit gameState: GameState): Position
+
   override def toString = name
 }
 
@@ -67,6 +77,8 @@ case class TurnPlayers(turnPlayer: Player, opponent: Player) {
       throw new IllegalArgumentException("Must be called with a turn player.")
     }
   }
+
+  def both = Seq(turnPlayer, opponent)
 }
 
 class CommandLineHumanPlayer(val name: String) extends Player {
@@ -205,6 +217,17 @@ class CommandLineHumanPlayer(val name: String) extends Player {
   override def selectAttackTarget(attacker: Monster, potentialTargets: Seq[Monster])(implicit gameState: GameState): Monster = {
     select(s"Select target for $attacker", potentialTargets)
   }
+
+  override def selectEffectTargets[C <: Card](targets: Seq[C], criteria: Criteria[C])(implicit gameState: GameState) = {
+    selectMultiple(s"Select targets for effect.", targets, criteria)
+  }
+
+  /**
+    * For a monster in the process of being special summoned, select from positions options which position to SS in.
+    */
+  override def selectSpecialSummonPosition(monster: Monster, positions: Seq[Position])(implicit gameState: GameState) = {
+    select(s"Select position to special summon $monster.", positions)
+  }
 }
 
 /**
@@ -215,10 +238,12 @@ class CommandLineHumanPlayer(val name: String) extends Player {
 class PassivePlayer extends Player {
   override val name = "PassivePlayer"
   override val deck = new TestDeck(this)
-  override def cardToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[Card] = Seq(hand.head)
+  override def cardToDiscardForHandSizeLimit(implicit gameState: GameState) = Seq(hand.head)
   override def chooseAction(actions: Seq[Action])(implicit gameState: GameState) = actions.head
-  override def consentToEnd(implicit gameState: GameState): Boolean = true
-  override def enterBattlePhase(implicit gameState: GameState): Boolean = false
+  override def consentToEnd(implicit gameState: GameState) = true
+  override def enterBattlePhase(implicit gameState: GameState) = false
   override def selectSummonMaterial(toSummon: Monster, summonCriteria: SummonCriteria, possibleMaterials: Seq[Monster])(implicit gameState: GameState) = ???
-  override def selectAttackTarget(attacker: Monster, potentialTargets: Seq[Monster])(implicit gameState: GameState): Monster = ???
+  override def selectAttackTarget(attacker: Monster, potentialTargets: Seq[Monster])(implicit gameState: GameState) = ???
+  override def selectEffectTargets[C <: Card](targets: Seq[C], criteria: Criteria[C])(implicit gameState: GameState) = ???
+  override def selectSpecialSummonPosition(monster: Monster, positions: Seq[Position])(implicit gameState: GameState) = ???
 }

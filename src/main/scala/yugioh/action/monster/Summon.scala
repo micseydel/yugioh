@@ -2,23 +2,29 @@ package yugioh.action.monster
 
 import yugioh._
 import yugioh.action.InherentAction
-import yugioh.card.monster.{Attack, Monster, Set, TributeSummonCriteria}
+import yugioh.card.monster._
 import yugioh.card.state._
 
-
-trait Summon extends InherentAction {
+trait SummonOrSet extends InherentAction {
   val monster: Monster
   val player = monster.owner
 
   override def toString = s"${this.getClass.getSimpleName}($monster)"
+
+  override protected def doAction()(implicit gameState: GameState): Unit = {
+    // super should be called for this line after the monster is placed on the field!
+    monster.maybeMonsterControlledState.get.manuallyChangedPositionsThisTurn = true
+  }
 }
+
+trait Summon extends SummonOrSet
 
 trait NormalSummon extends Summon
 
 class NormalSummonImpl(val monster: Monster) extends NormalSummon {
   override protected def doAction()(implicit gameState: GameState) = {
     monster.owner.field.placeAsMonster(monster, Attack, NormalSummoned)
-    monster.maybeMonsterControlledState.get.manuallyChangedPositionsThisTurn = true // TODO: consolidate
+    super.doAction()
   }
 }
 
@@ -43,24 +49,16 @@ trait FlipSummon extends Summon with SwitchPosition
 
 class FlipSummonImpl(override val monster: Monster) extends FlipSummon {
   override protected def doAction()(implicit gameState: GameState) = {
-    for (state <- monster.maybeMonsterControlledState) {
-      state.position = Attack
-      state.manuallyChangedPositionsThisTurn = true
-    }
+    super.doAction()
   }
 }
 
-trait SetAsMonster extends InherentAction {
-  val monster: Monster
-  val player = monster.owner
-  override def toString = s"${this.getClass.getSimpleName}($monster)"
-}
+trait SetAsMonster extends SummonOrSet
 
 class SetAsMonsterImpl(override val monster: Monster) extends SetAsMonster {
   override protected def doAction()(implicit gameState: GameState) = {
     monster.owner.field.placeAsMonster(monster, Set, NotSummoned)
-    monster.maybeControlledState = Some(new MonsterControlledState(Set))
-    monster.maybeMonsterControlledState.get.manuallyChangedPositionsThisTurn = true // TODO: consolidate
+    super.doAction()
   }
 }
 
@@ -74,6 +72,17 @@ class TributeSetImpl(monster: Monster) extends SetAsMonsterImpl(monster) with Tr
       tribute.sendToGrave()
     }
 
+    super.doAction()
+  }
+}
+
+trait SpecialSummon extends Summon {
+  val position: Position
+}
+
+case class SpecialSummonImpl(override val player: Player, monster: Monster, position: Position) extends SpecialSummon {
+  override protected def doAction()(implicit gameState: GameState): Unit = {
+    player.field.placeAsMonster(monster, position, SpecialSummoned)
     super.doAction()
   }
 }

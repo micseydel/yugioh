@@ -78,10 +78,10 @@ class TestDeck(val owner: Player) extends Deck {
     //ChangeOfHeart
     //DarkHole
     //DeSpell
-    DianKetoTheCureMaster
+    DianKetoTheCureMaster,
     //Fissure
     //LastWill
-    //MonsterReborn
+    MonsterReborn
     //RemoveTrap
     //SoulExchange
     //SwordOfDarkDestruction

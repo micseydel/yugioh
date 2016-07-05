@@ -3,7 +3,7 @@ package yugioh
 import yugioh.action.Action
 import yugioh.card.monster.{Monster, PendulumMonster, Position}
 import yugioh.card.spell.FieldSpell
-import yugioh.card.state.{HowSummoned, MonsterControlledState, MonsterFieldState, SpellTrapControlledState}
+import yugioh.card.state._
 import yugioh.card.{Card, SpellOrTrap}
 
 import scala.collection.mutable.ListBuffer
@@ -122,6 +122,14 @@ class FieldImpl extends Field {
         throw new IllegalArgumentException(s"Can't send to grave a card already in grave, $card.")
     }
 
+    // give it field state if it didn't already have it and needs it
+    card match {
+      case monster: Monster if monster.maybeMonsterFieldState.isEmpty =>
+        // not summoned is always correct, because it didn't already have state
+        monster.maybeMonsterFieldState = Some(new MonsterFieldState(NotSummoned))
+      case _ => // ignore
+    }
+
     // TODO: emit an event for sent to grave
     card.location = InGraveyard
     card.maybeControlledState = None // clear it out if it was present
@@ -138,10 +146,10 @@ sealed trait SimpleLocationChecker extends Location {
   def apply(card: Card): Boolean = card.location == this
 }
 
-case object InDeck extends Location with SimpleLocationChecker
-case object InHand extends Location with SimpleLocationChecker
-case object InGraveyard extends Location with SimpleLocationChecker
-case object InBanished extends Location with SimpleLocationChecker
+case object InDeck extends SimpleLocationChecker
+case object InHand extends SimpleLocationChecker
+case object InGraveyard extends SimpleLocationChecker
+case object InBanished extends SimpleLocationChecker
 
 sealed trait InFieldZone extends Location
 
