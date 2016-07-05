@@ -1,10 +1,11 @@
 package yugioh.card.library
 
-import yugioh.action.{DiscardImpl, DrawImpl}
 import yugioh.action.monster.SpecialSummonImpl
+import yugioh.action.{Action, DiscardImpl, DrawImpl}
 import yugioh.card._
 import yugioh.card.monster.{Attack, Defense, Monster}
 import yugioh.card.spell.{Spell, SpellEffect}
+import yugioh.events.DefaultEventsComponent
 import yugioh.{Criteria, GameState, InGraveyard, Player}
 
 
@@ -27,16 +28,33 @@ class CardDestruction(val Owner: Player) extends Spell {
     }
 
     override val Resolution = new Resolution {
-      override def resolve()(implicit gameState: GameState): Unit = {
-        for (player <- gameState.turnPlayers.both) {
-          val handSize = player.hand.size
-          // TODO: [Card Destruction] this is a good example of needing to separate groups of simultaneous events
-          for (card <- player.hand) {
-            new DiscardImpl(card).execute()
-          }
+      class DiscardBothHands extends Action with DefaultEventsComponent {
 
-          new DrawImpl(player, handSize).execute()
+        override val player: Player = controller
+
+        override protected def doAction()(implicit gameState: GameState): Unit = {
+          for (player <- gameState.turnPlayers.both) {
+            new DiscardImpl(controller, player.hand, this).execute()
+          }
         }
+      }
+
+      class BothDraw(handSizes: Seq[(Player, Int)]) extends Action with DefaultEventsComponent {
+        override val player: Player = controller
+
+        override protected def doAction()(implicit gameState: GameState): Unit = {
+          for ((player, handSize) <- handSizes) {
+            new DrawImpl(player, handSize, this).execute()
+          }
+        }
+      }
+
+      override def resolve()(implicit gameState: GameState): Unit = {
+        val handSizes = gameState.turnPlayers.both.map(player => (player, player.hand.size))
+
+        new DiscardBothHands().execute()
+
+        new BothDraw(handSizes).execute()
       }
     }
   })

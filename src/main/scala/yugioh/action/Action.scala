@@ -31,7 +31,12 @@ trait Action extends Event {
   protected def doAction()(implicit gameState: GameState): Unit
 }
 
-trait InherentAction extends Action with DefaultEventsComponent
+trait InherentAction extends Action with DefaultEventsComponent {
+  /**
+    * If the action is composed by something else.
+    */
+  val maybeParent: Option[Action]
+}
 
 /**
   * This can either be a card or an effect activation (the former may include the latter).
@@ -60,22 +65,32 @@ case class EffectActivation(card: Card, effect: Effect, player: Player) extends 
 case class PassPriority(player: Player) extends InherentAction {
   override def toString = "PassPriority"
   override def doAction()(implicit gameState: GameState) = ()
+  override val maybeParent: Option[Action] = None
 }
 
 trait SetCard extends InherentAction
 
 trait Discard extends InherentAction
 
-class DiscardImpl(card: Card) extends Discard {
-  override val player: Player = card.controller
+class DiscardImpl(override val player: Player, cards: Seq[Card], parent: Action = null) extends Discard {
+  val maybeParent = Option(parent)
 
-  override protected def doAction()(implicit gameState: GameState): Unit = card.discard()
+  def this(player: Player, card: Card) = {
+    this(player, Seq(card))
+  }
+
+  override protected def doAction()(implicit gameState: GameState): Unit = {
+    for (card <- cards) {
+      card.discard()
+    }
+  }
 }
 
 trait DiscardForHandSizeLimit extends Discard
 
 class DiscardForHandSizeLimitImpl(implicit gameState: GameState) extends DiscardForHandSizeLimit {
   val player = gameState.turnPlayers.turnPlayer
+  val maybeParent: Option[Action] = None
 
   override protected def doAction()(implicit gameState: GameState) = {
     for (choice <- player.cardToDiscardForHandSizeLimit) {
@@ -86,7 +101,9 @@ class DiscardForHandSizeLimitImpl(implicit gameState: GameState) extends Discard
 
 trait Draw extends InherentAction
 
-class DrawImpl(override val player: Player, howMany: Int = 1) extends Draw {
+class DrawImpl(override val player: Player, howMany: Int = 1, parent: Action = null) extends Draw {
+  val maybeParent: Option[Action] = Option(parent)
+
   override protected def doAction()(implicit gameState: GameState): Unit = player.draw(howMany)
 }
 
@@ -94,6 +111,7 @@ trait DrawForTurn extends Draw
 
 class DrawForTurnImpl(implicit gameState: GameState) extends DrawForTurn {
   val player = gameState.turnPlayers.turnPlayer
+  val maybeParent: Option[Action] = None
 
   override protected def doAction()(implicit gameState: GameState): Unit = {
     gameState.turnPlayers.turnPlayer.draw()
@@ -104,7 +122,9 @@ trait Destroy extends InherentAction {
   val card: Card
 }
 
-case class DestroyImpl(override val player: Player, override val card: Card) extends Destroy {
+case class DestroyImpl(override val player: Player, override val card: Card, parent: Action = null) extends Destroy {
+  val maybeParent: Option[Action] = Option(parent)
+
   override protected def doAction()(implicit gameState: GameState): Unit = {
     card.destroy()
   }
