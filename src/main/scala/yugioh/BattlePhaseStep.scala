@@ -94,7 +94,7 @@ case object EndStep extends BattlePhaseStep {
 
 
 sealed trait DamageStepSubStep extends Step {
-  def performAndGetNext(battle: Battle)(implicit gameState: GameState): DamageStepSubStep
+  def performAndGetNext(battle: Battle)(implicit gameState: GameState, eventsModule: EventsModule): DamageStepSubStep
 }
 
 object DamageStepSubStep {
@@ -111,14 +111,14 @@ object DamageStepSubStep {
 
 // http://www.yugioh-card.com/uk/gameplay/damage.html
 case object StartOfTheDamageStep extends DamageStepSubStep {
-  override def performAndGetNext(battle: Battle)(implicit gameState: GameState) = {
+  override def performAndGetNext(battle: Battle)(implicit gameState: GameState, eventsModule: EventsModule) = {
     FastEffectTiming.loop(gameState.copy(step = this))
     BeforeDamageCalculation
   }
 }
 
-case object BeforeDamageCalculation extends DamageStepSubStep with DefaultEventsModuleComponent {
-  override def performAndGetNext(battle: Battle)(implicit gameState: GameState) = {
+case object BeforeDamageCalculation extends DamageStepSubStep {
+  override def performAndGetNext(battle: Battle)(implicit gameState: GameState, eventsModule: EventsModule) = {
     // flip the target if need be
     battle match {
       case Battle(_, target) if target != null =>
@@ -135,8 +135,8 @@ case object BeforeDamageCalculation extends DamageStepSubStep with DefaultEvents
   }
 }
 
-case object PerformDamageCalculation extends DamageStepSubStep with DefaultEventsModuleComponent {
-  override def performAndGetNext(battle: Battle)(implicit gameState: GameState) = {
+case object PerformDamageCalculation extends DamageStepSubStep {
+  override def performAndGetNext(battle: Battle)(implicit gameState: GameState, eventsModule: EventsModule) = {
     FastEffectTiming.loop(gameState.copy(step = this))
 
     var destroyed: Set[Monster] = collection.immutable.Set()
@@ -191,7 +191,7 @@ case object PerformDamageCalculation extends DamageStepSubStep with DefaultEvent
 }
 
 case class AfterDamageCalculation(destroyed: Set[Monster]) extends DamageStepSubStep {
-  override def performAndGetNext(battle: Battle)(implicit gameState: GameState): DamageStepSubStep = {
+  override def performAndGetNext(battle: Battle)(implicit gameState: GameState, eventsModule: EventsModule): DamageStepSubStep = {
     // TODO: after damage calculation
     FastEffectTiming.loop(gameState.copy(step = this))
     EndOfTheDamageStep(destroyed)
@@ -199,7 +199,7 @@ case class AfterDamageCalculation(destroyed: Set[Monster]) extends DamageStepSub
 }
 
 case class EndOfTheDamageStep(destroyed: Set[Monster]) extends DamageStepSubStep {
-  override def performAndGetNext(battle: Battle)(implicit gameState: GameState) = {
+  override def performAndGetNext(battle: Battle)(implicit gameState: GameState, eventsModule: EventsModule) = {
     for (monster <- destroyed) {
       monster.sendToGrave()
     }

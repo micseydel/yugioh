@@ -5,6 +5,7 @@ import yugioh.action.Action
 import yugioh.action.monster._
 import yugioh.card._
 import yugioh.card.state.{MonsterControlledState, MonsterFieldState}
+import yugioh.events.EventsModule
 
 trait Monster extends Card {
   val PrintedAttack: Int
@@ -23,12 +24,14 @@ trait Monster extends Card {
 
   var maybeMonsterFieldState: Option[MonsterFieldState] = None
 
-  def maybeMonsterControlledState: Option[MonsterControlledState] = maybeControlledState.asInstanceOf[Option[MonsterControlledState]]
+  def maybeMonsterControlledState(implicit eventsModule: EventsModule): Option[MonsterControlledState] = {
+    maybeControlledState.asInstanceOf[Option[MonsterControlledState]]
+  }
 
   /**
     * Default implementation of being able to normal/tribute summon during main phases, does not apply to (Semi-)Nomi.
     */
-  override def actions(implicit gameState: GameState) = {
+  override def actions(implicit gameState: GameState, eventsModule: EventsModule) = {
     gameState match {
       case GameState(MutableGameState(_, hasNormalSummonedThisTurn, _), _, OpenGameState, phase, _, _) =>
         phase match {
@@ -43,7 +46,7 @@ trait Monster extends Card {
     }
   }
 
-  private def mainPhaseActions(hasNormalSummonedThisTurn: Boolean): Seq[Action] = {
+  private def mainPhaseActions(hasNormalSummonedThisTurn: Boolean)(implicit eventsModule: EventsModule): Seq[Action] = {
     location match {
       case InHand if !hasNormalSummonedThisTurn =>
         maybeLevel.map { level =>
@@ -79,13 +82,13 @@ trait Monster extends Card {
     }
   }
 
-  private def canSwitchPositions: Boolean = {
+  private def canSwitchPositions(implicit eventsModule: EventsModule): Boolean = {
     maybeMonsterControlledState.exists { monsterControlledState =>
       !monsterControlledState.manuallyChangedPositionsThisTurn && !monsterControlledState.attackedThisTurn
     }
   }
 
-  private def battlePhaseActions(implicit gameState: GameState): Seq[Action] = {
+  private def battlePhaseActions(implicit gameState: GameState, eventsModule: EventsModule) = {
     val Controller = controller // for pattern matching
     gameState match {
       case GameState(_, TurnPlayers(Controller, opponent), OpenGameState, _, BattleStep, _) =>

@@ -5,6 +5,7 @@ import yugioh.card.monster.{Monster, PendulumMonster, Position}
 import yugioh.card.spell.FieldSpell
 import yugioh.card.state._
 import yugioh.card.{Card, SpellOrTrap}
+import yugioh.events.EventsModuleComponent
 
 import scala.collection.mutable.ListBuffer
 
@@ -42,104 +43,119 @@ trait Field {
   def actions(implicit gameState: GameState) : Seq[Action]
 }
 
-class FieldImpl extends Field {
-  override def placeAsMonster(monster: Monster, position: Position, howSummoned: HowSummoned, locationPreference: Option[Int]) = {
-    monster.maybeControlledState = Some(new MonsterControlledState(position))
-    monster.maybeMonsterFieldState = Some(new MonsterFieldState(howSummoned))
-    placeAsHelper(monsterZones, InMonsterZone.MonsterZones)(monster, locationPreference)
-  }
+trait FieldModule {
+  def createField: Field
+}
 
-  override def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, faceup: Boolean, locationPreference: Option[Int]) = {
-    spellOrTrap.maybeControlledState = Some(SpellTrapControlledState(faceup))
-    placeAsHelper(spellTrapZones, InSpellTrapZone.SpellTrapZones)(spellOrTrap, locationPreference)
-  }
+trait FieldModuleComponent {
+  def fieldModule: FieldModule
+}
 
-  private def placeAsHelper[C <: Card, Z <: InFieldZone](destinationArray: Array[Option[C]], destinationLocation: Seq[Z])
-                                                        (card: C, locationPreference: Option[Int]): Z = {
-    val position = locationPreference.getOrElse(PositionPriorities.filter(destinationArray(_).isEmpty).head)
-    destinationArray.update(position, Some(card))
+trait DefaultFieldModuleComponent extends FieldModuleComponent {
+  self: EventsModuleComponent =>
 
-    // TODO LOW: want to make this an implicit in the utils, clean up the two deck situations
-    def remove[T](buffer: ListBuffer[T], element: T): Unit = buffer.remove(buffer.indexOf(element))
+  def fieldModule = new FieldModule {
+    override def createField = new Field {
+      override def placeAsMonster(monster: Monster, position: Position, howSummoned: HowSummoned, locationPreference: Option[Int]) = {
+        monster.maybeControlledState = Some(new MonsterControlledState(position))
+        monster.maybeMonsterFieldState = Some(new MonsterFieldState(howSummoned))
+        placeAsHelper(monsterZones, InMonsterZone.MonsterZones)(monster, locationPreference)
+      }
 
-    // remove it from its previous location
-    card.location match {
-      case InHand => remove(card.Owner.hand, card)
-      case InGraveyard => remove(card.Owner.field.graveyard, card)
-      case InBanished => remove(card.Owner.field.banished, card)
-      case monsterZone: InMonsterZone => removeFromMonsterZone(monsterZone)
-      case spellTrapZone: InSpellTrapZone => removeFromSpellTrapZone(spellTrapZone)
-      case InFieldSpell => fieldSpellZone = None
-      case InLeftPendulumZone => leftPendulumZone = None
-      case InRightPendulumZone => rightPendulumZone = None
-      case InDeck =>
-        card.Owner.deck.cards.remove(card.Owner.deck.cards.indexOf(card))
-        card.Owner.deck.shuffle()
-      case InExtraDeck =>
-        card.Owner.extraDeck.remove(card.Owner.extraDeck.indexOf(card))
+      override def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, faceup: Boolean, locationPreference: Option[Int]) = {
+        spellOrTrap.maybeControlledState = Some(SpellTrapControlledState(faceup))
+        placeAsHelper(spellTrapZones, InSpellTrapZone.SpellTrapZones)(spellOrTrap, locationPreference)
+      }
+
+      private def placeAsHelper[C <: Card, Z <: InFieldZone](destinationArray: Array[Option[C]], destinationLocation: Seq[Z])
+        (card: C, locationPreference: Option[Int]): Z = {
+        val position = locationPreference.getOrElse(PositionPriorities.filter(destinationArray(_).isEmpty).head)
+        destinationArray.update(position, Some(card))
+
+        // TODO LOW: want to make this an implicit in the utils, clean up the two deck situations
+        def remove[T](buffer: ListBuffer[T], element: T): Unit = buffer.remove(buffer.indexOf(element))
+
+        // remove it from its previous location
+        card.location match {
+          case InHand => remove(card.Owner.hand, card)
+          case InGraveyard => remove(card.Owner.field.graveyard, card)
+          case InBanished => remove(card.Owner.field.banished, card)
+          case monsterZone: InMonsterZone => removeFromMonsterZone(monsterZone)
+          case spellTrapZone: InSpellTrapZone => removeFromSpellTrapZone(spellTrapZone)
+          case InFieldSpell => fieldSpellZone = None
+          case InLeftPendulumZone => leftPendulumZone = None
+          case InRightPendulumZone => rightPendulumZone = None
+          case InDeck =>
+            card.Owner.deck.cards.remove(card.Owner.deck.cards.indexOf(card))
+            card.Owner.deck.shuffle()
+          case InExtraDeck =>
+            card.Owner.extraDeck.remove(card.Owner.extraDeck.indexOf(card))
+        }
+
+        val toWhere = destinationLocation(position)
+        card.location = toWhere
+        toWhere
+      }
+
+      def removeFromMonsterZone[Z <: InMonsterZone](monsterZone: Z) = {
+        removeFromHelper(monsterZones, monsterZone, InMonsterZone.MonsterZones)
+      }
+
+      def removeFromSpellTrapZone[Z <: InSpellTrapZone](spellTrapZone: Z) = {
+        removeFromHelper(spellTrapZones, spellTrapZone, InSpellTrapZone.SpellTrapZones)
+      }
+
+      private def removeFromHelper[T](removeFrom: Array[Option[T]], zone: InFieldZone, zones: Seq[InFieldZone]) = {
+        removeFrom.update(zones.indexOf(zone), None)
+      }
+
+      override def actions(implicit gameState: GameState) = {
+        ((monsterZones ++ spellTrapZones :+ fieldSpellZone :+ leftPendulumZone :+ rightPendulumZone).flatten
+          ++ graveyard ++ banished).flatMap(_.actions)
+      }
+
+      override def sendToGrave(card: Card): Unit = {
+        // remove from current location
+        card.location match {
+          case InDeck =>
+            card.Owner.deck.cards.remove(card.Owner.deck.cards.indexOf(card))
+          case InHand =>
+            card.Owner.hand.remove(card.Owner.hand.indexOf(card))
+          case InBanished =>
+            card.Owner.field.banished.remove(card.Owner.field.banished.indexOf(card))
+          case InExtraDeck =>
+            card.Owner.extraDeck.remove(card.Owner.extraDeck.indexOf(card))
+          case InRightPendulumZone =>
+            rightPendulumZone = None
+          case InLeftPendulumZone =>
+            leftPendulumZone = None
+          case monsterZone: InMonsterZone =>
+            monsterZones.update(InMonsterZone.MonsterZones.indexOf(monsterZone), None)
+          case spellTrapZone: InSpellTrapZone =>
+            spellTrapZones.update(InSpellTrapZone.SpellTrapZones.indexOf(spellTrapZone), None)
+          case InFieldSpell =>
+            fieldSpellZone = None
+          case InGraveyard =>
+            throw new IllegalArgumentException(s"Can't send to grave a card already in grave, $card.")
+        }
+
+        // give it field state if it didn't already have it and needs it
+        card match {
+          case monster: Monster if monster.maybeMonsterFieldState.isEmpty =>
+            // not summoned is always correct, because it didn't already have state
+            monster.maybeMonsterFieldState = Some(new MonsterFieldState(NotSummoned))
+          case _ => // ignore
+        }
+
+        // TODO: emit an event for sent to grave
+        card.location = InGraveyard
+        card.maybeControlledState = None // clear it out if it was present
+        graveyard.append(card)
+      }
     }
-
-    val toWhere = destinationLocation(position)
-    card.location = toWhere
-    toWhere
-  }
-
-  def removeFromMonsterZone[Z <: InMonsterZone](monsterZone: Z) = {
-    removeFromHelper(monsterZones, monsterZone, InMonsterZone.MonsterZones)
-  }
-
-  def removeFromSpellTrapZone[Z <: InSpellTrapZone](spellTrapZone: Z) = {
-    removeFromHelper(spellTrapZones, spellTrapZone, InSpellTrapZone.SpellTrapZones)
-  }
-
-  private def removeFromHelper[T](removeFrom: Array[Option[T]], zone: InFieldZone, zones: Seq[InFieldZone]) = {
-    removeFrom.update(zones.indexOf(zone), None)
-  }
-
-  override def actions(implicit gameState: GameState) = {
-    ((monsterZones ++ spellTrapZones :+ fieldSpellZone :+ leftPendulumZone :+ rightPendulumZone).flatten
-      ++ graveyard ++ banished).flatMap(_.actions)
-  }
-
-  override def sendToGrave(card: Card): Unit = {
-    // remove from current location
-    card.location match {
-      case InDeck =>
-        card.Owner.deck.cards.remove(card.Owner.deck.cards.indexOf(card))
-      case InHand =>
-        card.Owner.hand.remove(card.Owner.hand.indexOf(card))
-      case InBanished =>
-        card.Owner.field.banished.remove(card.Owner.field.banished.indexOf(card))
-      case InExtraDeck =>
-        card.Owner.extraDeck.remove(card.Owner.extraDeck.indexOf(card))
-      case InRightPendulumZone =>
-        rightPendulumZone = None
-      case InLeftPendulumZone =>
-        leftPendulumZone = None
-      case monsterZone: InMonsterZone =>
-        monsterZones.update(InMonsterZone.MonsterZones.indexOf(monsterZone), None)
-      case spellTrapZone: InSpellTrapZone =>
-        spellTrapZones.update(InSpellTrapZone.SpellTrapZones.indexOf(spellTrapZone), None)
-      case InFieldSpell =>
-        fieldSpellZone = None
-      case InGraveyard =>
-        throw new IllegalArgumentException(s"Can't send to grave a card already in grave, $card.")
-    }
-
-    // give it field state if it didn't already have it and needs it
-    card match {
-      case monster: Monster if monster.maybeMonsterFieldState.isEmpty =>
-        // not summoned is always correct, because it didn't already have state
-        monster.maybeMonsterFieldState = Some(new MonsterFieldState(NotSummoned))
-      case _ => // ignore
-    }
-
-    // TODO: emit an event for sent to grave
-    card.location = InGraveyard
-    card.maybeControlledState = None // clear it out if it was present
-    graveyard.append(card)
   }
 }
+
 
 sealed trait Location
 

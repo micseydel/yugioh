@@ -3,7 +3,7 @@ package yugioh
 import yugioh.action.Action
 import yugioh.card.Card
 import yugioh.card.monster._
-import yugioh.events.{EventsModuleComponent, PhaseStartEvent, TurnStartEvent}
+import yugioh.events.{EventsModule, PhaseStartEvent, TurnStartEvent}
 
 import scala.collection.mutable.ListBuffer
 import scala.io.StdIn
@@ -12,8 +12,9 @@ trait Player {
   val name: String
   val deck: Deck
   val extraDeck: ListBuffer[ExtraDeckMonster] = new ListBuffer[ExtraDeckMonster]
-  val field: Field = new FieldImpl
   val hand: ListBuffer[Card] = new ListBuffer[Card]
+
+  val field: Field
 
   var lifePoints: Int = Constants.InitialLifePoints
 
@@ -81,11 +82,12 @@ case class TurnPlayers(turnPlayer: Player, opponent: Player) {
   def both = Seq(turnPlayer, opponent)
 }
 
-class CommandLineHumanPlayer(val name: String) extends Player {
-  Me: EventsModuleComponent =>
+class CommandLineHumanPlayer(val name: String)(implicit eventsModule: EventsModule, fieldModule: FieldModule) extends Player {
+  Me =>
+
+  override val field = fieldModule.createField
 
   override val deck: Deck = new TestDeck(this) // TODO: be more than just a stub
-
   eventsModule.observe { event =>
     event match {
       case TurnStartEvent(turnPlayers, mutableGameState) =>
@@ -235,7 +237,8 @@ class CommandLineHumanPlayer(val name: String) extends Player {
   *
   * When given an option like discarding for hand size or choosing an action, will just select the first.
   */
-class PassivePlayer extends Player {
+class PassivePlayer(implicit fieldModule: FieldModule) extends Player {
+  override val field = fieldModule.createField
   override val name = "PassivePlayer"
   override val deck = new TestDeck(this)
   override def cardToDiscardForHandSizeLimit(implicit gameState: GameState) = Seq(hand.head)

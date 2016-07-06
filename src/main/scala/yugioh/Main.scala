@@ -5,9 +5,11 @@ import yugioh.events.DefaultEventsModuleComponent
 object Main extends DefaultPlayGameComponent
     with DefaultEventsModuleComponent
     with DefaultPhaseModuleComponent
-    with DefaultBattlePhaseModuleComponent{
-  val player1 = new CommandLineHumanPlayer("Human") with DefaultEventsModuleComponent
-  val player2 = new PassivePlayer
+    with DefaultFieldModuleComponent
+    with DefaultBattlePhaseModuleComponent {
+
+  val player1 = new CommandLineHumanPlayer("Human")(eventsModule, fieldModule)
+  val player2 = new PassivePlayer()(fieldModule)
 
   override val Players = (player1, player2)
 

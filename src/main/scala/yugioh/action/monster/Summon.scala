@@ -4,6 +4,7 @@ import yugioh._
 import yugioh.action.{Action, InherentAction, SetCard}
 import yugioh.card.monster._
 import yugioh.card.state._
+import yugioh.events.EventsModule
 
 trait SummonOrSet extends InherentAction {
   val monster: Monster
@@ -11,7 +12,7 @@ trait SummonOrSet extends InherentAction {
 
   override def toString = s"${this.getClass.getSimpleName}($monster)"
 
-  override protected def doAction()(implicit gameState: GameState): Unit = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule) = {
     // super should be called for this line after the monster is placed on the field!
     monster.maybeMonsterControlledState.get.manuallyChangedPositionsThisTurn = true
   }
@@ -24,7 +25,7 @@ trait NormalSummon extends Summon
 class NormalSummonImpl(val monster: Monster) extends NormalSummon {
   override val maybeParent: Option[Action] = None
 
-  override protected def doAction()(implicit gameState: GameState) = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule) = {
     monster.Owner.field.placeAsMonster(monster, Attack, NormalSummoned)
     super.doAction()
   }
@@ -33,7 +34,7 @@ class NormalSummonImpl(val monster: Monster) extends NormalSummon {
 trait TributeSummon extends NormalSummon
 
 class TributeSummonImpl(override val monster: Monster) extends NormalSummonImpl(monster) with TributeSummon {
-  override protected def doAction()(implicit gameState: GameState) = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule) = {
     val summonCriteria = TributeSummonCriteria(if (monster.maybeLevel.get < 7) 1 else 2)
     val toTribute = monster.Owner.selectSummonMaterial(monster, summonCriteria, monster.Owner.field.monsterZones.toSeq.flatten)
     for (tribute <- toTribute) {
@@ -49,10 +50,10 @@ class TributeSummonImpl(override val monster: Monster) extends NormalSummonImpl(
 
 trait FlipSummon extends Summon with SwitchPosition
 
-class FlipSummonImpl(override val monster: Monster) extends FlipSummon {
+class FlipSummonImpl(override val monster: Monster)(implicit override val eventsModule: EventsModule) extends FlipSummon {
   override val maybeParent: Option[Action] = None
 
-  override protected def doAction()(implicit gameState: GameState) = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule) = {
     super.doAction()
   }
 }
@@ -62,7 +63,7 @@ trait SetAsMonster extends SummonOrSet with SetCard
 class SetAsMonsterImpl(override val monster: Monster) extends SetAsMonster {
   override val maybeParent: Option[Action] = None
 
-  override protected def doAction()(implicit gameState: GameState) = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule) = {
     monster.Owner.field.placeAsMonster(monster, Set, NotSummoned)
     super.doAction()
   }
@@ -71,7 +72,7 @@ class SetAsMonsterImpl(override val monster: Monster) extends SetAsMonster {
 trait TributeSet extends SetAsMonster
 
 class TributeSetImpl(monster: Monster) extends SetAsMonsterImpl(monster) with TributeSet {
-  override protected def doAction()(implicit gameState: GameState) = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule) = {
     val summonCriteria = TributeSummonCriteria(if (monster.maybeLevel.get < 7) 1 else 2)
     val toTribute = monster.Owner.selectSummonMaterial(monster, summonCriteria, monster.Owner.field.monsterZones.toSeq.flatten)
     for (tribute <- toTribute) {
@@ -89,7 +90,7 @@ trait SpecialSummon extends Summon {
 case class SpecialSummonImpl(override val player: Player, monster: Monster, position: Position, parent: Action = null) extends SpecialSummon {
   override val maybeParent: Option[Action] = Option(parent)
 
-  override protected def doAction()(implicit gameState: GameState): Unit = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule): Unit = {
     player.field.placeAsMonster(monster, position, SpecialSummoned)
     super.doAction()
   }

@@ -2,16 +2,14 @@ package yugioh.action
 
 import yugioh._
 import yugioh.card.{Card, Effect}
-import yugioh.events.{DefaultEventsModuleComponent, Event, EventsModuleComponent}
+import yugioh.events.{Event, EventsModule}
 
 sealed trait Action extends Event {
-  self: EventsModuleComponent =>
-
   val player: Player
 
   private var previouslyCalled = false
 
-  def execute()(implicit gameState: GameState): Action = {
+  def execute()(implicit gameState: GameState, eventsModule: EventsModule): Action = {
     if (previouslyCalled) {
       throw new IllegalStateException(s"Action $this was already executed.")
     }
@@ -28,10 +26,10 @@ sealed trait Action extends Event {
 
   def redo()(implicit gameState: GameState): Unit = throw new NotImplementedError(s"Redo has not been implemented for $this")
 
-  protected def doAction()(implicit gameState: GameState): Unit
+  protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule): Unit
 }
 
-trait InherentAction extends Action with DefaultEventsModuleComponent {
+trait InherentAction extends Action {
   /**
     * If the action is composed by something else.
     */
@@ -41,30 +39,32 @@ trait InherentAction extends Action with DefaultEventsModuleComponent {
 /**
   * This can either be a card or an effect activation (the former may include the latter).
   */
-sealed trait ExistsInAChainAction extends Action with DefaultEventsModuleComponent {
+sealed trait ExistsInAChainAction extends Action {
   val card: Card
-  def resolve()(implicit gameState: GameState)
+  def resolve()(implicit gameState: GameState, eventsModule: EventsModule)
 }
 
 /**
   * Effect does not have to be activated for some continuous spells and traps.
   */
 case class CardActivation(card: Card, maybeEffect: Option[Effect]) extends ExistsInAChainAction {
-  override protected def doAction()(implicit gameState: GameState): Unit = maybeEffect.foreach(_.Activation.activate())
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule) = maybeEffect.foreach(_.Activation.activate())
   override val player = card.Owner
 
-  override def resolve()(implicit gameState: GameState): Unit = maybeEffect.foreach(effect => effect.Resolution.resolve(this))
+  override def resolve()(implicit gameState: GameState, eventsModule: EventsModule) = {
+    maybeEffect.foreach(effect => effect.Resolution.resolve(this))
+  }
 }
 
 case class EffectActivation(card: Card, effect: Effect, player: Player) extends ExistsInAChainAction {
-  override protected def doAction()(implicit gameState: GameState): Unit = effect.Activation.activate()
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule) = effect.Activation.activate()
 
-  override def resolve()(implicit gameState: GameState): Unit = effect.Resolution.resolve(this)
+  override def resolve()(implicit gameState: GameState, eventsModule: EventsModule) = effect.Resolution.resolve(this)
 }
 
 case class PassPriority(player: Player) extends InherentAction {
   override def toString = "PassPriority"
-  override def doAction()(implicit gameState: GameState) = ()
+  override def doAction()(implicit gameState: GameState, eventsModule: EventsModule) = ()
   override val maybeParent: Option[Action] = None
 }
 
@@ -79,7 +79,7 @@ class DiscardImpl(override val player: Player, cards: Seq[Card], parent: Action 
     this(player, Seq(card))
   }
 
-  override protected def doAction()(implicit gameState: GameState): Unit = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule): Unit = {
     for (card <- cards) {
       card.discard()
     }
@@ -92,7 +92,7 @@ class DiscardForHandSizeLimitImpl(implicit gameState: GameState) extends Discard
   val player = gameState.turnPlayers.turnPlayer
   val maybeParent: Option[Action] = None
 
-  override protected def doAction()(implicit gameState: GameState) = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule) = {
     for (choice <- player.cardToDiscardForHandSizeLimit) {
       choice.sendToGrave()
     }
@@ -104,7 +104,7 @@ trait Draw extends InherentAction
 class DrawImpl(override val player: Player, howMany: Int = 1, parent: Action = null) extends Draw {
   val maybeParent: Option[Action] = Option(parent)
 
-  override protected def doAction()(implicit gameState: GameState): Unit = player.draw(howMany)
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule): Unit = player.draw(howMany)
 }
 
 trait DrawForTurn extends Draw
@@ -113,7 +113,7 @@ class DrawForTurnImpl(implicit gameState: GameState) extends DrawForTurn {
   val player = gameState.turnPlayers.turnPlayer
   val maybeParent: Option[Action] = None
 
-  override protected def doAction()(implicit gameState: GameState): Unit = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule) = {
     gameState.turnPlayers.turnPlayer.draw()
   }
 }
@@ -136,7 +136,7 @@ case class DestroyImpl(override val player: Player, override val cards: Seq[Card
     this(player, Seq(card), null)
   }
 
-  override protected def doAction()(implicit gameState: GameState): Unit = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule): Unit = {
     for (card <- cards) {
       card.destroy()
     }

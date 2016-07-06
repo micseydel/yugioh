@@ -1,11 +1,11 @@
 package yugioh.card.library
 
-import yugioh.action.monster.SpecialSummonImpl
 import yugioh.action._
+import yugioh.action.monster.SpecialSummonImpl
 import yugioh.card._
 import yugioh.card.monster.{Attack, Defense, Monster}
 import yugioh.card.spell.{Spell, SpellEffect}
-import yugioh.events.DefaultEventsModuleComponent
+import yugioh.events.EventsModule
 import yugioh.{Criteria, GameState, InGraveyard, Player}
 
 
@@ -32,31 +32,31 @@ class CardDestruction(val Owner: Player) extends Spell {
     override val Resolution = new Resolution {
       override val Effect: Effect = CardDestructionEffect.this
 
-      case class DiscardBothHands(parent: Action, existsInAChainAction: ExistsInAChainAction) extends InherentAction with DefaultEventsModuleComponent {
+      case class DiscardBothHands(parent: Action, existsInAChainAction: ExistsInAChainAction) extends InherentAction {
         override val maybeParent = Some(existsInAChainAction)
 
         override val player: Player = controller
 
-        override protected def doAction()(implicit gameState: GameState): Unit = {
+        override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule) = {
           for (player <- gameState.turnPlayers.both) {
             new DiscardImpl(controller, player.hand, existsInAChainAction).execute()
           }
         }
       }
 
-      class BothDraw(handSizes: Seq[(Player, Int)], existsInAChainAction: ExistsInAChainAction) extends InherentAction with DefaultEventsModuleComponent {
+      class BothDraw(handSizes: Seq[(Player, Int)], existsInAChainAction: ExistsInAChainAction) extends InherentAction {
         override val maybeParent = Some(existsInAChainAction)
 
         override val player: Player = controller
 
-        override protected def doAction()(implicit gameState: GameState): Unit = {
+        override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule) = {
           for ((player, handSize) <- handSizes) {
             new DrawImpl(player, handSize, existsInAChainAction).execute()
           }
         }
       }
 
-      override def resolve(existsInAChainAction: ExistsInAChainAction)(implicit gameState: GameState): Unit = {
+      override def resolve(existsInAChainAction: ExistsInAChainAction)(implicit gameState: GameState, eventsModule: EventsModule) = {
         val handSizes = gameState.turnPlayers.both.map(player => (player, player.hand.size))
 
         new DiscardBothHands(existsInAChainAction, existsInAChainAction).execute()
@@ -85,7 +85,7 @@ class DarkHole(val Owner: Player) extends Spell {
     override val Resolution = new Resolution {
       val Effect = DarkHoleEffect.this
 
-      override def resolve(existsInAChainAction: ExistsInAChainAction)(implicit gameState: GameState): Unit = {
+      override def resolve(existsInAChainAction: ExistsInAChainAction)(implicit gameState: GameState, eventsModule: EventsModule) = {
         new DestroyImpl(Owner, gameState.turnPlayers.both.flatMap(_.field.monsterZones).flatten, existsInAChainAction).execute()
       }
     }
@@ -104,7 +104,7 @@ class DianKetoTheCureMaster(val Owner: Player) extends Spell {
     override val Resolution = new Resolution {
       val Effect = DianKetoTheCureMasterEffect.this
 
-      override def resolve(existsInAChainAction: ExistsInAChainAction)(implicit gameState: GameState): Unit = {
+      override def resolve(existsInAChainAction: ExistsInAChainAction)(implicit gameState: GameState, eventsModule: EventsModule) = {
         Card.Owner.lifePoints += 1000 // TODO LOW: this should be refactored out into an action
       }
     }
@@ -140,7 +140,7 @@ class MonsterReborn(val Owner: Player) extends Spell {
     override val Resolution = new Resolution {
       override val Effect: Effect = MonsterRebornEffect.this
 
-      override def resolve(existsInAChainAction: ExistsInAChainAction)(implicit gameState: GameState): Unit = {
+      override def resolve(existsInAChainAction: ExistsInAChainAction)(implicit gameState: GameState, eventsModule: EventsModule) = {
         val target = selectedTargets.head.asInstanceOf[Monster]
 
         if (InGraveyard(target) && controller.field.hasFreeMonsterZone) {

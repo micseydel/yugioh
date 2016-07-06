@@ -5,9 +5,10 @@ import yugioh._
 import yugioh.action.{Action, CardActivation}
 import yugioh.card.state.SpellTrapControlledState
 import yugioh.card._
+import yugioh.events.EventsModule
 
 trait Spell extends SpellOrTrap {
-  override def actions(implicit gameState: GameState): Seq[Action] = {
+  override def actions(implicit gameState: GameState, eventsModule: EventsModule): Seq[Action] = {
     val maybeActivation = if (effects.size == 1) {
       gameState match {
         case GameState(_, TurnPlayers(Owner, _), OpenGameState, MainPhase | MainPhase2, _, _) if canActivate =>

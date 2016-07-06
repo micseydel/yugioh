@@ -1,7 +1,7 @@
 package yugioh.card.state
 
 import yugioh.card.monster.Position
-import yugioh.events.{DefaultEventsModuleComponent, TurnEndEvent}
+import yugioh.events.{EventsModule, TurnEndEvent}
 
 trait ControlledState {
   def faceup: Boolean
@@ -13,7 +13,7 @@ case class MonsterControlledState(
   var position: Position,
   var attackedThisTurn: Boolean = false,
   var manuallyChangedPositionsThisTurn: Boolean = false // also set to true if attacked
-) extends ControlledState with DefaultEventsModuleComponent {
+)(implicit eventsModule: EventsModule) extends ControlledState {
   // TODO: need clean way of unsubscribing
   val subscription = eventsModule.observe { event =>
     event match {
