@@ -24,7 +24,7 @@ trait Subscription {
   def dispose(): Unit
 }
 
-object DefaultEventsModule$ extends EventsModule {
+object DefaultEventsModule extends EventsModule {
   val observers = new ListBuffer[Observer[_ <: Event]]
 
   def observe[E <: Event](observer: Observer[E]): Subscription = {
@@ -49,5 +49,5 @@ object DefaultEventsModule$ extends EventsModule {
 }
 
 trait DefaultEventsModuleComponent extends EventsModuleComponent {
-  def eventsModule = DefaultEventsModule$
+  def eventsModule = DefaultEventsModule
 }
