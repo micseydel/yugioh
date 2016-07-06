@@ -1,7 +1,7 @@
 package yugioh
 
 import yugioh.action.monster.{DeclareAttack, NormalSummon, SetAsMonster}
-import yugioh.events.{BattleDamage, EventsComponent, TurnEndEvent, TurnStartEvent}
+import yugioh.events.{BattleDamage, EventsModuleComponent, TurnEndEvent, TurnStartEvent}
 
 trait PlayGameComponent {
   val Players: (Player, Player)
@@ -18,11 +18,15 @@ trait PlayGameComponent {
 }
 
 trait DefaultPlayGameComponent extends PlayGameComponent {
-  self: EventsComponent =>
+  self: EventsModuleComponent
+    with PhaseModuleComponent =>
 
   override def playGame: PlayGame = new PlayGame {
     override val mutableGameState = new MutableGameState
 
+    /**
+      * A GameLossException will be thrown to end the game.
+      */
     def mainLoop() = {
       setupObservables()
 
@@ -32,7 +36,6 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
       }
 
       // loop until a game loss exception is thrown
-      // TODO LOW: catch the game loss exception here and do stuff based on it
       for (turnPlayers <- playersCycle) {
         takeTurn(turnPlayers)
       }
@@ -42,7 +45,7 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
       mutableGameState.turnCount += 1
 
       events.emit(TurnStartEvent(turnPlayers, mutableGameState))
-      Phase.loop(new GameState(mutableGameState, turnPlayers))
+      phaseModule.loop(GameState(mutableGameState, turnPlayers))
       events.emit(TurnEndEvent)
     }
 

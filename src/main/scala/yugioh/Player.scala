@@ -3,7 +3,7 @@ package yugioh
 import yugioh.action.Action
 import yugioh.card.Card
 import yugioh.card.monster._
-import yugioh.events.{EventsComponent, PhaseStartEvent, TurnStartEvent}
+import yugioh.events.{EventsModuleComponent, PhaseStartEvent, TurnStartEvent}
 
 import scala.collection.mutable.ListBuffer
 import scala.io.StdIn
@@ -82,7 +82,7 @@ case class TurnPlayers(turnPlayer: Player, opponent: Player) {
 }
 
 class CommandLineHumanPlayer(val name: String) extends Player {
-  Me: EventsComponent =>
+  Me: EventsModuleComponent =>
 
   override val deck: Deck = new TestDeck(this) // TODO: be more than just a stub
 

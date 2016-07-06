@@ -12,8 +12,8 @@ sealed case class PhaseEndEvent(phase: Phase) extends Event
   * Singleton objects to represent phase start/end.
   */
 object PhaseChangeEvent {
-  val StartEvents: Map[Phase, PhaseStartEvent] = Phase.phases.map(phase => (phase, PhaseStartEvent(phase))).toMap
-  val EndEvents: Map[Phase, PhaseEndEvent] = Phase.phases.map(phase => (phase, PhaseEndEvent(phase))).toMap
+  val StartEvents: Map[Phase, PhaseStartEvent] = Phase.Phases.map(phase => (phase, PhaseStartEvent(phase))).toMap
+  val EndEvents: Map[Phase, PhaseEndEvent] = Phase.Phases.map(phase => (phase, PhaseEndEvent(phase))).toMap
 }
 
 case object TurnEndEvent extends Event

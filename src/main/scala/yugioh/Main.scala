@@ -1,10 +1,11 @@
 package yugioh
 
-import yugioh.events.DefaultEventsComponent
+import yugioh.events.DefaultEventsModuleComponent
 
 object Main extends DefaultPlayGameComponent
-    with DefaultEventsComponent {
-  val player1 = new CommandLineHumanPlayer("Human") with DefaultEventsComponent
+    with DefaultEventsModuleComponent
+    with DefaultPhaseModuleComponent {
+  val player1 = new CommandLineHumanPlayer("Human") with DefaultEventsModuleComponent
   val player2 = new PassivePlayer
 
   override val Players = (player1, player2)

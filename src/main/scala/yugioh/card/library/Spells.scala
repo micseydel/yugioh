@@ -5,7 +5,7 @@ import yugioh.action._
 import yugioh.card._
 import yugioh.card.monster.{Attack, Defense, Monster}
 import yugioh.card.spell.{Spell, SpellEffect}
-import yugioh.events.DefaultEventsComponent
+import yugioh.events.DefaultEventsModuleComponent
 import yugioh.{Criteria, GameState, InGraveyard, Player}
 
 
@@ -32,7 +32,7 @@ class CardDestruction(val Owner: Player) extends Spell {
     override val Resolution = new Resolution {
       override val Effect: Effect = CardDestructionEffect.this
 
-      case class DiscardBothHands(parent: Action, existsInAChainAction: ExistsInAChainAction) extends InherentAction with DefaultEventsComponent {
+      case class DiscardBothHands(parent: Action, existsInAChainAction: ExistsInAChainAction) extends InherentAction with DefaultEventsModuleComponent {
         override val maybeParent = Some(existsInAChainAction)
 
         override val player: Player = controller
@@ -44,7 +44,7 @@ class CardDestruction(val Owner: Player) extends Spell {
         }
       }
 
-      class BothDraw(handSizes: Seq[(Player, Int)], existsInAChainAction: ExistsInAChainAction) extends InherentAction with DefaultEventsComponent {
+      class BothDraw(handSizes: Seq[(Player, Int)], existsInAChainAction: ExistsInAChainAction) extends InherentAction with DefaultEventsModuleComponent {
         override val maybeParent = Some(existsInAChainAction)
 
         override val player: Player = controller

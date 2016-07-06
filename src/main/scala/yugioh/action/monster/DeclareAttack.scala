@@ -3,14 +3,14 @@ package yugioh.action.monster
 import yugioh._
 import yugioh.action.{Action, InherentAction}
 import yugioh.card.monster.Monster
-import yugioh.events.{DefaultEventsComponent, Event}
+import yugioh.events.{DefaultEventsModuleComponent, Event}
 
 sealed trait DeclareAttack extends InherentAction {
   val attacker: Monster
   val player = attacker.controller
 }
 
-case class DeclareAttackOnMonster(attacker: Monster) extends DeclareAttack with DefaultEventsComponent {
+case class DeclareAttackOnMonster(attacker: Monster) extends DeclareAttack with DefaultEventsModuleComponent {
   override val maybeParent: Option[Action] = None
 
   override protected def doAction()(implicit gameState: GameState): Unit = {

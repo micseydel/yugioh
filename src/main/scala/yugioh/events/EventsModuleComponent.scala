@@ -4,7 +4,7 @@ import scala.collection.mutable.ListBuffer
 
 trait Event
 
-trait EventsComponent {
+trait EventsModuleComponent {
   def events: Events
 }
 
@@ -48,6 +48,6 @@ object DefaultEvents extends Events {
   }
 }
 
-trait DefaultEventsComponent extends EventsComponent {
+trait DefaultEventsModuleComponent extends EventsModuleComponent {
   def events = DefaultEvents
 }

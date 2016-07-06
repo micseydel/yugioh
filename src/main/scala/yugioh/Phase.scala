@@ -85,18 +85,32 @@ case object EndPhase extends Phase {
   }
 }
 
+object Phase {
+  val Phases = Seq(DrawPhase, StandbyPhase, MainPhase, BattlePhase, MainPhase2, EndPhase)
+  val MainPhases = Seq(MainPhase, MainPhase2)
+}
 
-object Phase extends DefaultEventsComponent {
-  val phases = Seq(DrawPhase, StandbyPhase, MainPhase, BattlePhase, MainPhase2, EndPhase)
-  val mainPhases = Set(MainPhase, MainPhase2)
 
-  def loop(implicit gameState: GameState) = {
-    var phase: Phase = DrawPhase
-    do {
-      events.emit(PhaseChangeEvent.StartEvents(phase))
-      val nextPhase = phase.next(gameState.copy(phase = phase))
-      events.emit(PhaseChangeEvent.EndEvents(phase))
-      phase = nextPhase
-    } while (phase != null)
+trait PhaseModuleComponent {
+  trait PhaseModule {
+    def loop(implicit gameState: GameState)
+  }
+
+  def phaseModule: PhaseModule
+}
+
+trait DefaultPhaseModuleComponent extends PhaseModuleComponent {
+  self: EventsModuleComponent =>
+
+  override def phaseModule = new PhaseModule {
+    def loop(implicit gameState: GameState) = {
+      var phase: Phase = DrawPhase
+      do {
+        events.emit(PhaseChangeEvent.StartEvents(phase))
+        val nextPhase = phase.next(gameState.copy(phase = phase))
+        events.emit(PhaseChangeEvent.EndEvents(phase))
+        phase = nextPhase
+      } while (phase != null)
+    }
   }
 }

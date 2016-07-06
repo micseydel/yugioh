@@ -2,10 +2,10 @@ package yugioh.action
 
 import yugioh._
 import yugioh.card.{Card, Effect}
-import yugioh.events.{DefaultEventsComponent, Event, EventsComponent}
+import yugioh.events.{DefaultEventsModuleComponent, Event, EventsModuleComponent}
 
 sealed trait Action extends Event {
-  self: EventsComponent =>
+  self: EventsModuleComponent =>
 
   val player: Player
 
@@ -31,7 +31,7 @@ sealed trait Action extends Event {
   protected def doAction()(implicit gameState: GameState): Unit
 }
 
-trait InherentAction extends Action with DefaultEventsComponent {
+trait InherentAction extends Action with DefaultEventsModuleComponent {
   /**
     * If the action is composed by something else.
     */
@@ -41,7 +41,7 @@ trait InherentAction extends Action with DefaultEventsComponent {
 /**
   * This can either be a card or an effect activation (the former may include the latter).
   */
-sealed trait ExistsInAChainAction extends Action with DefaultEventsComponent {
+sealed trait ExistsInAChainAction extends Action with DefaultEventsModuleComponent {
   val card: Card
   def resolve()(implicit gameState: GameState)
 }
