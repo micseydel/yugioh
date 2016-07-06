@@ -3,7 +3,7 @@ package yugioh.card.monster
 import yugioh._
 import yugioh.action.Action
 import yugioh.action.monster._
-import yugioh.card.Card
+import yugioh.card._
 import yugioh.card.state.{MonsterControlledState, MonsterFieldState}
 
 trait Monster extends Card {
@@ -108,7 +108,10 @@ trait Monster extends Card {
 
 trait NormalMonster extends Monster
 
-trait EffectMonster extends Monster
+trait EffectMonster extends Monster {
+  val Effects: Seq[Effect]
+}
+
 trait FlipMonster extends EffectMonster
 
 // TODO LOW: is there an is-A relationship between Nomi and Semi-Nomi?

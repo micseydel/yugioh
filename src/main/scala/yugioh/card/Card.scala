@@ -54,6 +54,8 @@ trait SetAsSpellOrTrap extends SetCard {
 }
 
 class SetAsSpellOrTrapImpl(override val spellOrTrap: SpellOrTrap) extends SetAsSpellOrTrap {
+  override val maybeParent: Option[Action] = None
+
   override val player: Player = spellOrTrap.Owner
 
   override val toString = s"SetAsSpellOrTrap($spellOrTrap)"

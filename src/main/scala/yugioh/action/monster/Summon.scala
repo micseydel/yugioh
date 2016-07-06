@@ -1,7 +1,7 @@
 package yugioh.action.monster
 
 import yugioh._
-import yugioh.action.{InherentAction, SetCard}
+import yugioh.action.{Action, InherentAction, SetCard}
 import yugioh.card.monster._
 import yugioh.card.state._
 
@@ -22,6 +22,8 @@ trait Summon extends SummonOrSet
 trait NormalSummon extends Summon
 
 class NormalSummonImpl(val monster: Monster) extends NormalSummon {
+  override val maybeParent: Option[Action] = None
+
   override protected def doAction()(implicit gameState: GameState) = {
     monster.Owner.field.placeAsMonster(monster, Attack, NormalSummoned)
     super.doAction()
@@ -48,6 +50,8 @@ class TributeSummonImpl(override val monster: Monster) extends NormalSummonImpl(
 trait FlipSummon extends Summon with SwitchPosition
 
 class FlipSummonImpl(override val monster: Monster) extends FlipSummon {
+  override val maybeParent: Option[Action] = None
+
   override protected def doAction()(implicit gameState: GameState) = {
     super.doAction()
   }
@@ -56,6 +60,8 @@ class FlipSummonImpl(override val monster: Monster) extends FlipSummon {
 trait SetAsMonster extends SummonOrSet with SetCard
 
 class SetAsMonsterImpl(override val monster: Monster) extends SetAsMonster {
+  override val maybeParent: Option[Action] = None
+
   override protected def doAction()(implicit gameState: GameState) = {
     monster.Owner.field.placeAsMonster(monster, Set, NotSummoned)
     super.doAction()
@@ -80,7 +86,9 @@ trait SpecialSummon extends Summon {
   val position: Position
 }
 
-case class SpecialSummonImpl(override val player: Player, monster: Monster, position: Position) extends SpecialSummon {
+case class SpecialSummonImpl(override val player: Player, monster: Monster, position: Position, parent: Action = null) extends SpecialSummon {
+  override val maybeParent: Option[Action] = Option(parent)
+
   override protected def doAction()(implicit gameState: GameState): Unit = {
     player.field.placeAsMonster(monster, position, SpecialSummoned)
     super.doAction()

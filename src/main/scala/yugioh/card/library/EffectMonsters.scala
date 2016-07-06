@@ -1,6 +1,7 @@
 package yugioh.card.library
 
 import yugioh.Player
+import yugioh.card.Effect
 import yugioh.card.monster._
 
 // this just makes IDE navigation easier
@@ -14,7 +15,8 @@ class TheSternMystic(val Owner: Player) extends FlipMonster {
   override val MaybePrintedLevel = Some(4)
   override val PrintedAttribute = Light
   override val PrintedType = Spellcaster
-  // TODO: TheSternMystic effect implementation - http://yugioh.wikia.com/wiki/The_Stern_Mystic
+
+  override lazy val Effects: Seq[Effect] = ??? // TODO: TheSternMystic effect implementation - http://yugioh.wikia.com/wiki/The_Stern_Mystic
 }
 
 object WallOfIllusion extends InstantiableCard[WallOfIllusion]
@@ -25,7 +27,8 @@ class WallOfIllusion(val Owner: Player) extends EffectMonster {
   override val MaybePrintedLevel = Some(4)
   override val PrintedAttribute = Dark
   override val PrintedType = Fiend
-  // TODO: WallOfIllusion effect implementation - http://yugioh.wikia.com/wiki/The_Stern_Mystic
+
+  override lazy val Effects: Seq[Effect] = ??? // TODO: WallOfIllusion effect implementation - http://yugioh.wikia.com/wiki/The_Stern_Mystic
 }
 
 object TrapMaster extends InstantiableCard[TrapMaster]
@@ -36,7 +39,8 @@ class TrapMaster(val Owner: Player) extends FlipMonster {
   override val MaybePrintedLevel = Some(3)
   override val PrintedAttribute = Earth
   override val PrintedType = Warrior
-  // TODO: TrapMaster effect implementation - http://yugioh.wikia.com/wiki/Trap_Master
+
+  override lazy val Effects: Seq[Effect] = ??? // TODO: TrapMaster effect implementation - http://yugioh.wikia.com/wiki/Trap_Master
 }
 
 object ManEaterBug extends InstantiableCard[ManEaterBug]
@@ -47,5 +51,6 @@ class ManEaterBug(val Owner: Player) extends FlipMonster {
   override val MaybePrintedLevel = Some(2)
   override val PrintedAttribute = Earth
   override val PrintedType = Insect
-  // TODO: ManEaterBug effect implementation - http://yugioh.wikia.com/wiki/Man-Eater_Bug
+
+  override lazy val Effects: Seq[Effect] = ??? // TODO: ManEaterBug effect implementation - http://yugioh.wikia.com/wiki/Man-Eater_Bug
 }

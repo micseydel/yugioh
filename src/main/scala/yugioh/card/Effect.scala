@@ -1,5 +1,6 @@
 package yugioh.card
 
+import yugioh.action.ExistsInAChainAction
 import yugioh.{Criteria, GameState}
 
 
@@ -50,5 +51,14 @@ trait Activation {
   * This encapsulates the complexity of "if then" and "and then" and such.
   */
 trait Resolution {
-  def resolve()(implicit gameState: GameState): Unit
+  /**
+    * The effect to which this resolution belongs.
+    */
+  val Effect: Effect
+
+  def resolve(existsInAChainAction: ExistsInAChainAction)(implicit gameState: GameState): Unit
+}
+
+trait FlipEffect extends Effect {
+
 }

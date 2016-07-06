@@ -93,6 +93,7 @@ case class TurnPlayerFastEffects(inResponseTo: List[Event]) extends FastEffectTi
     choice.execute() match {
       case pass: PassPriority => OpponentFastEffects
       case activation: ExistsInAChainAction => ChainRules(activation, inResponseTo)
+      case _: InherentAction => throw new IllegalStateException("Inherent actions cannot be taken when game state is closed.")
     }
   }
 }
@@ -106,6 +107,7 @@ object OpponentFastEffects extends FastEffectTiming {
     choice.execute() match {
       case pass: PassPriority => OpenGameState
       case activation: ExistsInAChainAction => ChainRules(activation, Nil)
+      case _: InherentAction => throw new IllegalStateException("Inherent actions cannot be taken by the opposing player.")
     }
   }
 }
@@ -143,6 +145,7 @@ case class ChainRules(existsInAChainAction: ExistsInAChainAction, inResponseTo: 
           chain.push(existsInAChainAction)
           passedPreviously = false
           player = gameState.turnPlayers.other(chain.head.player)
+        case _: InherentAction => throw new IllegalStateException("Inherent actions cannot be taken when game state is closed.")
       }
     }
 
@@ -189,6 +192,7 @@ object TryToEnd extends FastEffectTiming {
         } else {
           OpenGameState
         }
+      case _: InherentAction => throw new IllegalStateException("Inherent actions cannot be taken when game state is closed.")
     }
   }
 }
