@@ -9,8 +9,8 @@ sealed trait Step
 sealed trait BattlePhaseStep extends Step {
   self: EventsModuleComponent =>
 
-  protected def emitStartEvent(): Unit = events.emit(BattlePhaseStepStartEvent(this))
-  protected def emitEndEvent(): Unit = events.emit(BattlePhaseStepEndEvent(this))
+  protected def emitStartEvent(): Unit = eventsModule.emit(BattlePhaseStepStartEvent(this))
+  protected def emitEndEvent(): Unit = eventsModule.emit(BattlePhaseStepEndEvent(this))
 
   def next(gameState: GameState): BattlePhaseStep
 }
@@ -38,7 +38,7 @@ case object BattleStep extends BattlePhaseStep with DefaultEventsModuleComponent
   override def next(gameState: GameState): BattlePhaseStep = {
     var attacker: Monster = null
     var target: Monster = null
-    val subscription = events.observe { event =>
+    val subscription = eventsModule.observe { event =>
       event match {
         case targeted: TargetedForAttack =>
           target = targeted.target
@@ -92,9 +92,9 @@ object DamageStepSubStep extends DefaultEventsModuleComponent {
   def loop(battle: Battle)(implicit gameState: GameState): Unit = {
     var subStep: DamageStepSubStep = StartOfTheDamageStep
     do {
-      events.emit(DamageSubStepStartEvent(subStep))
+      eventsModule.emit(DamageSubStepStartEvent(subStep))
       val nextSubStep = subStep.performAndGetNext(battle)
-      events.emit(DamageSubStepEndEvent(subStep))
+      eventsModule.emit(DamageSubStepEndEvent(subStep))
       subStep = nextSubStep
     } while (subStep != null)
   }
@@ -116,7 +116,7 @@ case object BeforeDamageCalculation extends DamageStepSubStep with DefaultEvents
         for (controlledState <- target.maybeMonsterControlledState)
           if (controlledState.position == Set) {
             controlledState.position = Defense
-            events.emit(FlippedRegular(target, battle))
+            eventsModule.emit(FlippedRegular(target, battle))
           }
       case ignore =>
     }
@@ -131,7 +131,7 @@ case object PerformDamageCalculation extends DamageStepSubStep with DefaultEvent
     FastEffectTiming.loop(gameState.copy(step = this))
 
     var destroyed: Set[Monster] = collection.immutable.Set()
-    val subscription = events.observe { event =>
+    val subscription = eventsModule.observe { event =>
       event match {
         case DestroyedByBattle(monster, _) =>
           destroyed += monster
@@ -141,7 +141,7 @@ case object PerformDamageCalculation extends DamageStepSubStep with DefaultEvent
 
     battle match {
       case Battle(attacker, null) =>
-        events.emit(BattleDamage(gameState.turnPlayers.opponent, attacker.attack))
+        eventsModule.emit(BattleDamage(gameState.turnPlayers.opponent, attacker.attack))
       case Battle(attacker, target) =>
         for (
           monsterControlledState <- target.maybeMonsterControlledState;
@@ -151,7 +151,7 @@ case object PerformDamageCalculation extends DamageStepSubStep with DefaultEvent
             case Defense =>
               if (attacker.attack > target.defense) {
                 // TODO LOW: piercing damage?
-                events.emit(DestroyedByBattle(target, attacker))
+                eventsModule.emit(DestroyedByBattle(target, attacker))
               }
             case Attack =>
               // if both have 0 attack, nothing happens here
@@ -159,14 +159,14 @@ case object PerformDamageCalculation extends DamageStepSubStep with DefaultEvent
                 val difference = attacker.attack - target.attack
                 difference.signum match { // get the sign of the difference
                   case -1 => // attacker destroyed
-                    events.emit(BattleDamage(gameState.turnPlayers.turnPlayer, -difference))
-                    events.emit(DestroyedByBattle(attacker, target))
+                    eventsModule.emit(BattleDamage(gameState.turnPlayers.turnPlayer, -difference))
+                    eventsModule.emit(DestroyedByBattle(attacker, target))
                   case 0 =>
-                    events.emit(DestroyedByBattle(attacker, target))
-                    events.emit(DestroyedByBattle(target, attacker))
+                    eventsModule.emit(DestroyedByBattle(attacker, target))
+                    eventsModule.emit(DestroyedByBattle(target, attacker))
                   case 1 => // target destroyed
-                    events.emit(BattleDamage(gameState.turnPlayers.opponent, difference))
-                    events.emit(DestroyedByBattle(target, attacker))
+                    eventsModule.emit(BattleDamage(gameState.turnPlayers.opponent, difference))
+                    eventsModule.emit(DestroyedByBattle(target, attacker))
                 }
               }
             case Set =>

@@ -15,7 +15,7 @@ case class MonsterControlledState(
   var manuallyChangedPositionsThisTurn: Boolean = false // also set to true if attacked
 ) extends ControlledState with DefaultEventsModuleComponent {
   // TODO: need clean way of unsubscribing
-  val subscription = events.observe { event =>
+  val subscription = eventsModule.observe { event =>
     event match {
       case TurnEndEvent =>
         attackedThisTurn = false

@@ -86,7 +86,7 @@ class CommandLineHumanPlayer(val name: String) extends Player {
 
   override val deck: Deck = new TestDeck(this) // TODO: be more than just a stub
 
-  events.observe { event =>
+  eventsModule.observe { event =>
     event match {
       case TurnStartEvent(turnPlayers, mutableGameState) =>
         println(s"\nTurn #${mutableGameState.turnCount}")

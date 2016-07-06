@@ -16,7 +16,7 @@ case class DeclareAttackOnMonster(attacker: Monster) extends DeclareAttack with 
   override protected def doAction()(implicit gameState: GameState): Unit = {
     val turnPlayers = gameState.turnPlayers
     val attackTarget = turnPlayers.turnPlayer.selectAttackTarget(attacker, turnPlayers.opponent.field.monsterZones.toSeq.flatten)
-    events.emit(TargetedForAttack(attacker, attackTarget))
+    eventsModule.emit(TargetedForAttack(attacker, attackTarget))
   }
 }
 

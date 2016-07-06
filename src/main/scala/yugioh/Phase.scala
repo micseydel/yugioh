@@ -106,9 +106,9 @@ trait DefaultPhaseModuleComponent extends PhaseModuleComponent {
     def loop(implicit gameState: GameState) = {
       var phase: Phase = DrawPhase
       do {
-        events.emit(PhaseChangeEvent.StartEvents(phase))
+        eventsModule.emit(PhaseChangeEvent.StartEvents(phase))
         val nextPhase = phase.next(gameState.copy(phase = phase))
-        events.emit(PhaseChangeEvent.EndEvents(phase))
+        eventsModule.emit(PhaseChangeEvent.EndEvents(phase))
         phase = nextPhase
       } while (phase != null)
     }

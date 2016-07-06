@@ -17,7 +17,7 @@ sealed trait Action extends Event {
     }
 
     doAction()
-    events.emit(this)
+    eventsModule.emit(this)
     gameState.history.append(this)
     previouslyCalled = true
 

@@ -44,9 +44,9 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
     private def takeTurn(turnPlayers: TurnPlayers) = {
       mutableGameState.turnCount += 1
 
-      events.emit(TurnStartEvent(turnPlayers, mutableGameState))
+      eventsModule.emit(TurnStartEvent(turnPlayers, mutableGameState))
       phaseModule.loop(GameState(mutableGameState, turnPlayers))
-      events.emit(TurnEndEvent)
+      eventsModule.emit(TurnEndEvent)
     }
 
     /**
@@ -59,7 +59,7 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
 
     private def setupObservables() = {
       // set hook for clearing turn state
-      events.observe { event =>
+      eventsModule.observe { event =>
         event match {
           case TurnStartEvent(_, _) =>
             mutableGameState.hasNormalSummonedThisTurn = false
@@ -68,7 +68,7 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
       }
 
       // listen for a normal summon or set, flag that it happened
-      events.observe { event =>
+      eventsModule.observe { event =>
         event match {
           case _:NormalSummon | _:SetAsMonster =>
             mutableGameState.hasNormalSummonedThisTurn = true
@@ -77,7 +77,7 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
       }
 
       // listen for an attack declaration, tag that monster as having attacked
-      events.observe { event =>
+      eventsModule.observe { event =>
         event match {
           case attackDeclaration: DeclareAttack =>
             for (monsterControlledState <- attackDeclaration.attacker.maybeMonsterControlledState) {
@@ -88,7 +88,7 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
       }
 
       // listen for and handle life point damage
-      events.observe { event =>
+      eventsModule.observe { event =>
         event match {
           case BattleDamage(player, damage) =>
             player.lifePoints -= damage

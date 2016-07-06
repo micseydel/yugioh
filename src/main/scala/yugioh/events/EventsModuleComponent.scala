@@ -5,10 +5,10 @@ import scala.collection.mutable.ListBuffer
 trait Event
 
 trait EventsModuleComponent {
-  def events: Events
+  def eventsModule: EventsModule
 }
 
-trait Events {
+trait EventsModule {
   def observe[E <: Event](observer: Observer[E]): Subscription
 
   def observe[E <: Event](onEvent: Event => Unit): Subscription
@@ -24,7 +24,7 @@ trait Subscription {
   def dispose(): Unit
 }
 
-object DefaultEvents extends Events {
+object DefaultEventsModule$ extends EventsModule {
   val observers = new ListBuffer[Observer[_ <: Event]]
 
   def observe[E <: Event](observer: Observer[E]): Subscription = {
@@ -49,5 +49,5 @@ object DefaultEvents extends Events {
 }
 
 trait DefaultEventsModuleComponent extends EventsModuleComponent {
-  def events = DefaultEvents
+  def eventsModule = DefaultEventsModule$
 }
