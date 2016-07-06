@@ -4,7 +4,8 @@ import yugioh.events.DefaultEventsModuleComponent
 
 object Main extends DefaultPlayGameComponent
     with DefaultEventsModuleComponent
-    with DefaultPhaseModuleComponent {
+    with DefaultPhaseModuleComponent
+    with DefaultBattlePhaseModuleComponent{
   val player1 = new CommandLineHumanPlayer("Human") with DefaultEventsModuleComponent
   val player2 = new PassivePlayer
 

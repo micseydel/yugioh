@@ -5,7 +5,7 @@ import scala.collection.mutable.ListBuffer
 trait Event
 
 trait EventsModuleComponent {
-  def eventsModule: EventsModule
+  implicit def eventsModule: EventsModule
 }
 
 trait EventsModule {

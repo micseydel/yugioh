@@ -9,14 +9,14 @@ import yugioh.events._
 sealed trait Phase {
   val abbreviation: String
 
-  def next(gameState: GameState): Phase
+  def next(gameState: GameState)(implicit eventsModule: EventsModule, battlePhaseModule: BattlePhaseModule): Phase
 }
 
 
 case object DrawPhase extends Phase {
   val abbreviation = "DP"
 
-  override def next(gameState: GameState): Phase = {
+  override def next(gameState: GameState)(implicit eventsModule: EventsModule, battlePhaseModule: BattlePhaseModule): Phase = {
     implicit val newGameState = gameState.copy(phase = this)
 
     if (gameState.mutableGameState.turnCount > 1) {
@@ -34,7 +34,7 @@ case object DrawPhase extends Phase {
 case object StandbyPhase extends Phase {
   val abbreviation = "SP"
 
-  override def next(gameState: GameState): Phase = {
+  override def next(gameState: GameState)(implicit eventsModule: EventsModule, battlePhaseModule: BattlePhaseModule): Phase = {
     FastEffectTiming.loop(gameState.copy(phase = this))
     MainPhase
   }
@@ -46,7 +46,7 @@ case object MainPhase extends Phase {
   /**
     * If it's later than the first turn, ask the turn player if they want to go to BP. Otherwise go to EP.
     */
-  override def next(gameState: GameState): Phase = {
+  override def next(gameState: GameState)(implicit eventsModule: EventsModule, battlePhaseModule: BattlePhaseModule): Phase = {
     implicit val newGameState = gameState.copy(phase = this)
 
     FastEffectTiming.loop(newGameState)
@@ -61,8 +61,8 @@ case object MainPhase extends Phase {
 case object BattlePhase extends Phase {
   val abbreviation = "BP"
 
-  override def next(gameState: GameState): Phase = {
-    BattlePhaseStep.loop(gameState.copy(phase = this))
+  override def next(gameState: GameState)(implicit eventsModule: EventsModule, battlePhaseModule: BattlePhaseModule): Phase = {
+    battlePhaseModule.loop(gameState.copy(phase = this))
     MainPhase2
   }
 }
@@ -70,7 +70,7 @@ case object BattlePhase extends Phase {
 case object MainPhase2 extends Phase {
   val abbreviation = "MP2"
 
-  override def next(gameState: GameState): Phase = {
+  override def next(gameState: GameState)(implicit eventsModule: EventsModule, battlePhaseModule: BattlePhaseModule): Phase = {
     FastEffectTiming.loop(gameState.copy(phase = this))
     EndPhase
   }
@@ -79,7 +79,7 @@ case object MainPhase2 extends Phase {
 case object EndPhase extends Phase {
   val abbreviation = "EP"
 
-  override def next(gameState: GameState): Phase = {
+  override def next(gameState: GameState)(implicit eventsModule: EventsModule, battlePhaseModule: BattlePhaseModule): Phase = {
     FastEffectTiming.loop(gameState.copy(phase = this))
     null
   }
@@ -100,7 +100,8 @@ trait PhaseModuleComponent {
 }
 
 trait DefaultPhaseModuleComponent extends PhaseModuleComponent {
-  self: EventsModuleComponent =>
+  self: EventsModuleComponent
+    with BattlePhaseModuleComponent =>
 
   override def phaseModule = new PhaseModule {
     def loop(implicit gameState: GameState) = {
