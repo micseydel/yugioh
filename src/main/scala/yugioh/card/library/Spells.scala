@@ -39,7 +39,7 @@ class CardDestruction(val Owner: Player) extends Spell {
 
         override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule) = {
           for (player <- gameState.turnPlayers.both) {
-            new DiscardImpl(controller, player.hand, existsInAChainAction).execute()
+            new DiscardImpl(controller, player.hand, existsInAChainAction).execute() // TODO: decouple
           }
         }
       }
@@ -51,7 +51,7 @@ class CardDestruction(val Owner: Player) extends Spell {
 
         override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule) = {
           for ((player, handSize) <- handSizes) {
-            new DrawImpl(player, handSize, existsInAChainAction).execute()
+            new DrawImpl(player, handSize, existsInAChainAction).execute() // TODO: decouple
           }
         }
       }
@@ -86,7 +86,7 @@ class DarkHole(val Owner: Player) extends Spell {
       val Effect = DarkHoleEffect.this
 
       override def resolve(existsInAChainAction: ExistsInAChainAction)(implicit gameState: GameState, eventsModule: EventsModule) = {
-        new DestroyImpl(Owner, gameState.turnPlayers.both.flatMap(_.field.monsterZones).flatten, existsInAChainAction).execute()
+        new DestroyImpl(Owner, gameState.turnPlayers.both.flatMap(_.field.monsterZones).flatten, existsInAChainAction).execute() // TODO: decouple
       }
     }
   }

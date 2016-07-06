@@ -52,7 +52,7 @@ trait Monster extends Card {
         maybeLevel.map { level =>
           if (level <= 4) {
             if (Owner.field.hasFreeMonsterZone) {
-              Seq(new NormalSummonImpl(this), new SetAsMonsterImpl(this))
+              Seq(new NormalSummonImpl(this), new SetAsMonsterImpl(this)) // TODO: decouple
             } else {
               Seq()
             }
@@ -65,7 +65,7 @@ trait Monster extends Card {
             }
 
             if (canTribute) {
-              Seq(new TributeSummonImpl(this), new TributeSetImpl(this))
+              Seq(new TributeSummonImpl(this), new TributeSetImpl(this)) // TODO: decouple
             } else {
               Seq()
             }
@@ -73,9 +73,9 @@ trait Monster extends Card {
         }.getOrElse(Seq())
       case monsterZone: InMonsterZone if canSwitchPositions =>
         if (maybeControlledState.get.faceup) {
-          Seq(new SwitchPositionImpl(this))
+          Seq(new SwitchPositionImpl(this)) // TODO: decouple
         } else {
-          Seq(new FlipSummonImpl(this))
+          Seq(new FlipSummonImpl(this)) // TODO: decouple
         }
       case _ =>
         Seq()
