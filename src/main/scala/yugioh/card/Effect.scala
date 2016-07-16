@@ -1,6 +1,6 @@
 package yugioh.card
 
-import yugioh.action.ExistsInAChainAction
+import yugioh.action.{ActionModule, ExistsInAChainAction}
 import yugioh.events.EventsModule
 import yugioh.{Criteria, GameState}
 
@@ -57,7 +57,8 @@ trait Resolution {
     */
   val Effect: Effect
 
-  def resolve(existsInAChainAction: ExistsInAChainAction)(implicit gameState: GameState, eventsModule: EventsModule): Unit
+  def resolve(existsInAChainAction: ExistsInAChainAction)
+             (implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit
 }
 
 trait FlipEffect extends Effect {

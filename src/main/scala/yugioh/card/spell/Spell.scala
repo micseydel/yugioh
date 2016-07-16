@@ -2,13 +2,13 @@ package yugioh.card.spell
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 import yugioh._
-import yugioh.action.{Action, CardActivation}
+import yugioh.action.{Action, ActionModule, CardActivation}
 import yugioh.card.state.SpellTrapControlledState
 import yugioh.card._
 import yugioh.events.EventsModule
 
 trait Spell extends SpellOrTrap {
-  override def actions(implicit gameState: GameState, eventsModule: EventsModule): Seq[Action] = {
+  override def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Seq[Action] = {
     val maybeActivation = if (effects.size == 1) {
       gameState match {
         case GameState(_, TurnPlayers(Owner, _), OpenGameState, MainPhase | MainPhase2, _, _) if canActivate =>

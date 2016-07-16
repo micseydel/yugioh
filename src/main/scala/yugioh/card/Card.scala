@@ -1,7 +1,7 @@
 package yugioh.card
 
 import yugioh._
-import yugioh.action.{Action, SetCard}
+import yugioh.action.{Action, ActionModule, SetCard}
 import yugioh.card.monster.Monster
 import yugioh.card.state.ControlledState
 import yugioh.events.EventsModule
@@ -13,7 +13,7 @@ trait Card {
 
   var controller: Player = Owner
   var maybeControlledState: Option[ControlledState] = None
-  def actions(implicit gameState: GameState, eventsModule: EventsModule): Seq[Action]
+  def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Seq[Action]
 
   def name: String = PrintedName
 
@@ -41,10 +41,10 @@ trait Card {
 trait SpellOrTrap extends Card {
   val effects: List[Effect]
 
-  override def actions(implicit gameState: GameState, eventsModule: EventsModule) = {
+  override def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     gameState match {
       case GameState(_, TurnPlayers(Owner, _), OpenGameState, MainPhase | MainPhase2, _, _) if InHand(this) =>
-        Seq(new SetAsSpellOrTrapImpl(this)) // TODO: decouple
+        Seq(actionModule.newSetAsSpellOrTrap(this))
       case _ => Seq()
     }
   }
@@ -61,7 +61,7 @@ class SetAsSpellOrTrapImpl(override val spellOrTrap: SpellOrTrap) extends SetAsS
 
   override val toString = s"SetAsSpellOrTrap($spellOrTrap)"
 
-  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule): Unit = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     if (player.field.hasFreeSpellOrTrapZone) {
       player.field.placeAsSpellOrTrap(spellOrTrap, faceup = false)
     } else {

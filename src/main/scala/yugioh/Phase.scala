@@ -1,6 +1,6 @@
 package yugioh
 
-import yugioh.action.DrawForTurnImpl
+import yugioh.action.ActionModule
 import yugioh.events._
 
 /**
@@ -9,18 +9,20 @@ import yugioh.events._
 sealed trait Phase {
   val abbreviation: String
 
-  def next(gameState: GameState)(implicit eventsModule: EventsModule, battlePhaseModule: BattlePhaseModule): Phase
+  def next(gameState: GameState)
+          (implicit eventsModule: EventsModule, actionModule: ActionModule, battlePhaseModule: BattlePhaseModule): Phase
 }
 
 
 case object DrawPhase extends Phase {
   val abbreviation = "DP"
 
-  override def next(gameState: GameState)(implicit eventsModule: EventsModule, battlePhaseModule: BattlePhaseModule): Phase = {
+  override def next(gameState: GameState)
+                   (implicit eventsModule: EventsModule, actionModule: ActionModule, battlePhaseModule: BattlePhaseModule) = {
     implicit val newGameState = gameState.copy(phase = this)
 
     if (gameState.mutableGameState.turnCount > 1) {
-      val drawForTurn = new DrawForTurnImpl // TODO: decouple
+      val drawForTurn = actionModule.newDrawForTurn
       drawForTurn.execute()
       FastEffectTiming.loop(newGameState, start = CheckForTrigger(List(drawForTurn)))
     } else {
@@ -34,7 +36,8 @@ case object DrawPhase extends Phase {
 case object StandbyPhase extends Phase {
   val abbreviation = "SP"
 
-  override def next(gameState: GameState)(implicit eventsModule: EventsModule, battlePhaseModule: BattlePhaseModule): Phase = {
+  override def next(gameState: GameState)
+                   (implicit eventsModule: EventsModule, actionModule: ActionModule, battlePhaseModule: BattlePhaseModule) = {
     FastEffectTiming.loop(gameState.copy(phase = this))
     MainPhase
   }
@@ -46,7 +49,8 @@ case object MainPhase extends Phase {
   /**
     * If it's later than the first turn, ask the turn player if they want to go to BP. Otherwise go to EP.
     */
-  override def next(gameState: GameState)(implicit eventsModule: EventsModule, battlePhaseModule: BattlePhaseModule): Phase = {
+  override def next(gameState: GameState)
+                   (implicit eventsModule: EventsModule, actionModule: ActionModule, battlePhaseModule: BattlePhaseModule) = {
     implicit val newGameState = gameState.copy(phase = this)
 
     FastEffectTiming.loop(newGameState)
@@ -61,7 +65,8 @@ case object MainPhase extends Phase {
 case object BattlePhase extends Phase {
   val abbreviation = "BP"
 
-  override def next(gameState: GameState)(implicit eventsModule: EventsModule, battlePhaseModule: BattlePhaseModule): Phase = {
+  override def next(gameState: GameState)
+                   (implicit eventsModule: EventsModule, actionModule: ActionModule, battlePhaseModule: BattlePhaseModule) = {
     battlePhaseModule.loop(gameState.copy(phase = this))
     MainPhase2
   }
@@ -70,7 +75,8 @@ case object BattlePhase extends Phase {
 case object MainPhase2 extends Phase {
   val abbreviation = "MP2"
 
-  override def next(gameState: GameState)(implicit eventsModule: EventsModule, battlePhaseModule: BattlePhaseModule): Phase = {
+  override def next(gameState: GameState)
+                   (implicit eventsModule: EventsModule, actionModule: ActionModule, battlePhaseModule: BattlePhaseModule) = {
     FastEffectTiming.loop(gameState.copy(phase = this))
     EndPhase
   }
@@ -79,7 +85,8 @@ case object MainPhase2 extends Phase {
 case object EndPhase extends Phase {
   val abbreviation = "EP"
 
-  override def next(gameState: GameState)(implicit eventsModule: EventsModule, battlePhaseModule: BattlePhaseModule): Phase = {
+  override def next(gameState: GameState)
+                   (implicit eventsModule: EventsModule, actionModule: ActionModule, battlePhaseModule: BattlePhaseModule) = {
     FastEffectTiming.loop(gameState.copy(phase = this))
     null
   }
@@ -93,7 +100,7 @@ object Phase {
 
 trait PhaseModuleComponent {
   trait PhaseModule {
-    def loop(implicit gameState: GameState)
+    def loop(implicit gameState: GameState, actionModule: ActionModule)
   }
 
   def phaseModule: PhaseModule
@@ -104,7 +111,7 @@ trait DefaultPhaseModuleComponent extends PhaseModuleComponent {
     with BattlePhaseModuleComponent =>
 
   override def phaseModule = new PhaseModule {
-    def loop(implicit gameState: GameState) = {
+    def loop(implicit gameState: GameState, actionModule: ActionModule) = {
       var phase: Phase = DrawPhase
       do {
         eventsModule.emit(PhaseChangeEvent.StartEvents(phase))

@@ -1,7 +1,6 @@
 package yugioh.card.library
 
 import yugioh.action._
-import yugioh.action.monster.SpecialSummonImpl
 import yugioh.card._
 import yugioh.card.monster.{Attack, Defense, Monster}
 import yugioh.card.spell.{Spell, SpellEffect}
@@ -37,9 +36,9 @@ class CardDestruction(val Owner: Player) extends Spell {
 
         override val player: Player = controller
 
-        override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule) = {
+        override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
           for (player <- gameState.turnPlayers.both) {
-            new DiscardImpl(controller, player.hand, existsInAChainAction).execute() // TODO: decouple
+            actionModule.newDiscard(controller, player.hand, existsInAChainAction).execute()
           }
         }
       }
@@ -49,14 +48,15 @@ class CardDestruction(val Owner: Player) extends Spell {
 
         override val player: Player = controller
 
-        override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule) = {
+        override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
           for ((player, handSize) <- handSizes) {
-            new DrawImpl(player, handSize, existsInAChainAction).execute() // TODO: decouple
+            actionModule.newDraw(player, handSize, existsInAChainAction).execute()
           }
         }
       }
 
-      override def resolve(existsInAChainAction: ExistsInAChainAction)(implicit gameState: GameState, eventsModule: EventsModule) = {
+      override def resolve(existsInAChainAction: ExistsInAChainAction)
+                          (implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
         val handSizes = gameState.turnPlayers.both.map(player => (player, player.hand.size))
 
         new DiscardBothHands(existsInAChainAction, existsInAChainAction).execute()
@@ -85,8 +85,9 @@ class DarkHole(val Owner: Player) extends Spell {
     override val Resolution = new Resolution {
       val Effect = DarkHoleEffect.this
 
-      override def resolve(existsInAChainAction: ExistsInAChainAction)(implicit gameState: GameState, eventsModule: EventsModule) = {
-        new DestroyImpl(Owner, gameState.turnPlayers.both.flatMap(_.field.monsterZones).flatten, existsInAChainAction).execute() // TODO: decouple
+      override def resolve(existsInAChainAction: ExistsInAChainAction)
+                          (implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+        actionModule.newDestroy(Owner, gameState.turnPlayers.both.flatMap(_.field.monsterZones).flatten, existsInAChainAction).execute()
       }
     }
   }
@@ -104,7 +105,8 @@ class DianKetoTheCureMaster(val Owner: Player) extends Spell {
     override val Resolution = new Resolution {
       val Effect = DianKetoTheCureMasterEffect.this
 
-      override def resolve(existsInAChainAction: ExistsInAChainAction)(implicit gameState: GameState, eventsModule: EventsModule) = {
+      override def resolve(existsInAChainAction: ExistsInAChainAction)
+                          (implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
         Card.Owner.lifePoints += 1000 // TODO LOW: this should be refactored out into an action
       }
     }
@@ -140,12 +142,13 @@ class MonsterReborn(val Owner: Player) extends Spell {
     override val Resolution = new Resolution {
       override val Effect: Effect = MonsterRebornEffect.this
 
-      override def resolve(existsInAChainAction: ExistsInAChainAction)(implicit gameState: GameState, eventsModule: EventsModule) = {
+      override def resolve(existsInAChainAction: ExistsInAChainAction)
+                          (implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
         val target = selectedTargets.head.asInstanceOf[Monster]
 
         if (InGraveyard(target) && controller.field.hasFreeMonsterZone) {
           val position = Owner.selectSpecialSummonPosition(target, Seq(Attack, Defense))
-          SpecialSummonImpl(controller, target, position, existsInAChainAction).execute() // TODO: decouple from implementation somehow
+          actionModule.newSpecialSummon(controller, target, position, existsInAChainAction).execute()
         } // else fizzle
       }
     }

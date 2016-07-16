@@ -1,5 +1,6 @@
 package yugioh
 
+import yugioh.action.ActionModuleComponent
 import yugioh.action.monster.{DeclareAttack, NormalSummon, SetAsMonster}
 import yugioh.events.{BattleDamage, EventsModuleComponent, TurnEndEvent, TurnStartEvent}
 
@@ -19,7 +20,8 @@ trait PlayGameComponent {
 
 trait DefaultPlayGameComponent extends PlayGameComponent {
   self: EventsModuleComponent
-    with PhaseModuleComponent =>
+    with PhaseModuleComponent
+    with ActionModuleComponent =>
 
   override def playGame: PlayGame = new PlayGame {
     override val mutableGameState = new MutableGameState
@@ -45,7 +47,7 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
       mutableGameState.turnCount += 1
 
       eventsModule.emit(TurnStartEvent(turnPlayers, mutableGameState))
-      phaseModule.loop(GameState(mutableGameState, turnPlayers))
+      phaseModule.loop(GameState(mutableGameState, turnPlayers), actionModule)
       eventsModule.emit(TurnEndEvent)
     }
 

@@ -1,7 +1,7 @@
 package yugioh.card.monster
 
 import yugioh._
-import yugioh.action.Action
+import yugioh.action.ActionModule
 import yugioh.action.monster._
 import yugioh.card._
 import yugioh.card.state.{MonsterControlledState, MonsterFieldState}
@@ -31,7 +31,7 @@ trait Monster extends Card {
   /**
     * Default implementation of being able to normal/tribute summon during main phases, does not apply to (Semi-)Nomi.
     */
-  override def actions(implicit gameState: GameState, eventsModule: EventsModule) = {
+  override def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     gameState match {
       case GameState(MutableGameState(_, hasNormalSummonedThisTurn, _), _, OpenGameState, phase, _, _) =>
         phase match {
@@ -46,13 +46,14 @@ trait Monster extends Card {
     }
   }
 
-  private def mainPhaseActions(hasNormalSummonedThisTurn: Boolean)(implicit eventsModule: EventsModule): Seq[Action] = {
+  private def mainPhaseActions(hasNormalSummonedThisTurn: Boolean)
+                              (implicit eventsModule: EventsModule, actionModule: ActionModule) = {
     location match {
       case InHand if !hasNormalSummonedThisTurn =>
         maybeLevel.map { level =>
           if (level <= 4) {
             if (Owner.field.hasFreeMonsterZone) {
-              Seq(new NormalSummonImpl(this), new SetAsMonsterImpl(this)) // TODO: decouple
+              Seq(actionModule.newNormalSummon(this), actionModule.newSetAsMonster(this))
             } else {
               Seq()
             }
@@ -65,7 +66,7 @@ trait Monster extends Card {
             }
 
             if (canTribute) {
-              Seq(new TributeSummonImpl(this), new TributeSetImpl(this)) // TODO: decouple
+              Seq(actionModule.newTributeSummon(this), actionModule.newTributeSet(this))
             } else {
               Seq()
             }
@@ -73,9 +74,9 @@ trait Monster extends Card {
         }.getOrElse(Seq())
       case monsterZone: InMonsterZone if canSwitchPositions =>
         if (maybeControlledState.get.faceup) {
-          Seq(new SwitchPositionImpl(this)) // TODO: decouple
+          Seq(actionModule.newSwitchPosition(this))
         } else {
-          Seq(new FlipSummonImpl(this)) // TODO: decouple
+          Seq(actionModule.newFlipSummon(this))
         }
       case _ =>
         Seq()

@@ -1,6 +1,6 @@
 package yugioh
 
-import yugioh.action.Action
+import yugioh.action.{Action, ActionModule}
 import yugioh.card.monster.{Monster, PendulumMonster, Position}
 import yugioh.card.spell.FieldSpell
 import yugioh.card.state._
@@ -40,7 +40,7 @@ trait Field {
   /**
     * All the actions associated with a field, which includes grave and banished; may be empty.
     */
-  def actions(implicit gameState: GameState) : Seq[Action]
+  def actions(implicit gameState: GameState, actionModule: ActionModule): Seq[Action]
 }
 
 trait FieldModule {
@@ -109,7 +109,7 @@ trait DefaultFieldModuleComponent extends FieldModuleComponent {
         removeFrom.update(zones.indexOf(zone), None)
       }
 
-      override def actions(implicit gameState: GameState) = {
+      override def actions(implicit gameState: GameState, actionModule: ActionModule) = {
         ((monsterZones ++ spellTrapZones :+ fieldSpellZone :+ leftPendulumZone :+ rightPendulumZone).flatten
           ++ graveyard ++ banished).flatMap(_.actions)
       }
