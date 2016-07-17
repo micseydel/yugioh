@@ -12,8 +12,19 @@ trait Card {
   var location: Location = InDeck
 
   var controller: Player = Owner
-  var maybeControlledState: Option[ControlledState] = None
   def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Seq[Action]
+
+  private[this] var _maybeControlledState: Option[ControlledState] = None
+
+  def maybeControlledState: Option[ControlledState] = _maybeControlledState
+
+  def maybeControlledState_=(controlledState: Option[ControlledState]) = {
+    for (controlledState <- maybeControlledState) {
+      controlledState.close()
+    }
+
+    _maybeControlledState = controlledState
+  }
 
   def name: String = PrintedName
 

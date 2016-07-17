@@ -5,17 +5,23 @@ import yugioh.events.{EventsModule, TurnEndEvent}
 
 trait ControlledState {
   def faceup: Boolean
+
+  /**
+    * Should be called when the class isn't use anymore. Ideally this would happen in a destructor, but they don't exist in Scala.
+    */
+  def close(): Unit
 }
 
-case class SpellTrapControlledState(var faceup: Boolean) extends ControlledState
+case class SpellTrapControlledState(var faceup: Boolean) extends ControlledState {
+  override def close() = ()
+}
 
 case class MonsterControlledState(
   var position: Position,
   var attackedThisTurn: Boolean = false,
   var manuallyChangedPositionsThisTurn: Boolean = false // also set to true if attacked
 )(implicit eventsModule: EventsModule) extends ControlledState {
-  // TODO: need clean way of unsubscribing
-  val subscription = eventsModule.observe { event =>
+  private[this] val Subscription = eventsModule.observe { event =>
     event match {
       case TurnEndEvent =>
         attackedThisTurn = false
@@ -25,4 +31,6 @@ case class MonsterControlledState(
   }
 
   override def faceup: Boolean = Position.FaceUp.contains(position)
+
+  override def close() = Subscription.dispose()
 }

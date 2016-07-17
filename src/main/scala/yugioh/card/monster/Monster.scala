@@ -24,9 +24,7 @@ trait Monster extends Card {
 
   var maybeMonsterFieldState: Option[MonsterFieldState] = None
 
-  def maybeMonsterControlledState(implicit eventsModule: EventsModule): Option[MonsterControlledState] = {
-    maybeControlledState.asInstanceOf[Option[MonsterControlledState]]
-  }
+  def maybeMonsterControlledState = maybeControlledState.asInstanceOf[Option[MonsterControlledState]]
 
   /**
     * Default implementation of being able to normal/tribute summon during main phases, does not apply to (Semi-)Nomi.
