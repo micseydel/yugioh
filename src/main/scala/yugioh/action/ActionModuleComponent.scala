@@ -40,6 +40,10 @@ trait ActionModule {
   def newSpecialSummon(controller: Player, monster: Monster, position: Position, existsInAChainAction: ExistsInAChainAction): SpecialSummon
 
   def newDiscardForHandSizeLimit()(implicit gameState: GameState): DiscardForHandSizeLimit
+
+  def newDeclareDirectAttack(monster: Monster): DeclareDirectAttack
+
+  def newDeclareAttackOnMonster(monster: Monster): DeclareAttackOnMonster
 }
 
 trait ActionModuleComponent {
@@ -54,7 +58,7 @@ trait DefaultActionModuleComponent extends ActionModuleComponent {
     }
 
     override def newDestroy(player: Player, cards: Seq[Card], parent: Action = null): Destroy = {
-      new DestroyImpl(player, cards, parent)
+      DestroyImpl(player, cards, parent)
     }
 
     override def newDestroy(player: Player, card: Card): Destroy = {
@@ -70,7 +74,7 @@ trait DefaultActionModuleComponent extends ActionModuleComponent {
     }
 
     override def newSpecialSummon(controller: Player, monster: Monster, position: Position, existsInAChainAction: ExistsInAChainAction) = {
-      new SpecialSummonImpl(controller, monster, position, existsInAChainAction)
+      SpecialSummonImpl(controller, monster, position, existsInAChainAction)
     }
 
     override def newNormalSummon(monster: Monster): NormalSummon = {
@@ -102,5 +106,9 @@ trait DefaultActionModuleComponent extends ActionModuleComponent {
     }
 
     override def newDrawForTurn(implicit gameState: GameState): DrawForTurn = new DrawForTurnImpl
+
+    override def newDeclareDirectAttack(monster: Monster) = DeclareDirectAttackImpl(monster)
+
+    override def newDeclareAttackOnMonster(monster: Monster) = DeclareAttackOnMonsterImpl(monster)
   }
 }

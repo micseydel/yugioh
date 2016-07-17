@@ -2,7 +2,6 @@ package yugioh.card.monster
 
 import yugioh._
 import yugioh.action.ActionModule
-import yugioh.action.monster._
 import yugioh.card._
 import yugioh.card.state.{MonsterControlledState, MonsterFieldState}
 import yugioh.events.EventsModule
@@ -87,7 +86,7 @@ trait Monster extends Card {
     }
   }
 
-  private def battlePhaseActions(implicit gameState: GameState, eventsModule: EventsModule) = {
+  private def battlePhaseActions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     val Controller = controller // for pattern matching
     gameState match {
       case GameState(_, TurnPlayers(Controller, opponent), OpenGameState, _, BattleStep, _) =>
@@ -95,9 +94,9 @@ trait Monster extends Card {
           if (!controlledState.attackedThisTurn && controlledState.position == Attack) {
             val potentialTargets = opponent.field.monsterZones.toSeq.flatten
             if (potentialTargets.nonEmpty) {
-              Seq(new DeclareAttackOnMonster(this))
+              Seq(actionModule.newDeclareAttackOnMonster(this))
             } else {
-              Seq(new DeclareDirectAttack(this))
+              Seq(actionModule.newDeclareDirectAttack(this))
             }
           } else {
             Seq()
