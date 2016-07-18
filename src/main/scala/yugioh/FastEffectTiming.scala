@@ -37,7 +37,7 @@ sealed trait FastEffectTiming {
     val turnPlayers = gameState.turnPlayers
 
     // field includes grave + banished
-    Seq(new PassPriority(turnPlayers.turnPlayer)) ++
+    Seq(PassPriority(turnPlayers.turnPlayer)) ++
       turnPlayers.turnPlayer.hand.flatMap(_.actions) ++
       turnPlayers.turnPlayer.extraDeck.flatMap(_.actions) ++
       turnPlayers.turnPlayer.field.actions ++
@@ -48,7 +48,7 @@ sealed trait FastEffectTiming {
     val turnPlayers = gameState.turnPlayers
 
     // field includes grave + banished
-    Seq(new PassPriority(turnPlayers.opponent)) ++
+    Seq(PassPriority(turnPlayers.opponent)) ++
       turnPlayers.opponent.hand.flatMap(_.actions) ++
       turnPlayers.opponent.field.actions ++
       turnPlayers.turnPlayer.field.actions
