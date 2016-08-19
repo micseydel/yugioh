@@ -57,8 +57,8 @@ trait DefaultFieldModuleComponent extends FieldModuleComponent {
   def fieldModule = new FieldModule {
     override def createField = new Field {
       override def placeAsMonster(monster: Monster, position: Position, howSummoned: HowSummoned, locationPreference: Option[Int]) = {
-        monster.maybeControlledState = Some(new MonsterControlledState(position))
-        monster.maybeMonsterFieldState = Some(new MonsterFieldState(howSummoned))
+        monster.maybeControlledState = Some(MonsterControlledState(position))
+        monster.maybeMonsterFieldState = Some(MonsterFieldState(howSummoned))
         placeAsHelper(monsterZones, InMonsterZone.MonsterZones)(monster, locationPreference)
       }
 
@@ -143,7 +143,7 @@ trait DefaultFieldModuleComponent extends FieldModuleComponent {
         card match {
           case monster: Monster if monster.maybeMonsterFieldState.isEmpty =>
             // not summoned is always correct, because it didn't already have state
-            monster.maybeMonsterFieldState = Some(new MonsterFieldState(NotSummoned))
+            monster.maybeMonsterFieldState = Some(MonsterFieldState(NotSummoned))
           case _ => // ignore
         }
 
