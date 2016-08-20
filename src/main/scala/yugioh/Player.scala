@@ -1,6 +1,6 @@
 package yugioh
 
-import yugioh.action.Action
+import yugioh.action.{Action, Cause}
 import yugioh.card.Card
 import yugioh.card.monster._
 import yugioh.events.{EventsModule, PhaseStartEvent, TurnStartEvent}
@@ -8,7 +8,7 @@ import yugioh.events.{EventsModule, PhaseStartEvent, TurnStartEvent}
 import scala.collection.mutable.ListBuffer
 import scala.io.StdIn
 
-trait Player {
+trait Player extends Cause {
   val name: String
   val deck: Deck
   val extraDeck: ListBuffer[ExtraDeckMonster] = new ListBuffer[ExtraDeckMonster]
@@ -50,7 +50,7 @@ trait Player {
   /**
     * Ask a player what summon material (tribute, synchro, etc.) they wish to use for toSummon.
     */
-  def selectSummonMaterial(toSummon: Monster, summonCriteria: SummonCriteria, possibleMaterials: Seq[Monster])
+  def selectSummonMaterial(summonCriteria: SummonCriteria)
                           (implicit gameState: GameState): Seq[Monster]
 
   def selectAttackTarget(attacker: Monster, potentialTargets: Seq[Monster])(implicit gameState: GameState): Monster
@@ -58,7 +58,7 @@ trait Player {
   /**
     * When an effect needs to select a target, this is how an activation asks a player what targets to use.
     */
-  def selectEffectTargets[C <: Card](targets: Seq[C], criteria: Criteria[C])(implicit gameState: GameState): Seq[C]
+  def selectEffectTargets[C <: Card](criteria: Criteria[C])(implicit gameState: GameState): Seq[C]
 
   /**
     * For a monster in the process of being special summoned, select from positions options which position to SS in.
@@ -144,8 +144,13 @@ class CommandLineHumanPlayer(val name: String)(implicit eventsModule: EventsModu
   }
 
   override def cardToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[Card] = {
-    val criteria = CountCriteria(hand.size - Constants.HandSizeLimit)
-    selectMultiple(s"Must discard for hand size limit ($criteria):", hand, CountCriteria(hand.size - Constants.HandSizeLimit))
+    val criteria: Criteria[Card] = new Criteria[Card] {
+      override def meetable(implicit gameState: GameState) = true
+      override def validSelection(choices: Seq[Card])(implicit gameState: GameState): Boolean = choices.size == hand.size - Constants.HandSizeLimit
+      override def availableChoices(implicit gameState: GameState): Seq[Card] = hand
+    }
+
+    selectMultiple(s"Must discard for hand size limit ($criteria):", criteria)
   }
 
   override def enterBattlePhase(implicit gameState: GameState) = {
@@ -178,9 +183,11 @@ class CommandLineHumanPlayer(val name: String)(implicit eventsModule: EventsModu
   /**
     * Get some of the values from the choices.
     */
-  private def selectMultiple[A](prompt: String, choices: Seq[A], criteria: Criteria[A])
+  private def selectMultiple[A](prompt: String, criteria: Criteria[A])
                                (implicit gameState: GameState): Seq[A] = {
     println(prompt)
+
+    val choices = criteria.availableChoices
 
     for ((choice, i) <- choices.zipWithIndex) {
       println(s"($i) $choice")
@@ -206,22 +213,17 @@ class CommandLineHumanPlayer(val name: String)(implicit eventsModule: EventsModu
     }
   }
 
-  override def selectSummonMaterial(toSummon: Monster, summonCriteria: SummonCriteria, possibleMaterials: Seq[Monster])(implicit gameState: GameState) = {
-    summonCriteria match {
-      case TributeSummonCriteria(count) if possibleMaterials.size == count =>
-        println("Singular choice, automatically tributing " + possibleMaterials)
-        possibleMaterials
-      case _ =>
-        selectMultiple(s"To summon $toSummon, please enter comma separated monster(s) to use ($summonCriteria).", possibleMaterials, summonCriteria)
-    }
+  override def selectSummonMaterial(summonCriteria: SummonCriteria)(implicit gameState: GameState) = {
+    // TODO: streamlined logic for when there is only a single possibility
+    selectMultiple(s"To summon ${summonCriteria.monster}, please enter comma separated monster(s) to use ($summonCriteria).", summonCriteria)
   }
 
   override def selectAttackTarget(attacker: Monster, potentialTargets: Seq[Monster])(implicit gameState: GameState): Monster = {
     select(s"Select target for $attacker", potentialTargets)
   }
 
-  override def selectEffectTargets[C <: Card](targets: Seq[C], criteria: Criteria[C])(implicit gameState: GameState) = {
-    selectMultiple(s"Select targets for effect.", targets, criteria)
+  override def selectEffectTargets[C <: Card](criteria: Criteria[C])(implicit gameState: GameState) = {
+    selectMultiple(s"Select targets for effect.", criteria)
   }
 
   /**
@@ -237,6 +239,7 @@ class CommandLineHumanPlayer(val name: String)(implicit eventsModule: EventsModu
   *
   * When given an option like discarding for hand size or choosing an action, will just select the first.
   */
+//noinspection NotImplementedCode - explicitly ignoring the ??? here since we don't want to bother with it
 class PassivePlayer(implicit fieldModule: FieldModule) extends Player {
   override val field = fieldModule.createField
   override val name = "PassivePlayer"
@@ -245,8 +248,8 @@ class PassivePlayer(implicit fieldModule: FieldModule) extends Player {
   override def chooseAction(actions: Seq[Action])(implicit gameState: GameState) = actions.head
   override def consentToEnd(implicit gameState: GameState) = true
   override def enterBattlePhase(implicit gameState: GameState) = false
-  override def selectSummonMaterial(toSummon: Monster, summonCriteria: SummonCriteria, possibleMaterials: Seq[Monster])(implicit gameState: GameState) = ???
+  override def selectSummonMaterial(summonCriteria: SummonCriteria)(implicit gameState: GameState) = ???
   override def selectAttackTarget(attacker: Monster, potentialTargets: Seq[Monster])(implicit gameState: GameState) = ???
-  override def selectEffectTargets[C <: Card](targets: Seq[C], criteria: Criteria[C])(implicit gameState: GameState) = ???
+  override def selectEffectTargets[C <: Card](criteria: Criteria[C])(implicit gameState: GameState) = ???
   override def selectSpecialSummonPosition(monster: Monster, positions: Seq[Position])(implicit gameState: GameState) = ???
 }

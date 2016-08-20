@@ -21,29 +21,25 @@ trait ActionModule {
 
   def newFlipSummon(monster: Monster)(implicit eventsModule: EventsModule): FlipSummon
 
-  def newDiscard(cause: Player, hand: Seq[Card], existsInAChainAction: ExistsInAChainAction = null): Discard
+  def newDiscard(cause: Player, hand: Seq[Card]): Discard
 
-  def newDraw(player: Player, howMany: Int, existsInAChainAction: ExistsInAChainAction = null): Draw
+  def newDraw(player: Player, howMany: Int): Draw
 
   def newDrawForTurn(implicit gameState: GameState): DrawForTurn
 
-  /**
-    * To provide a parent action, use the overridden version of this method that allows for cards plural.
-    *
-    * This is, unfortunately, a limitation of Scala:
--   * http://stackoverflow.com/questions/4652095/why-does-the-scala-compiler-disallow-overloaded-methods-with-default-arguments
-    */
   def newDestroy(player: Player, card: Card): Destroy
 
-  def newDestroy(player: Player, cards: Seq[Card], parent: Action = null): Destroy
+  def newDestroy(player: Player, cards: Seq[Card]): Destroy
 
-  def newSpecialSummon(controller: Player, monster: Monster, position: Position, existsInAChainAction: ExistsInAChainAction): SpecialSummon
+  def newSpecialSummon(controller: Player, monster: Monster, position: Position): SpecialSummon
 
   def newDiscardForHandSizeLimit()(implicit gameState: GameState): DiscardForHandSizeLimit
 
   def newDeclareDirectAttack(monster: Monster): DeclareDirectAttack
 
   def newDeclareAttackOnMonster(monster: Monster): DeclareAttackOnMonster
+
+  def newChangeLifePoints(lifePointsChange: Int, player: Player): ChangeLifePoints
 }
 
 trait ActionModuleComponent {
@@ -57,24 +53,24 @@ trait DefaultActionModuleComponent extends ActionModuleComponent {
       new SetAsSpellOrTrapImpl(spellOrTrap)
     }
 
-    override def newDestroy(player: Player, cards: Seq[Card], parent: Action = null): Destroy = {
-      DestroyImpl(player, cards, parent)
+    override def newDestroy(player: Player, cards: Seq[Card]): Destroy = {
+      DestroyImpl(player, cards)
     }
 
     override def newDestroy(player: Player, card: Card): Destroy = {
       newDestroy(player, Seq(card))
     }
 
-    override def newDiscard(cause: Player, hand: Seq[Card], existsInAChainAction: ExistsInAChainAction): Discard = {
-      new DiscardImpl(cause, hand, existsInAChainAction)
+    override def newDiscard(cause: Player, hand: Seq[Card]): Discard = {
+      new DiscardImpl(cause, hand)
     }
 
     override def newSetAsMonster(monster: Monster): SetAsMonster = {
       new SetAsMonsterImpl(monster)
     }
 
-    override def newSpecialSummon(controller: Player, monster: Monster, position: Position, existsInAChainAction: ExistsInAChainAction) = {
-      SpecialSummonImpl(controller, monster, position, existsInAChainAction)
+    override def newSpecialSummon(controller: Player, monster: Monster, position: Position) = {
+      SpecialSummonImpl(controller, monster, position)
     }
 
     override def newNormalSummon(monster: Monster): NormalSummon = {
@@ -85,8 +81,8 @@ trait DefaultActionModuleComponent extends ActionModuleComponent {
       new FlipSummonImpl(monster)
     }
 
-    override def newDraw(player: Player, howMany: Int, existsInAChainAction: ExistsInAChainAction): Draw = {
-      new DrawImpl(player, howMany, existsInAChainAction)
+    override def newDraw(player: Player, howMany: Int): Draw = {
+      new DrawImpl(player, howMany)
     }
 
     override def newDiscardForHandSizeLimit()(implicit gameState: GameState): DiscardForHandSizeLimit = {
@@ -110,5 +106,7 @@ trait DefaultActionModuleComponent extends ActionModuleComponent {
     override def newDeclareDirectAttack(monster: Monster) = DeclareDirectAttackImpl(monster)
 
     override def newDeclareAttackOnMonster(monster: Monster) = DeclareAttackOnMonsterImpl(monster)
+
+    override def newChangeLifePoints(lifePointsChange: Int, player: Player): ChangeLifePoints = ChangeLifePointsImpl(lifePointsChange, player)
   }
 }

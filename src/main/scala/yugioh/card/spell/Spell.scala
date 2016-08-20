@@ -2,17 +2,17 @@ package yugioh.card.spell
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 import yugioh._
-import yugioh.action.{Action, ActionModule, CardActivation}
-import yugioh.card.state.SpellTrapControlledState
+import yugioh.action.{Action, ActionModule, CardActivation, InherentAction}
 import yugioh.card._
+import yugioh.card.state.SpellTrapControlledState
 import yugioh.events.EventsModule
 
-trait Spell extends SpellOrTrap {
+sealed trait Spell extends SpellOrTrap {
   override def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Seq[Action] = {
-    val maybeActivation = if (effects.size == 1) {
+    val maybeActivation = if (Effects.size == 1) {
       gameState match {
         case GameState(_, TurnPlayers(Owner, _), OpenGameState, MainPhase | MainPhase2, _, _) if canActivate =>
-          Seq(CardActivation(this, Some(effects.head)))
+          Seq(CardActivation(this, Owner))
         case _ => Seq()
       }
     } else {
@@ -26,28 +26,27 @@ trait Spell extends SpellOrTrap {
   private def canActivate(implicit gameState: GameState): Boolean = {
     // also assumes a single effect
     // if activation condition is met, and the spell is either already on the field or it's in hand and there's space to place it...
-    effects.head.Conditions.met && (InSpellTrapZone(this) || (InHand(this) && controller.field.hasFreeSpellOrTrapZone))
+    Effects.head.ActivationConditions.met && (InSpellTrapZone(this) || (InHand(this) && controller.field.hasFreeSpellOrTrapZone))
   }
 }
 
+trait NormalSpell extends Spell with NormalSpellOrTrap
+trait EquipSpell extends Spell
+trait QuickPlaySpell extends Spell
+trait RitualSpell extends Spell
+trait ContinuousSpell extends Spell with ContinuousSpellOrTrap
+
 trait SpellEffect extends Effect {
-  override val Conditions: Conditions = new Conditions {
-    /**
-      * By default, the condition for a spell is that the owner is the turn player and we're in open game state of a main phase.
-      */
-    override def met(implicit gameState: GameState): Boolean = {
-      gameState match {
-        case GameState(_, TurnPlayers(Card.Owner, _), OpenGameState, MainPhase | MainPhase2, _, _) => true
-        case _ => false
-      }
+  override def activationTimingCorrect(implicit gameState: GameState): Boolean = {
+    gameState match {
+      case GameState(_, TurnPlayers(Card.Owner, _), OpenGameState, MainPhase | MainPhase2, _, _) => true
+      case _ => false
     }
   }
 
-  /**
-    * By default, not much happens on activation (the chain is built elsewhere).
-    */
-  override val Activation = new Activation {
-    override def activate()(implicit gameState: GameState): Unit = {
+  // TODO: this should not be part of the spell effect, but rather, part of spell card activation
+  override lazy val StateChange = new InherentAction {
+    override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
       Card.location match {
         case InHand =>
           Card.controller.field.placeAsSpellOrTrap(Card.asInstanceOf[SpellOrTrap], faceup = true)
@@ -56,11 +55,9 @@ trait SpellEffect extends Effect {
         case _ =>
           throw new IllegalStateException("A regular spell should not be activated from anywhere except the hand or set Spell/Trap zones.")
       }
-
-      if (doesTarget) {
-        selectedTargets = Card.controller.selectEffectTargets(availableTargets, targetCriteria)
-      }
     }
+
+    override lazy val player: Player = Card.controller
   }
 }
 

@@ -5,14 +5,20 @@ package yugioh
   * Object to encapsulate whether a sequence of objects meets certain criteria. Overloading toString is highly recommended.
   */
 trait Criteria[A] {
-  def validSelection(choices: Seq[A]): Boolean
+  /**
+    * Can the player possibly meet the requirements?
+    */
+  def meetable(implicit gameState: GameState): Boolean // TODO: this must know the player
+
+  /**
+    * Available choices to fulfill the requirements.
+    */
+  def availableChoices(implicit gameState: GameState): Seq[A]
+
+  /**
+    * Verify that the subject of availableChoices which has been selected is valid.
+    */
+  def validSelection(choices: Seq[A])(implicit gameState: GameState): Boolean
 }
 
-class CountCriteria[A](needed: Int) extends Criteria[A] {
-  override def validSelection(choices: Seq[A]) = choices.size == needed
-  override def toString = s"$needed needed"
-}
-
-object CountCriteria {
-  def apply[A](needed: Int) = new CountCriteria[A](needed)
-}
+// TODO: specialized convenience criteria subclasses, ideally allowing for declarative style

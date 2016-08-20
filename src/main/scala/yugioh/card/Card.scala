@@ -49,9 +49,11 @@ trait Card {
   def sendToGrave() = Owner.field.sendToGrave(this)
 }
 
-trait SpellOrTrap extends Card {
-  val effects: List[Effect]
+trait EffectCard extends Card {
+  val Effects: Seq[Effect]
+}
 
+trait SpellOrTrap extends EffectCard { // TODO: spell speed!
   override def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     gameState match {
       case GameState(_, TurnPlayers(Owner, _), OpenGameState, MainPhase | MainPhase2, _, _) if InHand(this) =>
@@ -61,13 +63,24 @@ trait SpellOrTrap extends Card {
   }
 }
 
+trait NormalSpellOrTrap extends SpellOrTrap {
+  /**
+    * After a chain has resolved that involved this card, and it remains on the field, send it to grave.
+    */
+  def afterChainCleanup(): Unit = {
+    if (InSpellTrapZone(this)) {
+      sendToGrave() // TODO: this should be an action for which game mechanics are responsible
+    }
+  }
+}
+
+trait ContinuousSpellOrTrap extends SpellOrTrap
+
 trait SetAsSpellOrTrap extends SetCard {
   val spellOrTrap: SpellOrTrap
 }
 
 class SetAsSpellOrTrapImpl(override val spellOrTrap: SpellOrTrap) extends SetAsSpellOrTrap {
-  override val maybeParent: Option[Action] = None
-
   override val player: Player = spellOrTrap.Owner
 
   override val toString = s"SetAsSpellOrTrap($spellOrTrap)"

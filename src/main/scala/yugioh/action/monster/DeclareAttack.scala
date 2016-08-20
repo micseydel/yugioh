@@ -1,7 +1,7 @@
 package yugioh.action.monster
 
 import yugioh._
-import yugioh.action.{Action, ActionModule, InherentAction}
+import yugioh.action.{ActionModule, InherentAction}
 import yugioh.card.monster.Monster
 import yugioh.events.{Event, EventsModule}
 
@@ -16,8 +16,6 @@ sealed trait DeclareAttack extends InherentAction {
 trait DeclareAttackOnMonster extends DeclareAttack
 
 case class DeclareAttackOnMonsterImpl(attacker: Monster) extends DeclareAttackOnMonster {
-  override val maybeParent: Option[Action] = None
-
   override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     val turnPlayers = gameState.turnPlayers
     val attackTarget = turnPlayers.turnPlayer.selectAttackTarget(attacker, turnPlayers.opponent.field.monsterZones.toSeq.flatten)
@@ -28,8 +26,6 @@ case class DeclareAttackOnMonsterImpl(attacker: Monster) extends DeclareAttackOn
 trait DeclareDirectAttack extends DeclareAttack
 
 case class DeclareDirectAttackImpl(attacker: Monster) extends DeclareDirectAttack {
-  override val maybeParent: Option[Action] = None
-
   override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = ()
 }
 

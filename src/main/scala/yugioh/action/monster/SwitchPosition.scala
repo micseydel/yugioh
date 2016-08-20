@@ -1,7 +1,7 @@
 package yugioh.action.monster
 
 import yugioh._
-import yugioh.action.{Action, ActionModule, InherentAction}
+import yugioh.action.{ActionModule, InherentAction}
 import yugioh.card.monster.{Attack, Defense, Monster, Set}
 import yugioh.events.EventsModule
 
@@ -25,7 +25,5 @@ trait SwitchPosition extends InherentAction {
 
 class SwitchPositionImpl(override val monster: Monster)(implicit override val eventsModule: EventsModule)
     extends SwitchPosition {
-  override val maybeParent: Option[Action] = None
-
   val player = monster.Owner
 }

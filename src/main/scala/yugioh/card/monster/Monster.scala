@@ -109,9 +109,7 @@ trait Monster extends Card {
 
 trait NormalMonster extends Monster
 
-trait EffectMonster extends Monster {
-  val Effects: Seq[Effect]
-}
+trait EffectMonster extends Monster with EffectCard
 
 trait FlipMonster extends EffectMonster
 

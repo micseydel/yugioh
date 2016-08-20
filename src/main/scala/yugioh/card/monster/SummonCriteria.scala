@@ -1,20 +1,25 @@
 package yugioh.card.monster
 
-import yugioh.{CountCriteria, Criteria}
+import yugioh.{Criteria, GameState, Player}
 
 /**
   * The criteria for a summon, such as material for a tribute, synchro or fusion summon.
   */
-trait SummonCriteria extends Criteria[Monster]
+trait SummonCriteria extends Criteria[Monster] {
+  val monster: Monster
+}
 
-case class TributeSummonCriteria(count: Int) extends CountCriteria[Monster](count) with SummonCriteria {
+case class TributeSummonCriteria(player: Player, monster: Monster) extends Criteria[Monster] with SummonCriteria {
+  private[this] val count = if (monster.maybeLevel.get < 7) 1 else 2
+
   override def toString = s"$count monsters"
-}
 
-case class SynchroSummonCriteria() extends SummonCriteria { // TODO LOW
-  override def validSelection(monsters: Seq[Monster]): Boolean = ???
-}
+  // TODO LOW: tribute summon requirements are only meetable if there are a sufficient number of monsters on the field that can be used for a tribute summon
+  override def meetable(implicit gameState: GameState): Boolean = availableChoices.size >= count
 
-case class XyzSummonCriteria() extends SummonCriteria { // TODO LOW
-override def validSelection(monsters: Seq[Monster]): Boolean = ???
+  override def availableChoices(implicit gameState: GameState): Seq[Monster] = {
+    player.field.monsterZones.filter(_.nonEmpty).flatten.toSeq
+  }
+
+  override def validSelection(choices: Seq[Monster])(implicit gameState: GameState): Boolean = choices.size == count
 }

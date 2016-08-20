@@ -93,6 +93,7 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
       eventsModule.observe { event =>
         event match {
           case BattleDamage(player, damage) =>
+            // TODO: this should use action indirection
             player.lifePoints -= damage
             if (player.lifePoints <= 0) {
               throw OutOfLifepoints(player)

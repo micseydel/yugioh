@@ -2,9 +2,11 @@ package yugioh
 
 import yugioh.action._
 import yugioh.action.monster.DeclareAttack
-import yugioh.events.{Event, EventsModule}
+import yugioh.card.NormalSpellOrTrap
+import yugioh.events.{Event, EventsModule, TimeSeparationEvent}
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 
 /**
@@ -74,9 +76,14 @@ object FastEffectTiming {
 object OpenGameState extends FastEffectTiming {
   override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     val choice = gameState.turnPlayers.turnPlayer.chooseAction(turnPlayerActions)
-    choice.execute() match {
+
+    val action = choice.execute()
+
+    eventsModule.emit(TimeSeparationEvent)
+
+    action match {
       case pass: PassPriority => TryToEnd
-      case activation: ExistsInAChainAction => ChainRules(activation, Nil)
+      case activation: Activation => ChainRules(activation, Nil)
       case attackDeclaration: DeclareAttack => null // BattlePhaseStep will change, manually go to ChainRules
       case action: InherentAction => CheckForTrigger(List(action))
     }
@@ -93,9 +100,14 @@ case class TurnPlayerFastEffects(inResponseTo: List[Event]) extends FastEffectTi
 
   private def nextWithUpdatedGameState(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     val choice = gameState.turnPlayers.turnPlayer.chooseAction(turnPlayerActions)
-    choice.execute() match {
+
+    val action = choice.execute()
+
+    eventsModule.emit(TimeSeparationEvent)
+
+    action match {
       case pass: PassPriority => OpponentFastEffects
-      case activation: ExistsInAChainAction => ChainRules(activation, inResponseTo)
+      case activation: Activation => ChainRules(activation, inResponseTo)
       case _: InherentAction => throw new IllegalStateException("Inherent actions cannot be taken when game state is closed.")
     }
   }
@@ -107,9 +119,14 @@ case class TurnPlayerFastEffects(inResponseTo: List[Event]) extends FastEffectTi
 object OpponentFastEffects extends FastEffectTiming {
   override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     val choice = gameState.turnPlayers.opponent.chooseAction(opponentActions)
-    choice.execute() match {
+
+    val action = choice.execute()
+
+    eventsModule.emit(TimeSeparationEvent)
+
+    action match {
       case pass: PassPriority => OpenGameState
-      case activation: ExistsInAChainAction => ChainRules(activation, Nil)
+      case activation: Activation => ChainRules(activation, Nil)
       case _: InherentAction => throw new IllegalStateException("Inherent actions cannot be taken by the opposing player.")
     }
   }
@@ -122,15 +139,25 @@ object OpponentFastEffects extends FastEffectTiming {
   *                     or from B or C in the fast effect timing chart,
   *                     and MUST be None coming from E.
   */
-case class ChainRules(existsInAChainAction: ExistsInAChainAction, inResponseTo: List[Event]) extends FastEffectTiming {
+case class ChainRules(activation: Activation, inResponseTo: List[Event]) extends FastEffectTiming {
   override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     nextWithUpdatedGameState(gameState.copy(inResponseTo = inResponseTo), eventsModule, actionModule)
   }
 
-  var chain = mutable.Stack(existsInAChainAction)
+  var chain = mutable.Stack(activation)
 
   private def nextWithUpdatedGameState(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
-    // TODO LOW: more sophisticated chains will require changes to this code
+    // listen to all events, and keep track of the "last thing to happen" which can include ***multiple*** events (e.g. Blackship of Corn)
+    //   anytime a TimeSeparationEvent occurs, we drop all the old events
+    var lastThingToHappen = new ListBuffer[Event]()
+    val subscription = eventsModule.observe { event =>
+      event match {
+        case TimeSeparationEvent =>
+          lastThingToHappen = new ListBuffer[Event]()
+        case _ =>
+          lastThingToHappen.append(event)
+      }
+    }
 
     // build the chain
     var keepBuilding = true
@@ -145,9 +172,10 @@ case class ChainRules(existsInAChainAction: ExistsInAChainAction, inResponseTo: 
             passedPreviously = true
             player = gameState.turnPlayers.other(chain.top.player)
           }
-        case existsInAChainAction: ExistsInAChainAction =>
-          existsInAChainAction.execute()
-          chain.push(existsInAChainAction)
+        case activation: Activation =>
+          activation.execute()
+          eventsModule.emit(TimeSeparationEvent)
+          chain.push(activation)
           passedPreviously = false
           player = gameState.turnPlayers.other(chain.head.player)
         case _: InherentAction => throw new IllegalStateException("Inherent actions cannot be taken when game state is closed.")
@@ -155,22 +183,33 @@ case class ChainRules(existsInAChainAction: ExistsInAChainAction, inResponseTo: 
     }
 
     // resolve the chain
+    val normalSpellTraps = new ListBuffer[NormalSpellOrTrap]
     while (chain.nonEmpty) {
-      val existsInAChainAction: ExistsInAChainAction = chain.pop()
-      existsInAChainAction.resolve()
-      existsInAChainAction match {
-        case CardActivation(card, Some(effect)) =>
-          existsInAChainAction.player.field.sendToGrave(card)
-        case ignore =>
+      val activation: Activation = chain.pop()
+      activation.Effect.Resolution.execute()
+      // TODO: detect negation in a chain, as some chain links will not have their resolution occur
+
+      // keep track of the normal spells and traps so that we can remove them after the chain is empty
+      activation.Effect.Card match {
+        case normal: NormalSpellOrTrap =>
+          normalSpellTraps.append(normal)
+        case _ =>
       }
     }
+
+    // tell normal spells/traps to go to the grave after the chain has resolved
+    for (normal <- normalSpellTraps) {
+      normal.afterChainCleanup()
+    }
+
+    subscription.dispose()
 
     // in damage calculation, we only get a single chain
     //   if this condition is true, we deviate from what the fast effect timing chart documents
     if (gameState.step == PerformDamageCalculation) {
       TryToEnd
     } else {
-      CheckForTrigger(null) // TODO: ChainRules need to communicate last thing to happen here
+      CheckForTrigger(lastThingToHappen.toList)
     }
   }
 }
@@ -185,13 +224,18 @@ object TryToEnd extends FastEffectTiming {
     val turnPlayers = gameState.turnPlayers
     val choice = turnPlayers.opponent.chooseAction(opponentActions)
 
-    choice.execute() match {
-      case activation: ExistsInAChainAction => ChainRules(activation, Nil)
+    val action = choice.execute()
+
+    eventsModule.emit(TimeSeparationEvent)
+
+    action match {
+      case activation: Activation => ChainRules(activation, Nil)
       case pass: PassPriority =>
         if (turnPlayers.turnPlayer.consentToEnd && turnPlayers.opponent.consentToEnd) {
           if (gameState.phase == EndPhase && turnPlayers.turnPlayer.hand.size > Constants.HandSizeLimit) {
             // TODO LOW: discarding for turn may result in trigger effects; this should be updated once the trigger effect system is in place
             actionModule.newDiscardForHandSizeLimit().execute()
+            eventsModule.emit(TimeSeparationEvent)
           }
           null
         } else {
@@ -211,7 +255,7 @@ case class CheckForTrigger(inResponseTo: List[Event]) extends FastEffectTiming {
   }
 
   private def nextWithUpdatedGameState(implicit gameState: GameState) = {
-    // TODO: once a proper trigger system is in place, this will be able to go to ChainRules
+    // TODO: should be able to go to ChainRules from here, must check for trigger effects
     TurnPlayerFastEffects(inResponseTo)
   }
 }
