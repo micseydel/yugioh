@@ -19,7 +19,8 @@ case class SpellTrapControlledState(var faceup: Boolean) extends ControlledState
 case class MonsterControlledState(
   var position: Position,
   var attackedThisTurn: Boolean = false,
-  var manuallyChangedPositionsThisTurn: Boolean = false // also set to true if attacked
+  var manuallyChangedPositionsThisTurn: Boolean = false, // also set to true if attacked
+  var isPiercing: Boolean = false
 )(implicit eventsModule: EventsModule) extends ControlledState {
   private[this] val Subscription = eventsModule.observe { event =>
     event match {

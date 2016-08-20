@@ -21,6 +21,8 @@ trait Monster extends Card {
   def attribute: Attribute = PrintedAttribute
   def monsterType: Type = PrintedType
 
+  def isPiercing: Boolean = maybeMonsterControlledState.exists(_.isPiercing)
+
   var maybeMonsterFieldState: Option[MonsterFieldState] = None
 
   def maybeMonsterControlledState = maybeControlledState.asInstanceOf[Option[MonsterControlledState]]

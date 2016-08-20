@@ -164,7 +164,10 @@ case object PerformDamageCalculation extends DamageStepSubStep {
           position match {
             case Defense =>
               if (attacker.attack > target.defense) {
-                // TODO LOW: piercing damage?
+                if (attacker.isPiercing) {
+                  eventsModule.emit(BattleDamage(gameState.turnPlayers.turnPlayer, attacker.attack - target.defense))
+                }
+
                 eventsModule.emit(DestroyedByBattle(target, attacker))
               }
             case Attack =>
@@ -173,7 +176,7 @@ case object PerformDamageCalculation extends DamageStepSubStep {
                 val difference = attacker.attack - target.attack
                 difference.signum match { // get the sign of the difference
                   case -1 => // attacker destroyed
-                    eventsModule.emit(BattleDamage(gameState.turnPlayers.turnPlayer, -difference))
+                    eventsModule.emit(BattleDamage(gameState.turnPlayers.turnPlayer, difference))
                     eventsModule.emit(DestroyedByBattle(attacker, target))
                   case 0 =>
                     eventsModule.emit(DestroyedByBattle(attacker, target))

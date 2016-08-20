@@ -4,7 +4,9 @@ import yugioh._
 import yugioh.card.monster.Monster
 
 
-case class BattleDamage(player: Player, lifePoints: Int) extends LifePointsDamage
+case class BattleDamage(player: Player, lifePoints: Int) extends LifePointsDamage {
+  assert(lifePoints >= 0) // may want to be even more strict
+}
 
 trait Flipped extends Event {
   val monster: Monster
