@@ -10,6 +10,8 @@ import scala.collection.mutable.ListBuffer
 
 
 /**
+  * State machine for fast effect timing flow.
+  *
   * There is a nice visual at www.yugioh-card.com/en/gameplay/fasteffects_timing.html
   *
   * Here is a brief mapping:
@@ -19,8 +21,7 @@ import scala.collection.mutable.ListBuffer
   * D - ChainRules
   * E - TryToEnd (note that the purple box below is combined into TryToEnd)
   *
-  * There are two additional states, CheckForTrigger which represents the yellow box above B, and End to signal
-  * the end of a phase or step.
+  * There is one additional state, CheckForTrigger which represents the yellow box above B, and null indicates exit.
   */
 sealed trait FastEffectTiming {
   override val toString = this.getClass.getSimpleName
@@ -83,7 +84,7 @@ object OpenGameState extends FastEffectTiming {
 
     action match {
       case pass: PassPriority => TryToEnd
-      case activation: Activation => ChainRules(activation, Nil)
+      case activation: Activation => ChainRules(mutable.Stack(activation), Nil)
       case attackDeclaration: DeclareAttack => null // BattlePhaseStep will change, manually go to ChainRules
       case action: InherentAction => CheckForTrigger(List(action))
     }
@@ -107,7 +108,7 @@ case class TurnPlayerFastEffects(inResponseTo: List[Event]) extends FastEffectTi
 
     action match {
       case pass: PassPriority => OpponentFastEffects
-      case activation: Activation => ChainRules(activation, inResponseTo)
+      case activation: Activation => ChainRules(mutable.Stack(activation), inResponseTo)
       case _: InherentAction => throw new IllegalStateException("Inherent actions cannot be taken when game state is closed.")
     }
   }
@@ -126,7 +127,7 @@ object OpponentFastEffects extends FastEffectTiming {
 
     action match {
       case pass: PassPriority => OpenGameState
-      case activation: Activation => ChainRules(activation, Nil)
+      case activation: Activation => ChainRules(mutable.Stack(activation), Nil)
       case _: InherentAction => throw new IllegalStateException("Inherent actions cannot be taken by the opposing player.")
     }
   }
@@ -139,12 +140,10 @@ object OpponentFastEffects extends FastEffectTiming {
   *                     or from B or C in the fast effect timing chart,
   *                     and MUST be None coming from E.
   */
-case class ChainRules(activation: Activation, inResponseTo: List[Event]) extends FastEffectTiming {
+case class ChainRules(var chain: mutable.Stack[Activation], inResponseTo: List[Event]) extends FastEffectTiming {
   override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     nextWithUpdatedGameState(gameState.copy(inResponseTo = inResponseTo), eventsModule, actionModule)
   }
-
-  var chain = mutable.Stack(activation)
 
   private def nextWithUpdatedGameState(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     // listen to all events, and keep track of the "last thing to happen" which can include ***multiple*** events (e.g. Blackship of Corn)
@@ -240,7 +239,7 @@ object TryToEnd extends FastEffectTiming {
     eventsModule.emit(TimeSeparationEvent)
 
     action match {
-      case activation: Activation => ChainRules(activation, Nil)
+      case activation: Activation => ChainRules(mutable.Stack(activation), Nil)
       case pass: PassPriority =>
         if (turnPlayers.turnPlayer.consentToEnd && turnPlayers.opponent.consentToEnd) {
           if (gameState.phase == EndPhase && turnPlayers.turnPlayer.hand.size > Constants.HandSizeLimit) {
@@ -258,15 +257,69 @@ object TryToEnd extends FastEffectTiming {
 }
 
 /**
-  * Represents the yellow box above B in the chart.
+  * Represents the yellow box above B in the chart, handles SEGOC.
   */
 case class CheckForTrigger(inResponseTo: List[Event]) extends FastEffectTiming {
+  /**
+    * This flag is used to indicate to Player, through context, that mandatory trigger effects are the only one allowed right now.
+    *
+    * This flag will be switched to false when optional trigger effects are acceptable.
+    */
+  var mandatoryOnly = true
+
   override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
-    nextWithUpdatedGameState(gameState.copy(inResponseTo = inResponseTo))
+    nextWithUpdatedGameState(gameState.copy(inResponseTo = inResponseTo), eventsModule, actionModule)
   }
 
-  private def nextWithUpdatedGameState(implicit gameState: GameState) = {
-    // TODO: should be able to go to ChainRules from here, must check for trigger effects
-    TurnPlayerFastEffects(inResponseTo)
+  /**
+    * Before trying to understand this code, make sure you are familiar with SEGOC in general:
+    *   http://yugioh.wikia.com/wiki/Simultaneous_Effects_Go_On_Chain
+    */
+  private def nextWithUpdatedGameState(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+    // TODO: SEGOC exception - http://yugioh.wikia.com/wiki/Simultaneous_Effects_Go_On_Chain#Exception
+    // TODO: significant consideration must be made to conform properly to TCG's SEGOC rules
+    val segocChain = new mutable.Stack[Activation]
+
+    // capture both of these functions to keep below code DRY
+    //   first we ask turn player, then opposing player
+    val getChoiceFunctions: Seq[() => Action] = Seq(
+      () => gameState.turnPlayers.turnPlayer.chooseAction(turnPlayerActions),
+      () => gameState.turnPlayers.opponent.chooseAction(opponentActions)
+    )
+
+    /**
+      * Add to `segocChain` for both players.
+      */
+    def buildChainForBothPlayers(): Unit = {
+      for (getChoice <- getChoiceFunctions) {
+        // must loop in case there are multiple trigger effects that can optionally be activated with the same timing
+        var choice: Action = null
+        do {
+          getChoice().execute() match {
+            case activation: Activation =>
+              segocChain.push(activation)
+              eventsModule.emit(TimeSeparationEvent)
+            case pass: PassPriority =>
+              // this is fine, we'll just exit at the end of the loop
+            case _: InherentAction =>
+              throw new IllegalStateException("Inherent actions cannot be taken when game state is closed.")
+          }
+        } while (choice.isInstanceOf[PassPriority])
+      }
+    }
+
+    // mandatoryOnly is true first, and then false second
+    //  build chain for mandatory effects of turn player, then mandatory for opposing,
+    //  then optional for each in the same order
+    buildChainForBothPlayers()
+    mandatoryOnly = false
+    buildChainForBothPlayers()
+
+    if (segocChain.nonEmpty) {
+      ChainRules(segocChain, inResponseTo)
+    } else {
+      // no trigger effects occurred
+      TurnPlayerFastEffects(inResponseTo)
+    }
   }
 }
