@@ -4,6 +4,11 @@ import scala.collection.mutable.ListBuffer
 
 trait Event
 
+/**
+  * Event to indicate a progression of time and separate events from being considered simultaneous.
+  */
+object TimeSeparationEvent extends Event
+
 trait EventsModuleComponent {
   implicit def eventsModule: EventsModule
 }
