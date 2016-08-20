@@ -1,5 +1,7 @@
 package yugioh.events
 
+import yugioh.card.Effect
+
 import scala.collection.mutable.ListBuffer
 
 trait Event
@@ -8,6 +10,8 @@ trait Event
   * Event to indicate a progression of time and separate events from being considered simultaneous.
   */
 object TimeSeparationEvent extends Event
+
+case class EffectActivationNegationEvent(negated: Effect, negater: Effect) extends Event
 
 trait EventsModuleComponent {
   implicit def eventsModule: EventsModule

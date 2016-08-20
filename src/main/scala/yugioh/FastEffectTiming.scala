@@ -3,7 +3,7 @@ package yugioh
 import yugioh.action._
 import yugioh.action.monster.DeclareAttack
 import yugioh.card.NonContinuousSpellOrTrap
-import yugioh.events.{Event, EventsModule, TimeSeparationEvent}
+import yugioh.events.{EffectActivationNegationEvent, Event, EventsModule, TimeSeparationEvent}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -149,11 +149,14 @@ case class ChainRules(activation: Activation, inResponseTo: List[Event]) extends
   private def nextWithUpdatedGameState(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     // listen to all events, and keep track of the "last thing to happen" which can include ***multiple*** events (e.g. Blackship of Corn)
     //   anytime a TimeSeparationEvent occurs, we drop all the old events
+    // also listen for effect activation negation, and remove those effects from the chain
     var lastThingToHappen = new ListBuffer[Event]()
     val subscription = eventsModule.observe { event =>
       event match {
         case TimeSeparationEvent =>
           lastThingToHappen = new ListBuffer[Event]()
+        case EffectActivationNegationEvent(_, _) =>
+          chain.pop()
         case _ =>
           lastThingToHappen.append(event)
       }
@@ -186,7 +189,6 @@ case class ChainRules(activation: Activation, inResponseTo: List[Event]) extends
     val nonContinuousSpellTraps = new ListBuffer[NonContinuousSpellOrTrap]
     while (chain.nonEmpty) {
       val activation: Activation = chain.pop()
-      // TODO: detect negation in a chain, as some chain links will not have their resolution occur
       activation.Effect.Resolution.execute()
 
       // we can't emit this event when the last chain link is resolved, because non-continuous S/T cleanup
