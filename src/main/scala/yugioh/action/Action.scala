@@ -2,40 +2,39 @@ package yugioh.action
 
 import yugioh._
 import yugioh.card.{Effect, EffectCard}
-import yugioh.events.{Event, EventsModule, TimeSeparationEvent}
+import yugioh.events.{ActionEvent, EventsModule, TimeSeparationEvent}
 
 /**
   * TODO: Intended long-term to use the Action design pattern. This needs to be sussed out better before diving into that though.
   */
-// TODO: refactor Actions to not be Events, rather, for events to be created and emitted as a result of actions being executed.
-sealed trait Action extends Event {
+sealed trait Action {
   val player: Player
 
   protected[this] var previouslyCalled = false
 
-  def execute()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Action
+  def execute()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): ActionEvent
 }
 
 trait InherentAction extends Action {
   /**
     * Call doAction() and then emit the event.
     */
-  protected def doActionAndEmitEvent()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
+  protected def doActionAndEmitEvent()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): ActionEvent = {
     doAction()
     eventsModule.emit(this)
   }
 
   protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit
 
-  def execute()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Action = {
+  def execute()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): ActionEvent = {
     if (previouslyCalled) {
       throw new IllegalStateException(s"Action $this was already executed.")
     }
 
-    doActionAndEmitEvent()
+    val event = doActionAndEmitEvent()
     previouslyCalled = true
 
-    this
+    event
   }
 
   /**
@@ -89,9 +88,8 @@ trait InherentAction extends Action {
 sealed trait Activation extends Action {
   val Effect: Effect
 
-  override def execute()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Action = {
+  override def execute()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): ActionEvent = {
     Effect.Activation.execute()
-    this
   }
 }
 

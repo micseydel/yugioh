@@ -79,11 +79,7 @@ case class DestroyImpl(override val player: Player, override val cards: Seq[Card
 /**
   * Use negative lifepoints change to subtract lifepoints.
   */
-trait ChangeLifePoints extends InherentAction {
-  val lifePointsChange: Int
-}
-
-case class ChangeLifePointsImpl(lifePointsChange: Int, player: Player) extends ChangeLifePoints {
+case class ChangeLifePoints(lifePointsChange: Int, player: Player) extends InherentAction {
   override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
     player.lifePoints += lifePointsChange
   }

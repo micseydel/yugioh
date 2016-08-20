@@ -2,11 +2,11 @@ package yugioh.events
 
 import yugioh._
 
-case class TurnStartEvent(turnPlayers: TurnPlayers, mutableGameState: MutableGameState) extends Event
+case class TurnStartEvent(turnPlayers: TurnPlayers, mutableGameState: MutableGameState) extends GamePlayEvent
 
-sealed case class PhaseStartEvent(phase: Phase) extends Event
+sealed case class PhaseStartEvent(phase: Phase) extends GamePlayEvent
 
-sealed case class PhaseEndEvent(phase: Phase) extends Event
+sealed case class PhaseEndEvent(phase: Phase) extends GamePlayEvent
 
 /**
   * Singleton objects to represent phase start/end.
@@ -16,11 +16,11 @@ object PhaseChangeEvent {
   val EndEvents: Map[Phase, PhaseEndEvent] = Phase.Phases.map(phase => (phase, PhaseEndEvent(phase))).toMap
 }
 
-case object TurnEndEvent extends Event
+case object TurnEndEvent extends GamePlayEvent
 
 
-sealed trait StepStartEvent extends Event
-sealed trait StepEndEvent extends Event
+sealed trait StepStartEvent extends GamePlayEvent
+sealed trait StepEndEvent extends GamePlayEvent
 
 
 sealed case class BattlePhaseStepStartEvent(step: BattlePhaseStep) extends StepStartEvent

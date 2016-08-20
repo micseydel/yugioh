@@ -96,7 +96,8 @@ trait Monster extends Card {
           if (!controlledState.attackedThisTurn && controlledState.position == Attack) {
             val potentialTargets = opponent.field.monsterZones.toSeq.flatten
             if (potentialTargets.nonEmpty) {
-              Seq(actionModule.newDeclareAttackOnMonster(this))
+              val target = Controller.selectAttackTarget(this, potentialTargets)
+              Seq(actionModule.newDeclareAttackOnMonster(this, target))
             } else {
               Seq(actionModule.newDeclareDirectAttack(this))
             }

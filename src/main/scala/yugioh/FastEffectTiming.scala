@@ -3,7 +3,7 @@ package yugioh
 import yugioh.action._
 import yugioh.action.monster.DeclareAttack
 import yugioh.card.NonContinuousSpellOrTrap
-import yugioh.events.{EffectActivationNegationEvent, Event, EventsModule, TimeSeparationEvent}
+import yugioh.events._
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -78,15 +78,28 @@ object OpenGameState extends FastEffectTiming {
   override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     val choice = gameState.turnPlayers.turnPlayer.chooseAction(turnPlayerActions)
 
-    val action = choice.execute()
+    var lastThingsToHappen = new ListBuffer[Event]()
+    val subscription = eventsModule.observe { event =>
+      event match {
+        case TimeSeparationEvent =>
+          lastThingsToHappen = new ListBuffer[Event]()
+        case ActionEvent(_) =>
+          lastThingsToHappen.append(event)
+        case ignore =>
+      }
+    }
+
+    choice.execute()
+
+    subscription.dispose()
 
     eventsModule.emit(TimeSeparationEvent)
 
-    action match {
+    choice match {
       case pass: PassPriority => TryToEnd
       case activation: Activation => ChainRules(mutable.Stack(activation), Nil)
       case attackDeclaration: DeclareAttack => null // BattlePhaseStep will change, manually go to ChainRules
-      case action: InherentAction => CheckForTrigger(List(action))
+      case action: InherentAction => CheckForTrigger(lastThingsToHappen.toList)
     }
   }
 }
@@ -102,11 +115,11 @@ case class TurnPlayerFastEffects(inResponseTo: List[Event]) extends FastEffectTi
   private def nextWithUpdatedGameState(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     val choice = gameState.turnPlayers.turnPlayer.chooseAction(turnPlayerActions)
 
-    val action = choice.execute()
+    choice.execute()
 
     eventsModule.emit(TimeSeparationEvent)
 
-    action match {
+    choice match {
       case pass: PassPriority => OpponentFastEffects
       case activation: Activation => ChainRules(mutable.Stack(activation), inResponseTo)
       case _: InherentAction => throw new IllegalStateException("Inherent actions cannot be taken when game state is closed.")
@@ -121,11 +134,11 @@ object OpponentFastEffects extends FastEffectTiming {
   override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     val choice = gameState.turnPlayers.opponent.chooseAction(opponentActions)
 
-    val action = choice.execute()
+    choice.execute()
 
     eventsModule.emit(TimeSeparationEvent)
 
-    action match {
+    choice match {
       case pass: PassPriority => OpenGameState
       case activation: Activation => ChainRules(mutable.Stack(activation), Nil)
       case _: InherentAction => throw new IllegalStateException("Inherent actions cannot be taken by the opposing player.")
@@ -149,15 +162,15 @@ case class ChainRules(var chain: mutable.Stack[Activation], inResponseTo: List[E
     // listen to all events, and keep track of the "last thing to happen" which can include ***multiple*** events (e.g. Blackship of Corn)
     //   anytime a TimeSeparationEvent occurs, we drop all the old events
     // also listen for effect activation negation, and remove those effects from the chain
-    var lastThingToHappen = new ListBuffer[Event]()
+    var lastThingsToHappen = new ListBuffer[Event]()
     val subscription = eventsModule.observe { event =>
       event match {
         case TimeSeparationEvent =>
-          lastThingToHappen = new ListBuffer[Event]()
+          lastThingsToHappen = new ListBuffer[Event]()
         case EffectActivationNegationEvent(_, _) =>
           chain.pop()
         case _ =>
-          lastThingToHappen.append(event)
+          lastThingsToHappen.append(event)
       }
     }
 
@@ -168,6 +181,7 @@ case class ChainRules(var chain: mutable.Stack[Activation], inResponseTo: List[E
     while (keepBuilding) {
       player.chooseAction(actionsForPlayer(player)) match {
         case passPriority: PassPriority =>
+          passPriority.execute()
           if (passedPreviously) {
             keepBuilding = false
           } else {
@@ -219,7 +233,7 @@ case class ChainRules(var chain: mutable.Stack[Activation], inResponseTo: List[E
     if (gameState.step == PerformDamageCalculation) {
       TryToEnd
     } else {
-      CheckForTrigger(lastThingToHappen.toList)
+      CheckForTrigger(lastThingsToHappen.toList)
     }
   }
 }
@@ -234,11 +248,11 @@ object TryToEnd extends FastEffectTiming {
     val turnPlayers = gameState.turnPlayers
     val choice = turnPlayers.opponent.chooseAction(opponentActions)
 
-    val action = choice.execute()
+    choice.execute()
 
     eventsModule.emit(TimeSeparationEvent)
 
-    action match {
+    choice match {
       case activation: Activation => ChainRules(mutable.Stack(activation), Nil)
       case pass: PassPriority =>
         if (turnPlayers.turnPlayer.consentToEnd && turnPlayers.opponent.consentToEnd) {
@@ -295,7 +309,10 @@ case class CheckForTrigger(inResponseTo: List[Event]) extends FastEffectTiming {
         // must loop in case there are multiple trigger effects that can optionally be activated with the same timing
         var choice: Action = null
         do {
-          getChoice().execute() match {
+          choice = getChoice()
+          choice.execute()
+
+          choice match {
             case activation: Activation =>
               segocChain.push(activation)
               eventsModule.emit(TimeSeparationEvent)
@@ -304,7 +321,7 @@ case class CheckForTrigger(inResponseTo: List[Event]) extends FastEffectTiming {
             case _: InherentAction =>
               throw new IllegalStateException("Inherent actions cannot be taken when game state is closed.")
           }
-        } while (choice.isInstanceOf[PassPriority])
+        } while (!choice.isInstanceOf[PassPriority])
       }
     }
 

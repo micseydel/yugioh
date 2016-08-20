@@ -1,8 +1,8 @@
 package yugioh
 
-import yugioh.action.ActionModuleComponent
+import yugioh.action.{ActionModuleComponent, ChangeLifePoints}
 import yugioh.action.monster.{DeclareAttack, NormalSummon, SetAsMonster}
-import yugioh.events.{BattleDamage, EventsModuleComponent, TurnEndEvent, TurnStartEvent}
+import yugioh.events._
 
 trait PlayGameComponent {
   val Players: (Player, Player)
@@ -72,7 +72,7 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
       // listen for a normal summon or set, flag that it happened
       eventsModule.observe { event =>
         event match {
-          case _:NormalSummon | _:SetAsMonster =>
+          case ActionEvent(_:NormalSummon | _:SetAsMonster) =>
             mutableGameState.hasNormalSummonedThisTurn = true
           case ignore =>
         }
@@ -81,7 +81,7 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
       // listen for an attack declaration, tag that monster as having attacked
       eventsModule.observe { event =>
         event match {
-          case attackDeclaration: DeclareAttack =>
+          case ActionEvent(attackDeclaration: DeclareAttack) =>
             for (monsterControlledState <- attackDeclaration.attacker.maybeMonsterControlledState) {
               monsterControlledState.attackedThisTurn = true
             }
@@ -89,13 +89,10 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
         }
       }
 
-      // listen for and handle life point damage
+      // listen for changes in lifepoints, potentially issue a game loss
       eventsModule.observe { event =>
         event match {
-          case BattleDamage(player, damage) =>
-            // TODO: this should use action indirection
-
-            player.lifePoints -= damage
+          case ActionEvent(ChangeLifePoints(lifePointsChange, player)) =>
             if (player.lifePoints <= 0) {
               throw OutOfLifepoints(player)
             }

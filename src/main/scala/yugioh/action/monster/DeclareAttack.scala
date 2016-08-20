@@ -3,7 +3,7 @@ package yugioh.action.monster
 import yugioh._
 import yugioh.action.{ActionModule, InherentAction}
 import yugioh.card.monster.Monster
-import yugioh.events.{Event, EventsModule}
+import yugioh.events.{EventsModule, GamePlayEvent}
 
 sealed trait DeclareAttack extends InherentAction {
   val attacker: Monster
@@ -13,27 +13,17 @@ sealed trait DeclareAttack extends InherentAction {
 /**
   * Target is determined by asking the player when the action is performed.
   */
-trait DeclareAttackOnMonster extends DeclareAttack
-
-case class DeclareAttackOnMonsterImpl(attacker: Monster) extends DeclareAttackOnMonster {
-  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
-    val turnPlayers = gameState.turnPlayers
-    val attackTarget = turnPlayers.turnPlayer.selectAttackTarget(attacker, turnPlayers.opponent.field.monsterZones.toSeq.flatten)
-    eventsModule.emit(TargetedForAttack(attacker, attackTarget))
-  }
-}
-
-trait DeclareDirectAttack extends DeclareAttack
-
-case class DeclareDirectAttackImpl(attacker: Monster) extends DeclareDirectAttack {
+case class DeclareAttackOnMonster(attacker: Monster, target: Monster) extends DeclareAttack {
   override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = ()
 }
 
-case class TargetedForAttack(attacker: Monster, target: Monster) extends Event
+case class DeclareDirectAttack(attacker: Monster) extends DeclareAttack {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = ()
+}
 
 /**
-  * null target indicates a direct attack
+  * null target indicates a direct attack (TODO: use Option)
   */
-case class Battle(attacker: Monster, target: Monster) extends Event
+case class Battle(attacker: Monster, maybeTarget: Option[Monster]) extends GamePlayEvent
 
-case class Replay(attacker: Monster) extends Event
+case class Replay(attacker: Monster) extends GamePlayEvent

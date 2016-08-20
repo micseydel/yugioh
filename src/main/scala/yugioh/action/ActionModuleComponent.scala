@@ -37,7 +37,7 @@ trait ActionModule {
 
   def newDeclareDirectAttack(monster: Monster): DeclareDirectAttack
 
-  def newDeclareAttackOnMonster(monster: Monster): DeclareAttackOnMonster
+  def newDeclareAttackOnMonster(attacker: Monster, target: Monster): DeclareAttackOnMonster
 
   def newChangeLifePoints(lifePointsChange: Int, player: Player): ChangeLifePoints
 }
@@ -103,10 +103,10 @@ trait DefaultActionModuleComponent extends ActionModuleComponent {
 
     override def newDrawForTurn(implicit gameState: GameState): DrawForTurn = new DrawForTurnImpl
 
-    override def newDeclareDirectAttack(monster: Monster) = DeclareDirectAttackImpl(monster)
+    override def newDeclareDirectAttack(monster: Monster) = DeclareDirectAttack(monster)
 
-    override def newDeclareAttackOnMonster(monster: Monster) = DeclareAttackOnMonsterImpl(monster)
+    override def newDeclareAttackOnMonster(attacker: Monster, target: Monster) = DeclareAttackOnMonster(attacker, target)
 
-    override def newChangeLifePoints(lifePointsChange: Int, player: Player): ChangeLifePoints = ChangeLifePointsImpl(lifePointsChange, player)
+    override def newChangeLifePoints(lifePointsChange: Int, player: Player): ChangeLifePoints = ChangeLifePoints(lifePointsChange, player)
   }
 }

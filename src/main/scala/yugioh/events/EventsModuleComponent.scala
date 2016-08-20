@@ -1,10 +1,15 @@
 package yugioh.events
 
+import yugioh.action.Action
 import yugioh.card.Effect
 
 import scala.collection.mutable.ListBuffer
 
-trait Event
+sealed trait Event
+
+trait GamePlayEvent extends Event
+
+case class ActionEvent(action: Action) extends Event
 
 /**
   * Event to indicate a progression of time and separate events from being considered simultaneous.
@@ -22,7 +27,9 @@ trait EventsModule {
 
   def observe[E <: Event](onEvent: Event => Unit): Subscription
 
-  def emit(event: Event): Unit
+  def emit(event: Event): Event
+
+  def emit(action: Action): ActionEvent
 }
 
 trait Observer[E <: Event] {
@@ -50,10 +57,16 @@ object DefaultEventsModule extends EventsModule {
     })
   }
 
-  def emit(event: Event): Unit = {
+  def emit(event: Event) = {
     for (observer <- observers) {
       observer.notify(event)
     }
+
+    event
+  }
+
+  def emit(action: Action) = {
+    emit(ActionEvent(action)).asInstanceOf[ActionEvent]
   }
 }
 
