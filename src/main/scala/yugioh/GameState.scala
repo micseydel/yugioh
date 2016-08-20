@@ -11,5 +11,5 @@ case class GameState(mutableGameState: MutableGameState,
                      inResponseTo: List[Event] = Nil) {
   def turnCount = mutableGameState.turnCount
   def hasNormalSummonedThisTurn = mutableGameState.hasNormalSummonedThisTurn
-  // TODO: history
+  // TODO LOW: history
 }

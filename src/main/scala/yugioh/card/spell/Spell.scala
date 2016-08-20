@@ -45,9 +45,9 @@ trait SpellEffect extends Effect {
     }
   }
 
-  // TODO: this should not be part of the spell effect, but rather, part of spell card activation
   override lazy val StateChange = new InherentAction {
     override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
+      // TODO HIGH: this should not be part of the spell effect, but rather, part of spell card activation
       Card.location match {
         case InHand =>
           Card.controller.field.placeAsSpellOrTrap(Card.asInstanceOf[SpellOrTrap], faceup = true)

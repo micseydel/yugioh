@@ -9,6 +9,10 @@ import yugioh.events.EventsModuleComponent
 
 import scala.collection.mutable.ListBuffer
 
+/**
+  * Note that the methods here which have side effects, such as placing, destroying, discarding and sending to grave,
+  * should all only ever be called from an Action which will emit an event when it occurs.
+  */
 trait Field {
   // try to put things toward the center first
   protected val PositionPriorities = Seq(2, 1, 3, 0, 4)
@@ -31,7 +35,7 @@ trait Field {
   def placeAsMonster(monster: Monster, position: Position, howSummoned: HowSummoned, positionPreference: Option[Int] = None): InMonsterZone
   def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, faceup: Boolean, positionPreference: Option[Int] = None): InSpellTrapZone
 
-  def destroy(card: Card): Unit = sendToGrave(card) // TODO: must consider Bottomless Trap Hole
+  def destroy(card: Card): Unit = sendToGrave(card) // TODO LOW: must consider Bottomless Trap Hole
 
   def discard(card: Card): Unit = sendToGrave(card)
 
@@ -147,7 +151,6 @@ trait DefaultFieldModuleComponent extends FieldModuleComponent {
           case _ => // ignore
         }
 
-        // TODO: emit an event for sent to grave
         card.location = InGraveyard
         card.maybeControlledState = None // clear it out if it was present
         graveyard.append(card)

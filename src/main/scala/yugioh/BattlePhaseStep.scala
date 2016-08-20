@@ -201,7 +201,6 @@ case object PerformDamageCalculation extends DamageStepSubStep {
 case class AfterDamageCalculation(destroyed: Set[Monster]) extends DamageStepSubStep {
   override def performAndGetNext(battle: Battle)
                                 (implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
-    // TODO: after damage calculation
     FastEffectTiming.loop(gameState.copy(step = this))
     EndOfTheDamageStep(destroyed)
   }

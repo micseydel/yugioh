@@ -91,7 +91,7 @@ trait Effect {
   // DSL should be able to write "StateChange andThen Cost andThen SelectTargets"
   lazy val Activation: InherentAction = StateChange.andThen(Cost).andThen(SelectTargets)
 
-  val Resolution: InherentAction // TODO: this should really be... effect?
+  val Resolution: InherentAction
 
   protected[this] var selectedTargets: Seq[Card] = _
 

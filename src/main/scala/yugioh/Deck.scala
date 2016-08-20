@@ -32,7 +32,7 @@ trait Deck {
 }
 
 class TestDeck(val owner: Player) extends Deck {
-  // TODO: spells+traps for the deck
+  // TODO LOW: spells+traps for the deck
   val cards = ListBuffer(
     DianKetoTheCureMaster,
     // Monsters
