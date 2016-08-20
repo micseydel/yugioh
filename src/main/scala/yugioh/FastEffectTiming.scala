@@ -2,7 +2,7 @@ package yugioh
 
 import yugioh.action._
 import yugioh.action.monster.DeclareAttack
-import yugioh.card.NormalSpellOrTrap
+import yugioh.card.NonContinuousSpellOrTrap
 import yugioh.events.{Event, EventsModule, TimeSeparationEvent}
 
 import scala.collection.mutable
@@ -183,26 +183,35 @@ case class ChainRules(activation: Activation, inResponseTo: List[Event]) extends
     }
 
     // resolve the chain
-    val normalSpellTraps = new ListBuffer[NormalSpellOrTrap]
+    val nonContinuousSpellTraps = new ListBuffer[NonContinuousSpellOrTrap]
     while (chain.nonEmpty) {
       val activation: Activation = chain.pop()
-      activation.Effect.Resolution.execute()
       // TODO: detect negation in a chain, as some chain links will not have their resolution occur
+      activation.Effect.Resolution.execute()
+
+      // we can't emit this event when the last chain link is resolved, because non-continuous S/T cleanup
+      //   is considered simultaneous with the last thing to happen in the chain
+      if (chain.nonEmpty) {
+        eventsModule.emit(TimeSeparationEvent)
+      }
 
       // keep track of the normal spells and traps so that we can remove them after the chain is empty
       activation.Effect.Card match {
-        case normal: NormalSpellOrTrap =>
-          normalSpellTraps.append(normal)
+        case noncontinuous: NonContinuousSpellOrTrap =>
+          nonContinuousSpellTraps.append(noncontinuous)
         case _ =>
       }
     }
 
     // tell normal spells/traps to go to the grave after the chain has resolved
-    for (normal <- normalSpellTraps) {
-      normal.afterChainCleanup()
+    for (noncontinuous <- nonContinuousSpellTraps) {
+      noncontinuous.afterChainCleanup()
     }
 
     subscription.dispose()
+
+    // we do want to emit this after the cleanup, but we must wait until we've removed our observer
+    eventsModule.emit(TimeSeparationEvent)
 
     // in damage calculation, we only get a single chain
     //   if this condition is true, we deviate from what the fast effect timing chart documents

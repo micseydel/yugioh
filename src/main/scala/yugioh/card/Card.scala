@@ -63,7 +63,12 @@ trait SpellOrTrap extends EffectCard { // TODO: spell speed!
   }
 }
 
-trait NormalSpellOrTrap extends SpellOrTrap {
+/**
+  * Should not be inherited from outside of game mechanics. Instead, use one of:
+  * NormalTrap, ContinuousTrap, CounterTrap.
+  * TODO LOW: refactor to be `sealed`
+  */
+trait NonContinuousSpellOrTrap extends SpellOrTrap {
   /**
     * After a chain has resolved that involved this card, and it remains on the field, send it to grave.
     */

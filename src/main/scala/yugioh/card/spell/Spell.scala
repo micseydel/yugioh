@@ -30,11 +30,12 @@ sealed trait Spell extends SpellOrTrap {
   }
 }
 
-trait NormalSpell extends Spell with NormalSpellOrTrap
+trait NormalSpell extends Spell with NonContinuousSpellOrTrap
+trait QuickPlaySpell extends Spell with NonContinuousSpellOrTrap
+trait RitualSpell extends Spell with NonContinuousSpellOrTrap
 trait EquipSpell extends Spell
-trait QuickPlaySpell extends Spell
-trait RitualSpell extends Spell
-trait ContinuousSpell extends Spell with ContinuousSpellOrTrap
+trait ContinuousSpell extends Spell
+trait FieldSpell extends Spell
 
 trait SpellEffect extends Effect {
   override def activationTimingCorrect(implicit gameState: GameState): Boolean = {
@@ -60,5 +61,3 @@ trait SpellEffect extends Effect {
     override lazy val player: Player = Card.controller
   }
 }
-
-trait FieldSpell extends Spell
