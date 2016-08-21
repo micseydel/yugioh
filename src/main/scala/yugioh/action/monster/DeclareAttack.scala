@@ -21,9 +21,6 @@ case class DeclareDirectAttack(attacker: Monster) extends DeclareAttack {
   override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = ()
 }
 
-/**
-  * null target indicates a direct attack (TODO: use Option)
-  */
 case class Battle(attacker: Monster, maybeTarget: Option[Monster]) extends GamePlayEvent
 
 case class Replay(attacker: Monster) extends GamePlayEvent
