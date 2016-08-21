@@ -256,10 +256,16 @@ object TryToEnd extends FastEffectTiming {
       case activation: Activation => ChainRules(mutable.Stack(activation), Nil)
       case pass: PassPriority =>
         if (turnPlayers.turnPlayer.consentToEnd && turnPlayers.opponent.consentToEnd) {
+          // hand size limit logic
           if (gameState.phase == EndPhase && turnPlayers.turnPlayer.hand.size > Constants.HandSizeLimit) {
-            // TODO LOW: discarding for turn may result in trigger effects; this should be updated once the trigger effect system is in place
-            actionModule.newDiscardForHandSizeLimit().execute()
+            val event = actionModule.newDiscardForHandSizeLimit().execute()
             eventsModule.emit(TimeSeparationEvent)
+
+            var checkForTriggerResult: FastEffectTiming = CheckForTrigger(List(event)).next
+            while (checkForTriggerResult.isInstanceOf[ChainRules]) {
+              // ChainRules always goes to CheckForTrigger here, so we want to do that then go to the next thing
+              checkForTriggerResult = checkForTriggerResult.next.next
+            }
           }
           null
         } else {
