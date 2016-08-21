@@ -77,6 +77,7 @@ trait Effect {
   // TODO LOW: this should include things like discarding, which may be disallowed, and costs that include life points
   val maybeCostCriteria: Option[Criteria[Card]]
 
+  // TODO MEDIUM: these should be first-class and ideally declarative
   val Cost: InherentAction
 
   lazy val SelectTargets: InherentAction = maybeTargetCriteria.map(TargetCriteria => new InherentAction {
