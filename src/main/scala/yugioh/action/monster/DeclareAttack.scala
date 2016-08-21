@@ -10,9 +10,6 @@ sealed trait DeclareAttack extends InherentAction {
   val player = attacker.controller
 }
 
-/**
-  * Target is determined by asking the player when the action is performed.
-  */
 case class DeclareAttackOnMonster(attacker: Monster, target: Monster) extends DeclareAttack {
   override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = ()
 }
