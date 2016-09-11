@@ -8,10 +8,12 @@ object Main extends DefaultPlayGameComponent
     with DefaultPhaseModuleComponent
     with DefaultFieldModuleComponent
     with DefaultBattlePhaseModuleComponent
-    with DefaultActionModuleComponent {
+    with DefaultActionModuleComponent
+    with CommandLineHumanPlayerModuleComponent
+    with PassivePlayerModuleComponent {
 
-  val player1 = new CommandLineHumanPlayer("Human")(eventsModule, fieldModule)
-  val player2 = new PassivePlayer()(fieldModule)
+  val player1 = newCommandLineHumanPlayer("Human")
+  val player2 = newPassivePlayer
 
   override val Players = (player1, player2)
 
