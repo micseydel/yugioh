@@ -12,3 +12,6 @@
 * Tribute summons need to be enforced properly; currently, tribute summons require one or more tributes, without further specificity.
 * Documentation
 
+### Use
+* Main class should be independently runnable.
+* Can use "sbt publishLocal" to publish for use by a separate project.
