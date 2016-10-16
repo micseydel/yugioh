@@ -1,6 +1,8 @@
 name := "yugioh"
 
-version := "1.0"
+organization := "me.micseydel"
+
+version := "0.1-SNAPSHOT"
 
 scalaVersion := "2.11.8"
 
