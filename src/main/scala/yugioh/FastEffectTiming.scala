@@ -296,7 +296,7 @@ case class CheckForTrigger(inResponseTo: List[Event]) extends FastEffectTiming {
     *   http://yugioh.wikia.com/wiki/Simultaneous_Effects_Go_On_Chain
     */
   private def nextWithUpdatedGameState(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
-    // TODO: SEGOC exception - http://yugioh.wikia.com/wiki/Simultaneous_Effects_Go_On_Chain#Exception
+    // TODO: SEGOC exception - http://yugioh.wikia.com/wiki/Simultaneous_Effects_Go_On_Chain#Exception http://yugioh.wikia.com/wiki/Special_Summons_itself_from_your_hand
     // TODO: significant consideration must be made to conform properly to TCG's SEGOC rules
     val segocChain = new mutable.Stack[Activation]
 
