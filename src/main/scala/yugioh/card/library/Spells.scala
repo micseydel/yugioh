@@ -9,7 +9,7 @@ import yugioh.{Criteria, GameState, InGraveyard, Player}
 
 
 // this just makes IDE navigation easier
-private object Spells
+private[this] object Spells
 
 object CardDestruction extends InstantiableCard[CardDestruction]
 class CardDestruction(val Owner: Player) extends NormalSpell {
