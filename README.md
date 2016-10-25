@@ -7,10 +7,15 @@
 * A card should never be in the grave or banished zone of a non-owner.
 
 ### Big short to mid-term TODOs:
-* Battle.
 * Support for a trap like Trap Hole. Event system needs some more sophistication on this front.
-* Tribute summons need to be enforced properly; currently, tribute summons require one or more tributes, without further specificity.
-* Documentation
+* Documentation. State machines need visual documentation.
+* Commands should have an issuer
+* ALL state mutation should be done by commands, and game mechanics should also issue commands.
+
+### Long-term TODOs:
+* Undo to commands.
+* Design - players should emit commands.
+* Gamestate checksum to detect non-progression; should not be dependent on things like deck order.
 
 ### Use
 * Main class should be independently runnable.
