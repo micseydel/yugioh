@@ -34,6 +34,7 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
 
       // before turns start, each player draws
       for (player <- IterablePlayers) {
+        implicit val gameState = GameState(mutableGameState, null)
         player.draw(Constants.InitialHandSize)
       }
 

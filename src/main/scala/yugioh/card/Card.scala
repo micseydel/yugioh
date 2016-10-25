@@ -44,9 +44,14 @@ trait Card {
     }.getOrElse(name)
   }
 
-  def discard() = Owner.field.discard(this)
-  def destroy() = Owner.field.destroy(this)
-  def sendToGrave() = Owner.field.sendToGrave(this)
+  def discard()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = Owner.field.discard(this)
+  def destroy()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = Owner.field.destroy(this)
+  def sendToGrave()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = Owner.field.sendToGrave(this)
+
+  /**
+    * Allows the card to be notified of when it's moved.
+    */
+  def notifyMoved()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = ()
 }
 
 trait EffectCard extends Card {
@@ -72,7 +77,7 @@ trait NonContinuousSpellOrTrap extends SpellOrTrap {
   /**
     * After a chain has resolved that involved this card, and it remains on the field, send it to grave.
     */
-  def afterChainCleanup(): Unit = {
+  def afterChainCleanup()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
     if (InSpellTrapZone(this)) {
       sendToGrave() // TODO: this should be an action for which game mechanics are responsible
     }
@@ -110,3 +115,5 @@ trait SpellOrTrapDelegate extends Delegate with SpellOrTrap
   * This is essentially a wrapper that allows a SpellOrTrap to be treated as a Monster card.
   */
 trait MonsterDelegate extends Delegate with Monster
+
+sealed trait CardMoved

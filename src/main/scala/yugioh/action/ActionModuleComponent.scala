@@ -43,7 +43,7 @@ trait ActionModule {
 }
 
 trait ActionModuleComponent {
-  def actionModule: ActionModule
+  implicit def actionModule: ActionModule
 }
 
 trait DefaultActionModuleComponent extends ActionModuleComponent {

@@ -1,9 +1,9 @@
 package yugioh
 
-import yugioh.action.{Action, Cause}
+import yugioh.action.{Action, ActionModule, Cause}
 import yugioh.card.Card
 import yugioh.card.monster._
-import yugioh.events.{EventsModuleComponent, PhaseStartEvent, TurnStartEvent}
+import yugioh.events.{EventsModule, EventsModuleComponent, PhaseStartEvent, TurnStartEvent}
 
 import scala.collection.mutable.ListBuffer
 import scala.io.StdIn
@@ -30,11 +30,12 @@ trait Player extends Cause {
     */
   def enterBattlePhase(implicit gameState: GameState): Boolean
 
-  def draw(): Unit = draw(1)
-  def draw(howMany: Int): Unit = {
+  def draw()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = draw(1)
+  def draw(howMany: Int)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
     val toAdd = deck.fromTop(howMany)
     for (card <- toAdd) {
       card.location = InHand
+      card.notifyMoved()
     }
 
     hand ++= toAdd
