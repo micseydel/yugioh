@@ -7,6 +7,7 @@
 * A card should never be in the grave or banished zone of a non-owner.
 
 ### Big short to mid-term TODOs:
+* Game loop should be mutated by commands issued by game mechanics.
 * Support for a trap like Trap Hole. Event system needs some more sophistication on this front.
 * Documentation. State machines need visual documentation.
 * Commands should have an issuer
