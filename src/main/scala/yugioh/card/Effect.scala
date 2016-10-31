@@ -71,7 +71,7 @@ trait Effect {
   def specialActivationConditionsMet(implicit gameState: GameState): Option[Boolean] = None
 
   /**
-    * Things like placing a spell on the field, flipping a set S/T, and placeholder for things like "once per turn."
+    * TODO LOW: Placeholder for things like "once per turn."
     */
   lazy val StateChange: InherentAction = NoAction(Card.controller)
 

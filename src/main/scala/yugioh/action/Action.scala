@@ -1,8 +1,13 @@
 package yugioh.action
 
+import com.typesafe.scalalogging.Logger
 import yugioh._
-import yugioh.card.{Effect, EffectCard}
+import yugioh.card.state.SpellTrapControlledState
+import yugioh.card.trap.Trap
+import yugioh.card.{Effect, EffectCard, SpellOrTrap}
 import yugioh.events.{ActionEvent, EventsModule, TimeSeparationEvent}
+
+
 
 /**
   * TODO: Intended long-term to use the Action design pattern. This needs to be sussed out better before diving into that though.
@@ -96,9 +101,31 @@ sealed trait Activation extends Action {
 /**
   * Effect does not have to be activated for some continuous spells and traps.
   *
-  * TODO: make effect optional for card activation
+  * TODO: make effect optional for card activation, e.g. Ultimate Offering or Skull Lair
   */
 case class CardActivation(Card: EffectCard, player: Player) extends Activation {
+  private val logger = Logger[CardActivation]
+
+  override def execute()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): ActionEvent = {
+    Card.location match {
+      case InHand =>
+        if (Card.isInstanceOf[Trap]) {
+          // this itself is unusual, as cards like Typhoon are very rare
+          // that said, if we got here then other code allowed it
+          logger.debug(s"Trap $Card was activated from hand")
+        }
+
+        Card.controller.field.placeAsSpellOrTrap(Card.asInstanceOf[SpellOrTrap], faceup = true)
+      case _: InSpellTrapZone =>
+        Card.maybeControlledState.get.asInstanceOf[SpellTrapControlledState].faceup = true
+      case _ =>
+        // this shouldn't happen, since even cards like Breakthrough Skills will merely activate their effect when elsewhere
+        throw new AssertionError(s"Card activations cannot occur from anywhere other than hand or field; $Card tried to activate from ${Card.location}")
+    }
+
+    super.execute()
+  }
+
   override val Effect: Effect = {
     assert(Card.Effects.size == 1, "Card activation only supports single-effect cards.")
     Card.Effects.head
