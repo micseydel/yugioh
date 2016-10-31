@@ -20,7 +20,9 @@ sealed trait SummonOrSet extends InherentAction {
 
 trait Summon extends SummonOrSet
 
-trait NormalSummon extends Summon
+sealed trait NormalOrFlipSummon extends Summon
+
+trait NormalSummon extends NormalOrFlipSummon
 
 class NormalSummonImpl(val monster: Monster) extends NormalSummon {
   override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
@@ -47,7 +49,7 @@ class TributeSummonImpl(override val monster: Monster) extends NormalSummonImpl(
   }
 }
 
-trait FlipSummon extends Summon with SwitchPosition
+trait FlipSummon extends NormalOrFlipSummon with SwitchPosition
 
 class FlipSummonImpl(override val monster: Monster)(implicit override val eventsModule: EventsModule) extends FlipSummon {
   override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {

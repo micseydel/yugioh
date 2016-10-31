@@ -25,6 +25,8 @@ sealed trait Spell extends SpellOrTrap {
 
   private def canActivate(implicit gameState: GameState): Boolean = {
     // also assumes a single effect
+    assert(Effects.length == 1, "Code assumes only a single effect will be present.")
+
     // if activation condition is met, and the spell is either already on the field or it's in hand and there's space to place it...
     Effects.head.ActivationConditions.met && (InSpellTrapZone(this) || (InHand(this) && controller.field.hasFreeSpellOrTrapZone))
   }

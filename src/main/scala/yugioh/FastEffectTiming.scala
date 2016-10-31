@@ -105,9 +105,14 @@ object OpenGameState extends FastEffectTiming {
 }
 
 /**
+  * Convenience trait for turn player and opposing player fast effects.
+  */
+sealed trait PlayerFastEffects extends FastEffectTiming
+
+/**
   * B in the fast effect timing chart. Turn player can use fast effects.
   */
-case class TurnPlayerFastEffects(inResponseTo: List[Event]) extends FastEffectTiming {
+case class TurnPlayerFastEffects(inResponseTo: List[Event]) extends PlayerFastEffects {
   override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     nextWithUpdatedGameState(gameState.copy(inResponseTo = inResponseTo), eventsModule, actionModule)
   }
@@ -120,7 +125,7 @@ case class TurnPlayerFastEffects(inResponseTo: List[Event]) extends FastEffectTi
     eventsModule.emit(TimeSeparationEvent)
 
     choice match {
-      case pass: PassPriority => OpponentFastEffects
+      case pass: PassPriority => OpposingPlayerFastEffects
       case activation: Activation => ChainRules(mutable.Stack(activation), inResponseTo)
       case _: InherentAction => throw new IllegalStateException("Inherent actions cannot be taken when game state is closed.")
     }
@@ -130,7 +135,7 @@ case class TurnPlayerFastEffects(inResponseTo: List[Event]) extends FastEffectTi
 /**
   * C in the fast effect timing chart. Opposing player can use fast effects.
   */
-object OpponentFastEffects extends FastEffectTiming {
+object OpposingPlayerFastEffects extends PlayerFastEffects {
   override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     val choice = gameState.turnPlayers.opponent.chooseAction(opponentActions)
 
@@ -153,7 +158,7 @@ object OpponentFastEffects extends FastEffectTiming {
   *                     or from B or C in the fast effect timing chart,
   *                     and MUST be None coming from E.
   */
-case class ChainRules(var chain: mutable.Stack[Activation], inResponseTo: List[Event]) extends FastEffectTiming {
+case class ChainRules(chain: mutable.Stack[Activation], inResponseTo: List[Event]) extends FastEffectTiming {
   override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     nextWithUpdatedGameState(gameState.copy(inResponseTo = inResponseTo), eventsModule, actionModule)
   }
@@ -203,6 +208,7 @@ case class ChainRules(var chain: mutable.Stack[Activation], inResponseTo: List[E
     while (chain.nonEmpty) {
       val activation: Activation = chain.pop()
       activation.Effect.Resolution.execute()
+      activation.Effect.Card.activated = false
 
       // we can't emit this event when the last chain link is resolved, because non-continuous S/T cleanup
       //   is considered simultaneous with the last thing to happen in the chain

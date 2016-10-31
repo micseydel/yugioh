@@ -55,10 +55,17 @@ trait Card {
 }
 
 trait EffectCard extends Card {
+  var activated = false
+
   val Effects: Seq[Effect]
 }
 
 trait SpellOrTrap extends EffectCard { // TODO: spell speed!
+  /**
+    * The turn this card was set on the field, if at all.
+    */
+  var maybeTurnSet: Option[Int] = None
+
   override def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     gameState match {
       case GameState(_, TurnPlayers(Owner, _), OpenGameState, MainPhase | MainPhase2, _, _) if InHand(this) =>
@@ -98,6 +105,7 @@ class SetAsSpellOrTrapImpl(override val spellOrTrap: SpellOrTrap) extends SetAsS
   override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     if (player.field.hasFreeSpellOrTrapZone) {
       player.field.placeAsSpellOrTrap(spellOrTrap, faceup = false)
+      spellOrTrap.maybeTurnSet = Some(gameState.turnCount)
     } else {
       throw new IllegalStateException(s"Tried to set $spellOrTrap but there was no space.")
     }

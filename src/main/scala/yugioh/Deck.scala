@@ -34,7 +34,6 @@ trait Deck {
 class TestDeck(val owner: Player) extends Deck {
   // TODO LOW: spells+traps for the deck
   val cards = ListBuffer(
-    DianKetoTheCureMaster,
     // Monsters
     AncientElf,
     Ansatsu,
@@ -70,7 +69,7 @@ class TestDeck(val owner: Player) extends Deck {
     //DragonCaptureJar,
     //Reinforcements,
     //ReverseTrap,
-    //TrapHole,
+    TrapHole,
     //UltimateOffering,
     //Waboku,
     // Spells - though Dian Keto is above for easier testing
@@ -78,6 +77,7 @@ class TestDeck(val owner: Player) extends Deck {
     CardDestruction,
     //ChangeOfHeart
     DarkHole,
+    DianKetoTheCureMaster,
     //DeSpell
     //Fissure
     //LastWill

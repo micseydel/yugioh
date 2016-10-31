@@ -23,9 +23,22 @@ trait Monster extends Card {
 
   def isPiercing: Boolean = maybeMonsterControlledState.exists(_.isPiercing)
 
+  /**
+    * @return true iff monster was properly summoned
+    */
+  def properlySummoned: Boolean = {
+    maybeMonsterFieldState.exists(_.properlySummoned(this)) // TODO LOW: cleanup ("this" shouldn't be necessary)
+  }
+
+  /**
+    * Is None unless monster is on the field.
+    */
   var maybeMonsterFieldState: Option[MonsterFieldState] = None
 
-  def maybeMonsterControlledState = maybeControlledState.asInstanceOf[Option[MonsterControlledState]]
+  /**
+    * Alias for maybeControlledState, casted to MonsterControlledState.
+    */
+  def maybeMonsterControlledState = maybeControlledState.map(_.asInstanceOf[MonsterControlledState])
 
   /**
     * Default implementation of being able to normal/tribute summon during main phases, does not apply to (Semi-)Nomi.

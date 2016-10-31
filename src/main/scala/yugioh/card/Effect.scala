@@ -27,7 +27,7 @@ object SpellSpeed4 extends SpellSpeed
   * An effect will go on chain, and its activation will occur, and its resolution will occur as the chain resolves.
   */
 trait Effect {
-  val Card: Card
+  val Card: EffectCard
 
   val EffectType: EffectType
 
@@ -56,7 +56,8 @@ trait Effect {
     */
   val ActivationConditions: Conditions = new Conditions {
     override def met(implicit gameState: GameState): Boolean = {
-      activationTimingCorrect &&
+      !Card.activated &&
+        activationTimingCorrect &&
         Seq(maybeCostCriteria, maybeTargetCriteria).flatten.forall(_.meetable) &&
         specialActivationConditionsMet.getOrElse(true)
     }
@@ -82,7 +83,7 @@ trait Effect {
 
   lazy val SelectTargets: InherentAction = maybeTargetCriteria.map(TargetCriteria => new InherentAction {
     override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
-      player.selectEffectTargets(TargetCriteria)
+      selectedTargets = player.selectEffectTargets(TargetCriteria)
     }
 
     override val player: Player = Card.controller

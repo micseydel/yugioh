@@ -100,7 +100,7 @@ sealed trait Activation extends Action {
   */
 case class CardActivation(Card: EffectCard, player: Player) extends Activation {
   override val Effect: Effect = {
-    assert(Card.Effects.size == 1)
+    assert(Card.Effects.size == 1, "Card activation only supports single-effect cards.")
     Card.Effects.head
   }
 }

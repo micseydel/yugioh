@@ -18,7 +18,7 @@ class CardDestruction(val Owner: Player) extends NormalSpell {
   override val Effects: List[Effect] = List(CardDestructionEffect)
 
   object CardDestructionEffect extends SpellEffect {
-    override lazy val Card: Card = CardDestruction.this
+    override lazy val Card = CardDestruction.this
     override val EffectType: EffectType = Effect
     override val Cost: InherentAction = NoAction(Card.Owner)
     override val maybeTargetCriteria = None
@@ -66,7 +66,7 @@ class DarkHole(val Owner: Player) extends NormalSpell {
   override val Effects: List[Effect] = List(new DarkHoleEffect)
 
   class DarkHoleEffect extends SpellEffect {
-    override val Card: Card = DarkHole.this
+    override val Card = DarkHole.this
 
     override val Resolution = new InherentAction {
       override val player: Player = Owner
@@ -93,7 +93,7 @@ class DianKetoTheCureMaster(val Owner: Player) extends NormalSpell {
   override val Effects: List[Effect] = List(new DianKetoTheCureMasterEffect)
 
   class DianKetoTheCureMasterEffect extends SpellEffect {
-    override val Card: Card = DianKetoTheCureMaster.this
+    override val Card = DianKetoTheCureMaster.this
 
     override val Resolution = new InherentAction {
       override val player: Player = Card.Owner
@@ -116,11 +116,16 @@ class MonsterReborn(val Owner: Player) extends NormalSpell {
   override val Effects: List[Effect] = List(new MonsterRebornEffect)
 
   class MonsterRebornEffect extends SpellEffect {
-    override val Card: Card = MonsterReborn.this
+    override val Card = MonsterReborn.this
 
     override val Resolution = new InherentAction {
       override def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
-        val target = selectedTargets.head.asInstanceOf[Monster]
+        val target = selectedTargets match {
+          case Seq(monster: Monster) =>
+            monster
+          case _ =>
+            throw new AssertionError(s"selectedTargets should have contained a single monster, not $selectedTargets")
+        }
 
         if (InGraveyard(target) && controller.field.hasFreeMonsterZone) {
           val position = Owner.selectSpecialSummonPosition(target, Seq(Attack, Defense))
@@ -143,9 +148,10 @@ class MonsterReborn(val Owner: Player) extends NormalSpell {
       override def availableChoices(implicit gameState: GameState): Seq[Card] = {
         gameState.turnPlayers.both
           .flatMap(_.field.graveyard)
-          .filter(_.isInstanceOf[Monster])
-          .map(_.asInstanceOf[Monster])
-          .filter(monster => monster.maybeMonsterFieldState.get.properlySummoned(monster)) // TODO LOW: cleanup (monster is redundant here)
+          .collect {
+            case monster: Monster if monster.properlySummoned =>
+              monster
+          }
       }
     })
   }
