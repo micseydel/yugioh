@@ -45,7 +45,7 @@ trait Monster extends Card {
     */
   override def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     gameState match {
-      case GameState(MutableGameState(_, hasNormalSummonedThisTurn, _), _, OpenGameState, phase, _, _) =>
+      case GameState(MutableGameState(_, hasNormalSummonedThisTurn, _), TurnPlayers(Owner, _), OpenGameState, phase, _, _) =>
         phase match {
           case MainPhase | MainPhase2 =>
             mainPhaseActions(hasNormalSummonedThisTurn)
