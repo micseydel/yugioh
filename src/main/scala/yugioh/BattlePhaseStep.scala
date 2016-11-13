@@ -48,15 +48,13 @@ case object BattleStep extends BattlePhaseStep {
   override def next(gameState: GameState)(implicit eventsModule: EventsModule, actionModule: ActionModule) = {
     var attacker: Monster = null
     var target: Monster = null
-    val subscription = eventsModule.observe { event =>
-      event match {
-        case ActionEvent(DeclareAttackOnMonster(theAttacker, theTarget)) =>
-          attacker = theAttacker
-          target = theTarget
-        case ActionEvent(DeclareDirectAttack(theAttacker)) =>
-          attacker = theAttacker
-        case ignore =>
-      }
+    val subscription = eventsModule.observe {
+      case ActionEvent(DeclareAttackOnMonster(theAttacker, theTarget)) =>
+        attacker = theAttacker
+        target = theTarget
+      case ActionEvent(DeclareDirectAttack(theAttacker)) =>
+        attacker = theAttacker
+      case ignore =>
     }
 
     // listen for an attack declaration here
@@ -128,7 +126,7 @@ case object BeforeDamageCalculation extends DamageStepSubStep {
     // flip the target if need be
     battle match {
       case Battle(_, Some(target)) =>
-        for (controlledState <- target.maybeMonsterControlledState)
+        for (controlledState <- target.maybeControlledState)
           if (controlledState.position == Set) {
             controlledState.position = Defense
             eventsModule.emit(FlippedRegular(target, battle))
@@ -147,12 +145,10 @@ case object PerformDamageCalculation extends DamageStepSubStep {
     FastEffectTiming.loop(gameState.copy(step = this))
 
     var destroyed: Set[Monster] = collection.immutable.Set()
-    val subscription = eventsModule.observe { event =>
-      event match {
-        case ActionEvent(DestroyByBattle(monster, _)) =>
-          destroyed += monster
-        case ignore =>
-      }
+    val subscription = eventsModule.observe {
+      case ActionEvent(DestroyByBattle(monster, _)) =>
+        destroyed += monster
+      case ignore =>
     }
 
     battle match {
@@ -160,7 +156,7 @@ case object PerformDamageCalculation extends DamageStepSubStep {
         CauseBattleDamage(gameState.turnPlayers.turnPlayer, gameState.turnPlayers.opponent, attacker.attack).execute()
       case Battle(attacker, Some(target)) =>
         for (
-          monsterControlledState <- target.maybeMonsterControlledState;
+          monsterControlledState <- target.maybeControlledState;
           position = monsterControlledState.position
         ) {
           position match {

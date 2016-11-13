@@ -23,8 +23,6 @@ trait EventsModuleComponent {
 }
 
 trait EventsModule {
-  def observe[E <: Event](observer: Observer[E]): Subscription
-
   def observe[E <: Event](onEvent: Event => Unit): Subscription
 
   def emit(event: Event): Event
@@ -43,15 +41,17 @@ trait Subscription {
 object DefaultEventsModule extends EventsModule {
   val observers = new ListBuffer[Observer[_ <: Event]]
 
-  def observe[E <: Event](observer: Observer[E]): Subscription = {
+  private[this] def observe[E <: Event](observer: Observer[E]): Subscription = {
     observers.append(observer)
 
+    //noinspection ConvertExpressionToSAM
     new Subscription {
       override def dispose(): Unit = observers.remove(observers.indexOf(observer))
     }
   }
 
   def observe[E <: Event](onEvent: Event => Unit): Subscription = {
+    //noinspection ConvertExpressionToSAM
     observe(new Observer[E] {
       override def notify(event: Event): Unit = onEvent(event)
     })

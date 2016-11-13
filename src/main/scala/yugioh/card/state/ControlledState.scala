@@ -16,10 +16,10 @@ trait ControlledState {
   /**
     * Should be called when the class isn't use anymore. Ideally this would happen in a destructor, but they don't exist in Scala.
     */
-  def close(): Unit
+  def close(): Unit // TODO: can probably implement a .finalize() method instead of this
 }
 
-case class SpellTrapControlledState(var faceup: Boolean) extends ControlledState {
+case class SpellOrTrapControlledState(var faceup: Boolean) extends ControlledState {
   override def close() = ()
 }
 
@@ -29,13 +29,11 @@ case class MonsterControlledState(
   var manuallyChangedPositionsThisTurn: Boolean = false, // also set to true if attacked
   var isPiercing: Boolean = false
 )(implicit eventsModule: EventsModule) extends ControlledState {
-  private[this] val Subscription = eventsModule.observe { event =>
-    event match {
-      case TurnEndEvent =>
-        attackedThisTurn = false
-        manuallyChangedPositionsThisTurn = false
-      case ignore =>
-    }
+  private[this] val Subscription = eventsModule.observe {
+    case TurnEndEvent =>
+      attackedThisTurn = false
+      manuallyChangedPositionsThisTurn = false
+    case ignore =>
   }
 
   override def faceup: Boolean = Position.FaceUp.contains(position)

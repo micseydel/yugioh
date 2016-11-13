@@ -2,6 +2,8 @@ package yugioh.action
 
 import yugioh.{GameState, Player}
 import yugioh.card.Card
+import yugioh.card.Card.AnyCard
+import yugioh.card.state.ControlledState
 import yugioh.events.EventsModule
 
 // purely for IDE navigation
@@ -25,8 +27,8 @@ trait SetCard extends InherentAction
 
 trait Discard extends InherentAction
 
-class DiscardImpl(override val player: Player, cards: Seq[Card]) extends Discard {
-  def this(player: Player, card: Card) = {
+class DiscardImpl(override val player: Player, cards: Seq[AnyCard]) extends Discard {
+  def this(player: Player, card: AnyCard) = {
     this(player, Seq(card))
   }
 
@@ -64,11 +66,11 @@ class DrawForTurnImpl(implicit gameState: GameState) extends DrawForTurn {
 }
 
 trait Destroy extends InherentAction {
-  val cards: Seq[Card]
+  val cards: Seq[AnyCard]
 }
 
 
-case class DestroyImpl(override val player: Player, override val cards: Seq[Card]) extends Destroy {
+case class DestroyImpl(override val player: Player, override val cards: Seq[AnyCard]) extends Destroy {
   override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     for (card <- cards) {
       card.destroy()

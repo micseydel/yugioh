@@ -3,10 +3,14 @@ package yugioh.card
 import yugioh._
 import yugioh.action.{Action, ActionModule, SetCard}
 import yugioh.card.monster.Monster
-import yugioh.card.state.ControlledState
+import yugioh.card.state.{ControlledState, SpellOrTrapControlledState}
 import yugioh.events.EventsModule
 
-trait Card {
+object Card {
+  type AnyCard = Card[_ <: ControlledState]
+}
+
+trait Card[CS <: ControlledState] {
   val PrintedName: String
   val Owner: Player
   var location: Location = InDeck
@@ -14,11 +18,11 @@ trait Card {
   var controller: Player = Owner
   def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Seq[Action]
 
-  private[this] var _maybeControlledState: Option[ControlledState] = None
+  private[this] var _maybeControlledState: Option[CS] = None
 
-  def maybeControlledState: Option[ControlledState] = _maybeControlledState
+  def maybeControlledState: Option[CS] = _maybeControlledState
 
-  def maybeControlledState_=(controlledState: Option[ControlledState]) = {
+  def maybeControlledState_=(controlledState: Option[CS]) = {
     for (controlledState <- maybeControlledState) {
       controlledState.close()
     }
@@ -54,13 +58,17 @@ trait Card {
   def notifyMoved()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = ()
 }
 
-trait EffectCard extends Card {
+object EffectCard {
+  type AnyEffectCard = EffectCard[_ <: ControlledState]
+}
+
+trait EffectCard[CS <: ControlledState] extends Card[CS] {
   var activated = false
 
   val Effects: Seq[Effect]
 }
 
-trait SpellOrTrap extends EffectCard { // TODO: spell speed!
+trait SpellOrTrap extends EffectCard[SpellOrTrapControlledState] { // TODO: spell speed!
   /**
     * The turn this card was set on the field, if at all.
     */

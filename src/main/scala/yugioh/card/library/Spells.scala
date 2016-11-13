@@ -140,12 +140,12 @@ class MonsterReborn(val Owner: Player) extends NormalSpell {
     override val Cost: InherentAction = NoAction(Card.Owner)
     override val maybeCostCriteria = None
 
-    override val maybeTargetCriteria = Some(new Criteria[Card] {
-      override def meetable(implicit gameState: GameState): Boolean = availableChoices.nonEmpty
+    override val maybeTargetCriteria = Some(new Criteria[Monster] {
+      override def meetable(implicit gameState: GameState) = availableChoices.nonEmpty
 
-      override def validSelection(choices: Seq[Card])(implicit gameState: GameState): Boolean = choices.size == 1
+      override def validSelection[T >: Monster](choices: Seq[T])(implicit gameState: GameState) = choices.size == 1
 
-      override def availableChoices(implicit gameState: GameState): Seq[Card] = {
+      override def availableChoices(implicit gameState: GameState) = {
         gameState.turnPlayers.both
           .flatMap(_.field.graveyard)
           .collect {

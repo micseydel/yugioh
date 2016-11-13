@@ -1,6 +1,8 @@
 package yugioh.card
 
 import yugioh.action.{ActionModule, InherentAction, NoAction}
+import yugioh.card.Card.AnyCard
+import yugioh.card.EffectCard.AnyEffectCard
 import yugioh.events.EventsModule
 import yugioh.{Criteria, GameState, Player}
 
@@ -27,7 +29,7 @@ object SpellSpeed4 extends SpellSpeed
   * An effect will go on chain, and its activation will occur, and its resolution will occur as the chain resolves.
   */
 trait Effect {
-  val Card: EffectCard
+  val Card: AnyEffectCard
 
   val EffectType: EffectType
 
@@ -47,13 +49,14 @@ trait Effect {
     case Unclassified => null
   }
 
-  val maybeTargetCriteria: Option[Criteria[Card]]
+  val maybeTargetCriteria: Option[Criteria[AnyCard]]
 
   /**
     * Conditions for activation. Infers costs and targets are meetable.
     *
     * TODO: infer state changes (e.g. "once per turn")
     */
+  //noinspection ConvertExpressionToSAM
   val ActivationConditions: Conditions = new Conditions {
     override def met(implicit gameState: GameState): Boolean = {
       !Card.activated &&
@@ -76,7 +79,7 @@ trait Effect {
   lazy val StateChange: InherentAction = NoAction(Card.controller)
 
   // TODO LOW: this should include things like discarding, which may be disallowed, and costs that include life points
-  val maybeCostCriteria: Option[Criteria[Card]]
+  val maybeCostCriteria: Option[Criteria[AnyCard]]
 
   // TODO MEDIUM: these should be first-class and ideally declarative
   val Cost: InherentAction
@@ -95,7 +98,7 @@ trait Effect {
 
   val Resolution: InherentAction
 
-  protected[this] var selectedTargets: Seq[Card] = _
+  protected[this] var selectedTargets: Seq[AnyCard] = _
 
   /**
     * Helper method for determining if an effect targets or not.

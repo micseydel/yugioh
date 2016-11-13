@@ -21,5 +21,5 @@ case class TributeSummonCriteria(player: Player, monster: Monster) extends Crite
     player.field.monsterZones.filter(_.nonEmpty).flatten.toSeq
   }
 
-  override def validSelection(choices: Seq[Monster])(implicit gameState: GameState): Boolean = choices.size == count
+  override def validSelection[T >: Monster](choices: Seq[T])(implicit gameState: GameState) = choices.size == count
 }

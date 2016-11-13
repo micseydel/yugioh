@@ -2,9 +2,8 @@ package yugioh.action
 
 import com.typesafe.scalalogging.Logger
 import yugioh._
-import yugioh.card.state.SpellTrapControlledState
 import yugioh.card.trap.Trap
-import yugioh.card.{Effect, EffectCard, SpellOrTrap}
+import yugioh.card.{Effect, SpellOrTrap}
 import yugioh.events.{ActionEvent, EventsModule, TimeSeparationEvent}
 
 
@@ -103,7 +102,7 @@ sealed trait Activation extends Action {
   *
   * TODO: make effect optional for card activation, e.g. Ultimate Offering or Skull Lair
   */
-case class CardActivation(Card: EffectCard, player: Player) extends Activation {
+case class CardActivation(Card: SpellOrTrap, player: Player) extends Activation {
   private val logger = Logger[CardActivation]
 
   override def execute()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): ActionEvent = {
@@ -115,9 +114,9 @@ case class CardActivation(Card: EffectCard, player: Player) extends Activation {
           logger.debug(s"Trap $Card was activated from hand")
         }
 
-        Card.controller.field.placeAsSpellOrTrap(Card.asInstanceOf[SpellOrTrap], faceup = true)
+        Card.controller.field.placeAsSpellOrTrap(Card, faceup = true)
       case _: InSpellTrapZone =>
-        Card.maybeControlledState.get.asInstanceOf[SpellTrapControlledState].faceup = true
+        Card.maybeControlledState.get.faceup = true
       case _ =>
         // this shouldn't happen, since even cards like Breakthrough Skills will merely activate their effect when elsewhere
         throw new AssertionError(s"Card activations cannot occur from anywhere other than hand or field; $Card tried to activate from ${Card.location}")

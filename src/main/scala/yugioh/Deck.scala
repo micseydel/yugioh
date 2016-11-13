@@ -3,26 +3,26 @@ package yugioh
 import java.util
 import java.util.Collections
 
-import yugioh.card.Card
+import yugioh.card.Card.AnyCard
 import yugioh.card.library._
 
 import scala.collection.mutable.ListBuffer
 
 trait Deck {
-  val cards: ListBuffer[_ <: Card]
+  val cards: ListBuffer[_ <: AnyCard]
 
   val owner: Player
 
   def shuffle(): Unit = Collections.shuffle(util.Arrays.asList(cards: _*))
 
-  def fromTop(): Card = fromTop(1).head
+  def fromTop(): AnyCard = fromTop(1).head
 
   def remaining = cards.size
 
   /**
     * An EmptyDeck GameLoss exception will be thrown if the deck is empty.
     */
-  def fromTop(howMany: Int): Seq[Card] = {
+  def fromTop(howMany: Int): Seq[AnyCard] = {
     try {
       for (_ <- 1 to howMany) yield cards.remove(0)
     } catch {

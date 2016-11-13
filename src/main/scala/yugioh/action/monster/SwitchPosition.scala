@@ -9,10 +9,10 @@ trait SwitchPosition extends InherentAction {
   protected[this] implicit val eventsModule: EventsModule
 
   val monster: Monster
-  override def toString = s"${this.getClass.getSimpleName}($monster(${monster.maybeMonsterControlledState.get.position}))"
+  override def toString = s"${this.getClass.getSimpleName}($monster(${monster.maybeControlledState.get.position}))"
 
   override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
-    for (controlledState <- monster.maybeMonsterControlledState) {
+    for (controlledState <- monster.maybeControlledState) {
       controlledState.manuallyChangedPositionsThisTurn = true
       controlledState.position = controlledState.position match {
         case Attack => Defense

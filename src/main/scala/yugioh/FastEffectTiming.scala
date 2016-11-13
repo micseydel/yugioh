@@ -78,14 +78,12 @@ object OpenGameState extends FastEffectTiming {
     val choice = gameState.turnPlayers.turnPlayer.chooseAction(turnPlayerActions)
 
     var lastThingsToHappen = new ListBuffer[Event]()
-    val subscription = eventsModule.observe { event =>
-      event match {
-        case TimeSeparationEvent =>
-          lastThingsToHappen = new ListBuffer[Event]()
-        case ActionEvent(_) =>
-          lastThingsToHappen.append(event)
-        case ignore =>
-      }
+    val subscription = eventsModule.observe {
+      case TimeSeparationEvent =>
+        lastThingsToHappen = new ListBuffer[Event]()
+      case event@ActionEvent(_) =>
+        lastThingsToHappen.append(event)
+      case ignore =>
     }
 
     choice.execute()
@@ -169,15 +167,13 @@ case class ChainRules(startingChain: List[Activation], inResponseTo: List[Event]
     //   anytime a TimeSeparationEvent occurs, we drop all the old events
     // also listen for effect activation negation, and remove those effects from the chain
     var lastThingsToHappen = new ListBuffer[Event]()
-    val subscription = eventsModule.observe { event =>
-      event match {
-        case TimeSeparationEvent =>
-          lastThingsToHappen = new ListBuffer[Event]()
-        case EffectActivationNegationEvent(_, _) =>
-          chain = chain.tail
-        case _ =>
-          lastThingsToHappen.append(event)
-      }
+    val subscription = eventsModule.observe {
+      case TimeSeparationEvent =>
+        lastThingsToHappen = new ListBuffer[Event]()
+      case EffectActivationNegationEvent(_, _) =>
+        chain = chain.tail
+      case event =>
+        lastThingsToHappen.append(event)
     }
 
     // build the chain

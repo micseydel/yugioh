@@ -1,10 +1,11 @@
 package yugioh.action
 
-import yugioh.{GameState, Player}
 import yugioh.action.monster.{FlipSummon, SpecialSummon, _}
-import yugioh.card.{Card, SetAsSpellOrTrap, SetAsSpellOrTrapImpl, SpellOrTrap}
+import yugioh.card.Card.AnyCard
 import yugioh.card.monster.{Monster, Position}
+import yugioh.card.{SetAsSpellOrTrap, SetAsSpellOrTrapImpl, SpellOrTrap}
 import yugioh.events.EventsModule
+import yugioh.{GameState, Player}
 
 trait ActionModule {
   def newSetAsSpellOrTrap(spellOrTrap: SpellOrTrap): SetAsSpellOrTrap
@@ -21,15 +22,15 @@ trait ActionModule {
 
   def newFlipSummon(monster: Monster)(implicit eventsModule: EventsModule): FlipSummon
 
-  def newDiscard(cause: Player, hand: Seq[Card]): Discard
+  def newDiscard(cause: Player, hand: Seq[AnyCard]): Discard
 
   def newDraw(player: Player, howMany: Int): Draw
 
   def newDrawForTurn(implicit gameState: GameState): DrawForTurn
 
-  def newDestroy(player: Player, card: Card): Destroy
+  def newDestroy(player: Player, card: AnyCard): Destroy
 
-  def newDestroy(player: Player, cards: Seq[Card]): Destroy
+  def newDestroy(player: Player, cards: Seq[AnyCard]): Destroy
 
   def newSpecialSummon(controller: Player, monster: Monster, position: Position): SpecialSummon
 
@@ -53,15 +54,15 @@ trait DefaultActionModuleComponent extends ActionModuleComponent {
       new SetAsSpellOrTrapImpl(spellOrTrap)
     }
 
-    override def newDestroy(player: Player, cards: Seq[Card]): Destroy = {
+    override def newDestroy(player: Player, cards: Seq[AnyCard]): Destroy = {
       DestroyImpl(player, cards)
     }
 
-    override def newDestroy(player: Player, card: Card): Destroy = {
+    override def newDestroy(player: Player, card: AnyCard): Destroy = {
       newDestroy(player, Seq(card))
     }
 
-    override def newDiscard(cause: Player, hand: Seq[Card]): Discard = {
+    override def newDiscard(cause: Player, hand: Seq[AnyCard]): Discard = {
       new DiscardImpl(cause, hand)
     }
 

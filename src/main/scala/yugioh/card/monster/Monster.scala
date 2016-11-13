@@ -6,7 +6,7 @@ import yugioh.card._
 import yugioh.card.state.{MonsterControlledState, MonsterFieldState}
 import yugioh.events.EventsModule
 
-trait Monster extends Card {
+trait Monster extends Card[MonsterControlledState] {
   val PrintedAttack: Int
   val PrintedDefense: Int
   val MaybePrintedLevel: Option[Int]
@@ -21,7 +21,7 @@ trait Monster extends Card {
   def attribute: Attribute = PrintedAttribute
   def monsterType: Type = PrintedType
 
-  def isPiercing: Boolean = maybeMonsterControlledState.exists(_.isPiercing)
+  def isPiercing: Boolean = maybeControlledState.exists(_.isPiercing)
 
   /**
     * @return true iff monster was properly summoned
@@ -34,11 +34,6 @@ trait Monster extends Card {
     * Is None unless monster is on the field.
     */
   var maybeMonsterFieldState: Option[MonsterFieldState] = None
-
-  /**
-    * Alias for maybeControlledState, casted to MonsterControlledState.
-    */
-  def maybeMonsterControlledState = maybeControlledState.map(_.asInstanceOf[MonsterControlledState])
 
   /**
     * Default implementation of being able to normal/tribute summon during main phases, does not apply to (Semi-)Nomi.
@@ -96,7 +91,7 @@ trait Monster extends Card {
   }
 
   private def canSwitchPositions(implicit eventsModule: EventsModule): Boolean = {
-    maybeMonsterControlledState.exists { monsterControlledState =>
+    maybeControlledState.exists { monsterControlledState =>
       !monsterControlledState.manuallyChangedPositionsThisTurn && !monsterControlledState.attackedThisTurn
     }
   }
@@ -105,7 +100,7 @@ trait Monster extends Card {
     val Controller = controller // for pattern matching
     gameState match {
       case GameState(_, TurnPlayers(Controller, opponent), OpenGameState, _, BattleStep, _) =>
-        maybeMonsterControlledState.map { controlledState =>
+        maybeControlledState.map { controlledState =>
           if (!controlledState.attackedThisTurn && controlledState.position == Attack) {
             val potentialTargets = opponent.field.monsterZones.toSeq.flatten
             if (potentialTargets.nonEmpty) {
@@ -125,7 +120,7 @@ trait Monster extends Card {
 
 trait NormalMonster extends Monster
 
-trait EffectMonster extends Monster with EffectCard
+trait EffectMonster extends Monster with EffectCard[MonsterControlledState]
 
 trait FlipMonster extends EffectMonster
 
@@ -152,6 +147,7 @@ trait SynchroMonster extends ExtraDeckMonster
 
 trait XyzMonster extends ExtraDeckMonster {
   override val MaybePrintedLevel = None
+  //noinspection NotImplementedCode
   override val MaybePrintedRank = ??? // TODO LOW: nicer way to be convenient elsewhere but force rank definition here?
 }
 

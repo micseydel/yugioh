@@ -14,7 +14,7 @@ sealed trait SummonOrSet extends InherentAction {
 
   override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     // super should be called for this line after the monster is placed on the field!
-    monster.maybeMonsterControlledState.get.manuallyChangedPositionsThisTurn = true
+    monster.maybeControlledState.get.manuallyChangedPositionsThisTurn = true
   }
 }
 

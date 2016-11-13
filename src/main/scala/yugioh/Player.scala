@@ -2,7 +2,7 @@ package yugioh
 
 import yugioh.action.monster.NormalSummon
 import yugioh.action.{Action, ActionModule, Cause}
-import yugioh.card.Card
+import yugioh.card.Card.AnyCard
 import yugioh.card.monster._
 import yugioh.events.{EventsModule, EventsModuleComponent, PhaseStartEvent, TurnStartEvent}
 
@@ -13,7 +13,7 @@ trait Player extends Cause {
   val name: String
   val deck: Deck
   val extraDeck: ListBuffer[ExtraDeckMonster] = new ListBuffer[ExtraDeckMonster]
-  val hand: ListBuffer[Card] = new ListBuffer[Card]
+  val hand = new ListBuffer[AnyCard]
 
   val field: Field
 
@@ -42,7 +42,7 @@ trait Player extends Cause {
     hand ++= toAdd
   }
 
-  def cardToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[Card]
+  def cardToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[AnyCard]
 
   /**
     * Ask player if they wish to end the phase or step.
@@ -60,7 +60,7 @@ trait Player extends Cause {
   /**
     * When an effect needs to select a target, this is how an activation asks a player what targets to use.
     */
-  def selectEffectTargets[C <: Card](criteria: Criteria[C])(implicit gameState: GameState): Seq[C]
+  def selectEffectTargets[C <: AnyCard](criteria: Criteria[C])(implicit gameState: GameState): Seq[C]
 
   /**
     * For a monster in the process of being special summoned, select from positions options which position to SS in.
@@ -68,6 +68,10 @@ trait Player extends Cause {
   def selectSpecialSummonPosition(monster: Monster, positions: Seq[Position])(implicit gameState: GameState): Position
 
   override def toString = name
+
+  def opponent(implicit gameState: GameState) = {
+    gameState.turnPlayers.other(this)
+  }
 }
 
 case class TurnPlayers(turnPlayer: Player, opponent: Player) {
@@ -96,16 +100,14 @@ trait CommandLineHumanPlayerModuleComponent {
     override val field = fieldModule.createField
 
     override val deck: Deck = new TestDeck(this) // TODO: be more than just a stub
-    eventsModule.observe { event =>
-      event match {
-        case TurnStartEvent(turnPlayers, mutableGameState) =>
-          println(s"\nTurn #${mutableGameState.turnCount}")
-          println("================================")
-          showField(turnPlayers, mutableGameState)
-        case phaseStart: PhaseStartEvent =>
-          println(s"Entering ${phaseStart.phase}")
-        case ignore =>
-      }
+    eventsModule.observe {
+      case TurnStartEvent(turnPlayers, mutableGameState) =>
+        println(s"\nTurn #${mutableGameState.turnCount}")
+        println("================================")
+        showField(turnPlayers, mutableGameState)
+      case phaseStart: PhaseStartEvent =>
+        println(s"Entering ${phaseStart.phase}")
+      case ignore =>
     }
 
     private def showField(implicit turnPlayers: TurnPlayers, mutableGameState: MutableGameState) = {
@@ -151,11 +153,11 @@ trait CommandLineHumanPlayerModuleComponent {
       }
     }
 
-    override def cardToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[Card] = {
-      val criteria: Criteria[Card] = new Criteria[Card] {
+    override def cardToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[AnyCard] = {
+      val criteria = new Criteria[AnyCard] {
         override def meetable(implicit gameState: GameState) = true
-        override def validSelection(choices: Seq[Card])(implicit gameState: GameState): Boolean = choices.size == hand.size - Constants.HandSizeLimit
-        override def availableChoices(implicit gameState: GameState): Seq[Card] = hand
+        override def validSelection[T >: AnyCard](choices: Seq[T])(implicit gameState: GameState) = choices.size == hand.size - Constants.HandSizeLimit
+        override def availableChoices(implicit gameState: GameState) = hand
       }
 
       selectMultiple(s"Must discard for hand size limit ($criteria):", criteria)
@@ -230,7 +232,7 @@ trait CommandLineHumanPlayerModuleComponent {
       select(s"Select target for $attacker", potentialTargets)
     }
 
-    override def selectEffectTargets[C <: Card](criteria: Criteria[C])(implicit gameState: GameState) = {
+    override def selectEffectTargets[C <: AnyCard](criteria: Criteria[C])(implicit gameState: GameState) = {
       selectMultiple(s"Select targets for effect.", criteria)
     }
 
@@ -256,12 +258,12 @@ trait PassivePlayerModuleComponent {
     override val field = fieldModule.createField
     override val name = "PassivePlayer"
     override val deck = new TestDeck(this)
-    override def cardToDiscardForHandSizeLimit(implicit gameState: GameState) = Seq(hand.head)
+    override def cardToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[AnyCard] = Seq(hand.head)
     override def consentToEnd(implicit gameState: GameState) = true
     override def enterBattlePhase(implicit gameState: GameState) = false
     override def selectSummonMaterial(summonCriteria: SummonCriteria)(implicit gameState: GameState) = ???
     override def selectAttackTarget(attacker: Monster, potentialTargets: Seq[Monster])(implicit gameState: GameState) = ???
-    override def selectEffectTargets[C <: Card](criteria: Criteria[C])(implicit gameState: GameState) = ???
+    override def selectEffectTargets[C <: AnyCard](criteria: Criteria[C])(implicit gameState: GameState) = ???
     override def selectSpecialSummonPosition(monster: Monster, positions: Seq[Position])(implicit gameState: GameState) = ???
 
     override def chooseAction(actions: Seq[Action])(implicit gameState: GameState) = {

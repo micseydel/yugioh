@@ -3,9 +3,10 @@ package yugioh.card.library
 import yugioh._
 import yugioh.action.monster.NormalOrFlipSummon
 import yugioh.action.{ActionModule, InherentAction, NoAction}
+import yugioh.card.Card.AnyCard
 import yugioh.card.monster.Monster
 import yugioh.card.trap.{NormalTrap, TrapEffect}
-import yugioh.card.{Card, Effect, EffectType}
+import yugioh.card.{Effect, EffectType}
 import yugioh.events.{ActionEvent, EventsModule}
 
 // mostly for IDE navigation
@@ -20,7 +21,7 @@ class TrapHole(val Owner: Player) extends NormalTrap {
   object TrapHoleEffect extends TrapEffect {
     override val Card = TrapHole.this
     override val EffectType: EffectType = Effect
-    override val maybeCostCriteria: Option[Criteria[Card]] = None
+    override val maybeCostCriteria: Option[Criteria[AnyCard]] = None
     override val Cost: InherentAction = NoAction(Card.Owner)
 
     override def activationTimingCorrect(implicit gameState: GameState): Boolean = {
@@ -35,7 +36,7 @@ class TrapHole(val Owner: Player) extends NormalTrap {
       }
     }
 
-    override val maybeTargetCriteria: Option[Criteria[Card]] = Some(new Criteria[Card] {
+    override val maybeTargetCriteria: Option[Criteria[Monster]] = Some(new Criteria[Monster] {
       /**
         * Can the player possibly meet the requirements?
         */
@@ -51,7 +52,7 @@ class TrapHole(val Owner: Player) extends NormalTrap {
       /**
         * Verify that the subject of availableChoices which has been selected is valid.
         */
-      override def validSelection(choices: Seq[Card])(implicit gameState: GameState): Boolean = {
+      override def validSelection[T >: Monster](choices: Seq[T])(implicit gameState: GameState) = {
         choices match {
           case Seq(monster: Monster) if monster.attack > 1000 =>
             true
@@ -63,7 +64,7 @@ class TrapHole(val Owner: Player) extends NormalTrap {
       /**
         * Available choices to fulfill the requirements.
         */
-      override def availableChoices(implicit gameState: GameState): Seq[Card] = {
+      override def availableChoices(implicit gameState: GameState) = {
         val choices = gameState.inResponseTo.collect {
           case ActionEvent(normalOrFlipSummon: NormalOrFlipSummon) if normalOrFlipSummon.monster.attack > 1000 =>
             normalOrFlipSummon.monster

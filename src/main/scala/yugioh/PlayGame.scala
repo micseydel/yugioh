@@ -62,43 +62,35 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
 
     private def setupObservables() = {
       // set hook for clearing turn state
-      eventsModule.observe { event =>
-        event match {
-          case TurnStartEvent(_, _) =>
-            mutableGameState.hasNormalSummonedThisTurn = false
-          case ignore =>
-        }
+      eventsModule.observe {
+        case TurnStartEvent(_, _) =>
+          mutableGameState.hasNormalSummonedThisTurn = false
+        case ignore =>
       }
 
       // listen for a normal summon or set, flag that it happened
-      eventsModule.observe { event =>
-        event match {
-          case ActionEvent(_:NormalSummon | _:SetAsMonster) =>
-            mutableGameState.hasNormalSummonedThisTurn = true
-          case ignore =>
-        }
+      eventsModule.observe {
+        case ActionEvent(_: NormalSummon | _: SetAsMonster) =>
+          mutableGameState.hasNormalSummonedThisTurn = true
+        case ignore =>
       }
 
       // listen for an attack declaration, tag that monster as having attacked
-      eventsModule.observe { event =>
-        event match {
-          case ActionEvent(attackDeclaration: DeclareAttack) =>
-            for (monsterControlledState <- attackDeclaration.attacker.maybeMonsterControlledState) {
-              monsterControlledState.attackedThisTurn = true
-            }
-          case ignore =>
-        }
+      eventsModule.observe {
+        case ActionEvent(attackDeclaration: DeclareAttack) =>
+          for (monsterControlledState <- attackDeclaration.attacker.maybeControlledState) {
+            monsterControlledState.attackedThisTurn = true
+          }
+        case ignore =>
       }
 
       // listen for changes in lifepoints, potentially issue a game loss
-      eventsModule.observe { event =>
-        event match {
-          case ActionEvent(ChangeLifePoints(lifePointsChange, player)) =>
-            if (player.lifePoints <= 0) {
-              throw OutOfLifepoints(player)
-            }
-          case ignore =>
-        }
+      eventsModule.observe {
+        case ActionEvent(ChangeLifePoints(lifePointsChange, player)) =>
+          if (player.lifePoints <= 0) {
+            throw OutOfLifepoints(player)
+          }
+        case ignore =>
       }
     }
   }
