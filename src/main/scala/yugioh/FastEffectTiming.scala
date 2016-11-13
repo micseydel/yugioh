@@ -23,7 +23,7 @@ import scala.collection.mutable.ListBuffer
   * There is one additional state, CheckForTrigger which represents the yellow box above B, and null indicates exit.
   */
 sealed trait FastEffectTiming {
-  override val toString = this.getClass.getSimpleName
+  override def toString = this.getClass.getSimpleName
 
   def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): FastEffectTiming
 
@@ -294,6 +294,10 @@ case class CheckForTrigger(inResponseTo: List[Event]) extends FastEffectTiming {
     * This flag will be switched to false when optional trigger effects are acceptable.
     */
   var mandatoryOnly = true
+
+  override def toString: String = {
+    s"${this.getClass}(mandatoryOnly = $mandatoryOnly)"
+  }
 
   override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
     nextWithUpdatedGameState(gameState.copy(inResponseTo = inResponseTo), eventsModule, actionModule)
