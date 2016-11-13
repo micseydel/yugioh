@@ -1,6 +1,5 @@
 package yugioh
 
-import yugioh.action.monster.NormalSummon
 import yugioh.action.{Action, ActionModule, Cause}
 import yugioh.card.Card.AnyCard
 import yugioh.card.monster._
@@ -265,15 +264,6 @@ trait PassivePlayerModuleComponent {
     override def selectAttackTarget(attacker: Monster, potentialTargets: Seq[Monster])(implicit gameState: GameState) = ???
     override def selectEffectTargets[C <: AnyCard](criteria: Criteria[C])(implicit gameState: GameState) = ???
     override def selectSpecialSummonPosition(monster: Monster, positions: Seq[Position])(implicit gameState: GameState) = ???
-
-    override def chooseAction(actions: Seq[Action])(implicit gameState: GameState) = {
-      val action = actions.find(_.isInstanceOf[NormalSummon]).getOrElse(actions.head)
-
-      if (gameState.turnPlayers.turnPlayer == this) {
-        println(this + " going to take action " + action)
-      }
-
-      action
-    }
+    override def chooseAction(actions: Seq[Action])(implicit gameState: GameState) = actions.head
   }
 }
