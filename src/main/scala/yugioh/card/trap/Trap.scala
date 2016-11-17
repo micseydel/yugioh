@@ -29,4 +29,18 @@ trait NormalTrap extends Trap with NonContinuousSpellOrTrap {
 trait CounterTrap extends Trap with NonContinuousSpellOrTrap
 trait ContinuousTrap extends Trap
 
-trait TrapEffect extends Effect
+trait TrapEffect extends Effect {
+  /**
+    * Applicable for non-counter traps.
+    */
+  override def activationTimingCorrect(implicit gameState: GameState): Boolean = {
+    gameState match {
+      case GameState(_, _, _, _, _: DamageStep, _) =>
+        false
+      case GameState(_, _, _: CheckForTrigger | _: PlayerFastEffects | _: ChainRules, _, _, _) =>
+        true
+      case _ =>
+        false
+    }
+  }
+}

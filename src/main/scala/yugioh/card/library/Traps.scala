@@ -24,18 +24,6 @@ class TrapHole(val Owner: Player) extends NormalTrap {
     override val maybeCostCriteria: Option[Criteria[AnyCard]] = None
     override val Cost: InherentAction = NoAction(Card.Owner)
 
-    override def activationTimingCorrect(implicit gameState: GameState): Boolean = {
-      gameState match {
-        case GameState(_, _, _, _, _: DamageStep, _) =>
-          // TODO LOW: refactor this (no activation in damage step) logic to be checked for in an ancestor
-          false
-        case GameState(_, _, _: CheckForTrigger | _: PlayerFastEffects | _: ChainRules, _, _, _) =>
-          true
-        case _ =>
-          false
-      }
-    }
-
     override val maybeTargetCriteria: Option[Criteria[Monster]] = Some(new Criteria[Monster] {
       /**
         * Can the player possibly meet the requirements?
