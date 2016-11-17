@@ -223,8 +223,13 @@ trait CommandLineHumanPlayerModuleComponent {
     }
 
     override def selectSummonMaterial(summonCriteria: SummonCriteria)(implicit gameState: GameState) = {
-      // TODO: streamlined logic for when there is only a single possibility
-      selectMultiple(s"To summon ${summonCriteria.monster}, please enter comma separated monster(s) to use ($summonCriteria).", summonCriteria)
+      summonCriteria match {
+        case TributeSummonCriteria(_, _, requiredTributes) if field.monsterZones.count(_.isDefined) == requiredTributes =>
+          // only one possibility, do it automatically
+          field.monsterZones.filter(_.isDefined).flatten.toSeq
+        case _ =>
+          selectMultiple(s"To summon ${summonCriteria.monster}, please enter comma separated monster(s) to use ($summonCriteria).", summonCriteria)
+      }
     }
 
     override def selectAttackTarget(attacker: Monster, potentialTargets: Seq[Monster])(implicit gameState: GameState): Monster = {
