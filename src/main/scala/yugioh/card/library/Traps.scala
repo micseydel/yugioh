@@ -24,6 +24,18 @@ class TrapHole(val Owner: Player) extends NormalTrap {
     override val maybeCostCriteria: Option[Criteria[AnyCard]] = None
     override val Cost: InherentAction = NoAction(Card.Owner)
 
+    /**
+      * Override normal trap behavior, for cards like Compulsory Evacuation Device, which are more lenient with timing.
+      */
+    override def activationTimingCorrect(implicit gameState: GameState): Boolean = {
+      gameState match {
+        case GameState(_, _, _: PlayerFastEffects, _, _, _) =>
+          false
+        case _ =>
+          super.activationTimingCorrect
+      }
+    }
+
     override val maybeTargetCriteria: Option[Criteria[Monster]] = Some(new Criteria[Monster] {
       /**
         * Can the player possibly meet the requirements?
