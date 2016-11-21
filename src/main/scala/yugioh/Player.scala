@@ -106,7 +106,6 @@ trait CommandLineHumanPlayerModuleComponent {
         showField(turnPlayers, mutableGameState)
       case phaseStart: PhaseStartEvent =>
         println(s"Entering ${phaseStart.phase}")
-      case ignore =>
     }
 
     private def showField(implicit turnPlayers: TurnPlayers, mutableGameState: MutableGameState) = {

@@ -81,9 +81,8 @@ object OpenGameState extends FastEffectTiming {
     val subscription = eventsModule.observe {
       case TimeSeparationEvent =>
         lastThingsToHappen = new ListBuffer[Event]()
-      case event@ActionEvent(_) =>
+      case event: ActionEvent =>
         lastThingsToHappen.append(event)
-      case ignore =>
     }
 
     choice.execute()

@@ -65,14 +65,12 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
       eventsModule.observe {
         case TurnStartEvent(_, _) =>
           mutableGameState.hasNormalSummonedThisTurn = false
-        case ignore =>
       }
 
       // listen for a normal summon or set, flag that it happened
       eventsModule.observe {
         case ActionEvent(_: NormalSummon | _: SetAsMonster) =>
           mutableGameState.hasNormalSummonedThisTurn = true
-        case ignore =>
       }
 
       // listen for an attack declaration, tag that monster as having attacked
@@ -81,7 +79,6 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
           for (monsterControlledState <- attackDeclaration.attacker.maybeControlledState) {
             monsterControlledState.attackedThisTurn = true
           }
-        case ignore =>
       }
 
       // listen for changes in lifepoints, potentially issue a game loss
@@ -90,7 +87,6 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
           if (player.lifePoints <= 0) {
             throw OutOfLifepoints(player)
           }
-        case ignore =>
       }
     }
   }

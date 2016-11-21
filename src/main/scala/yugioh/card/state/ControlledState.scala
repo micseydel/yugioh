@@ -33,7 +33,6 @@ case class MonsterControlledState(
     case TurnEndEvent =>
       attackedThisTurn = false
       manuallyChangedPositionsThisTurn = false
-    case ignore =>
   }
 
   override def faceup: Boolean = Position.FaceUp.contains(position)

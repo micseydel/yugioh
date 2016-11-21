@@ -23,14 +23,14 @@ trait EventsModuleComponent {
 }
 
 trait EventsModule {
-  def observe[E <: Event](onEvent: Event => Unit): Subscription
+  def observe(onEvent: PartialFunction[Event, Unit]): Subscription
 
-  def emit(event: Event): Event
+  def emit[E <: Event](event: E): E
 
   def emit(action: Action): ActionEvent
 }
 
-trait Observer[E <: Event] {
+trait Observer {
   def notify(event: Event): Unit
 }
 
@@ -39,25 +39,23 @@ trait Subscription {
 }
 
 object DefaultEventsModule extends EventsModule {
-  val observers = new ListBuffer[Observer[_ <: Event]]
+  val observers = new ListBuffer[Observer]
 
-  private[this] def observe[E <: Event](observer: Observer[E]): Subscription = {
+  private[this] def observe(observer: Observer): Subscription = {
     observers.append(observer)
 
-    //noinspection ConvertExpressionToSAM
-    new Subscription {
-      override def dispose(): Unit = observers.remove(observers.indexOf(observer))
-    }
+    () => observers.remove(observers.indexOf(observer))
   }
 
-  def observe[E <: Event](onEvent: Event => Unit): Subscription = {
-    //noinspection ConvertExpressionToSAM
-    observe(new Observer[E] {
-      override def notify(event: Event): Unit = onEvent(event)
+  override def observe(onEvent: PartialFunction[Event, Unit]): Subscription = {
+    observe((event: Event) => {
+      if (onEvent.isDefinedAt(event)) {
+        onEvent(event)
+      }
     })
   }
 
-  def emit(event: Event) = {
+  override def emit[E <: Event](event: E) = {
     for (observer <- observers) {
       observer.notify(event)
     }
@@ -65,8 +63,8 @@ object DefaultEventsModule extends EventsModule {
     event
   }
 
-  def emit(action: Action) = {
-    emit(ActionEvent(action)).asInstanceOf[ActionEvent]
+  override def emit(action: Action) = {
+    emit(ActionEvent(action))
   }
 }
 

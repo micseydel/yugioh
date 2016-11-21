@@ -54,7 +54,6 @@ case object BattleStep extends BattlePhaseStep {
         target = theTarget
       case ActionEvent(DeclareDirectAttack(theAttacker)) =>
         attacker = theAttacker
-      case ignore =>
     }
 
     // listen for an attack declaration here
@@ -148,7 +147,6 @@ case object PerformDamageCalculation extends DamageStepSubStep {
     val subscription = eventsModule.observe {
       case ActionEvent(DestroyByBattle(monster, _)) =>
         destroyed += monster
-      case ignore =>
     }
 
     battle match {
