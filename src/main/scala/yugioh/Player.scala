@@ -91,7 +91,9 @@ trait CommandLineHumanPlayerModuleComponent {
   self: EventsModuleComponent
     with FieldModuleComponent =>
 
-  def newCommandLineHumanPlayer(playerName: String) = new Player {
+  def newCommandLineHumanPlayer(playerName: String) = new CommandLineHumanPlayer(playerName)
+
+  class CommandLineHumanPlayer(playerName: String) extends Player {
     Me =>
 
     val name = playerName
@@ -256,8 +258,10 @@ trait CommandLineHumanPlayerModuleComponent {
 trait PassivePlayerModuleComponent {
   self: FieldModuleComponent =>
 
+  def newPassivePlayer = new PassivePlayer
+
   //noinspection NotImplementedCode - explicitly ignoring the ??? here since we don't want to bother with it
-  def newPassivePlayer = new Player {
+  class PassivePlayer extends Player {
     override val field = fieldModule.createField
     override val name = "PassivePlayer"
     override val deck = new TestDeck(this)
