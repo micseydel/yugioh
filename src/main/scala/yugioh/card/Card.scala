@@ -22,7 +22,7 @@ trait Card[CS <: ControlledState] {
 
   def maybeControlledState: Option[CS] = _maybeControlledState
 
-  def maybeControlledState_=(controlledState: Option[CS]) = {
+  def maybeControlledState_=(controlledState: Option[CS]): Unit = {
     for (controlledState <- maybeControlledState) {
       controlledState.close()
     }
@@ -32,7 +32,7 @@ trait Card[CS <: ControlledState] {
 
   def name: String = PrintedName
 
-  override def toString = name
+  override def toString: String = name
 
   def toString(viewer: Player): String = {
     maybeControlledState.map { controlledState =>
@@ -48,9 +48,9 @@ trait Card[CS <: ControlledState] {
     }.getOrElse(name)
   }
 
-  def discard()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = Owner.field.discard(this)
-  def destroy()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = Owner.field.destroy(this)
-  def sendToGrave()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = Owner.field.sendToGrave(this)
+  def discard()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = Owner.field.discard(this)
+  def destroy()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = Owner.field.destroy(this)
+  def sendToGrave()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = Owner.field.sendToGrave(this)
 
   /**
     * Allows the card to be notified of when it's moved.
@@ -74,7 +74,7 @@ trait SpellOrTrap extends EffectCard[SpellOrTrapControlledState] { // TODO: spel
     */
   var maybeTurnSet: Option[Int] = None
 
-  override def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  override def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Seq[Action] = {
     gameState match {
       case GameState(_, TurnPlayers(Owner, _), OpenGameState, MainPhase | MainPhase2, _, _) if InHand(this) =>
         Seq(actionModule.newSetAsSpellOrTrap(this))
@@ -110,7 +110,7 @@ class SetAsSpellOrTrapImpl(override val spellOrTrap: SpellOrTrap) extends SetAsS
 
   override val toString = s"SetAsSpellOrTrap($spellOrTrap)"
 
-  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
     if (player.field.hasFreeSpellOrTrapZone) {
       player.field.placeAsSpellOrTrap(spellOrTrap, faceup = false)
       spellOrTrap.maybeTurnSet = Some(gameState.turnCount)

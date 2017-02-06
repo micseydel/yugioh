@@ -10,7 +10,7 @@ trait SummonCriteria extends Criteria[Monster] {
 }
 
 object TributeSummonCriteria {
-  def apply(player: Player, monster: Monster) = {
+  def apply(player: Player, monster: Monster): TributeSummonCriteria = {
     new TributeSummonCriteria(player, monster)
   }
 }
@@ -29,5 +29,5 @@ case class TributeSummonCriteria(player: Player, monster: Monster, requiredTribu
     player.field.monsterZones.filter(_.nonEmpty).flatten.toSeq
   }
 
-  override def validSelection[T >: Monster](choices: Seq[T])(implicit gameState: GameState) = choices.size == requiredTributes
+  override def validSelection[T >: Monster](choices: Seq[T])(implicit gameState: GameState): Boolean = choices.size == requiredTributes
 }

@@ -1,10 +1,8 @@
 package yugioh.action
 
-import yugioh.{GameState, Player}
-import yugioh.card.Card
 import yugioh.card.Card.AnyCard
-import yugioh.card.state.ControlledState
 import yugioh.events.EventsModule
+import yugioh.{GameState, Player}
 
 // purely for IDE navigation
 private[this] object InherentActions
@@ -18,7 +16,7 @@ case class NoAction(player: Player) extends InherentAction {
 
 case class PassPriority(player: Player) extends InherentAction {
   override def toString = "PassPriority"
-  override def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = ()
+  override def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = ()
 }
 
 trait PlaceOnField extends InherentAction // TODO
@@ -50,7 +48,7 @@ trait Draw extends InherentAction
 
 class DrawImpl(override val player: Player, howMany: Int = 1) extends Draw {
 
-  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
     player.draw(howMany)
   }
 }
@@ -58,9 +56,9 @@ class DrawImpl(override val player: Player, howMany: Int = 1) extends Draw {
 trait DrawForTurn extends Draw
 
 class DrawForTurnImpl(implicit gameState: GameState) extends DrawForTurn {
-  val player = gameState.turnPlayers.turnPlayer
+  val player: Player = gameState.turnPlayers.turnPlayer
 
-  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
     gameState.turnPlayers.turnPlayer.draw()
   }
 }
@@ -71,7 +69,7 @@ trait Destroy extends InherentAction {
 
 
 case class DestroyImpl(override val player: Player, override val cards: Seq[AnyCard]) extends Destroy {
-  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
     for (card <- cards) {
       card.destroy()
     }

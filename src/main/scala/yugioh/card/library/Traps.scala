@@ -19,7 +19,7 @@ class TrapHole(val Owner: Player) extends NormalTrap {
   override val Effects: List[Effect] = List(TrapHoleEffect)
 
   object TrapHoleEffect extends TrapEffect {
-    override val Card = TrapHole.this
+    override val Card: TrapHole = TrapHole.this
     override val EffectType: EffectType = Effect
     override val maybeCostCriteria: Option[Criteria[AnyCard]] = None
     override val Cost: InherentAction = NoAction(Card.Owner)
@@ -52,7 +52,7 @@ class TrapHole(val Owner: Player) extends NormalTrap {
       /**
         * Verify that the subject of availableChoices which has been selected is valid.
         */
-      override def validSelection[T >: Monster](choices: Seq[T])(implicit gameState: GameState) = {
+      override def validSelection[T >: Monster](choices: Seq[T])(implicit gameState: GameState): Boolean = {
         choices match {
           case Seq(monster: Monster) if monster.attack > 1000 =>
             true
@@ -64,7 +64,7 @@ class TrapHole(val Owner: Player) extends NormalTrap {
       /**
         * Available choices to fulfill the requirements.
         */
-      override def availableChoices(implicit gameState: GameState) = {
+      override def availableChoices(implicit gameState: GameState): List[Monster] = {
         val choices = gameState.inResponseTo.collect {
           case ActionEvent(normalOrFlipSummon: NormalOrFlipSummon) if normalOrFlipSummon.monster.attack > 1000 =>
             normalOrFlipSummon.monster
@@ -79,7 +79,7 @@ class TrapHole(val Owner: Player) extends NormalTrap {
     override val Resolution: InherentAction = new InherentAction {
       override val player: Player = Card.Owner
 
-      override def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+      override def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
         val target = selectedTargets match {
           case Seq(monster: Monster) =>
             monster

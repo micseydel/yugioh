@@ -1,7 +1,7 @@
 package yugioh.card.monster
 
 import yugioh._
-import yugioh.action.ActionModule
+import yugioh.action.{ActionModule, InherentAction}
 import yugioh.card._
 import yugioh.card.state.{MonsterControlledState, MonsterFieldState}
 import yugioh.events.EventsModule
@@ -38,7 +38,7 @@ trait Monster extends Card[MonsterControlledState] {
   /**
     * Default implementation of being able to normal/tribute summon during main phases, does not apply to (Semi-)Nomi.
     */
-  override def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  override def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Seq[InherentAction] = {
     gameState match {
       case GameState(MutableGameState(_, hasNormalSummonedThisTurn, _), TurnPlayers(Owner, _), OpenGameState, phase, _, _) =>
         phase match {
@@ -79,7 +79,7 @@ trait Monster extends Card[MonsterControlledState] {
             }
           }
         }.getOrElse(Seq())
-      case monsterZone: InMonsterZone if canSwitchPositions =>
+      case _: InMonsterZone if canSwitchPositions =>
         if (maybeControlledState.get.faceup) {
           Seq(actionModule.newSwitchPosition(this))
         } else {

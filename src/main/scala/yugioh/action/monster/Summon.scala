@@ -12,7 +12,7 @@ sealed trait SummonOrSet extends InherentAction {
 
   override def toString = s"${this.getClass.getSimpleName}($monster)"
 
-  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
     // super should be called for this line after the monster is placed on the field!
     monster.maybeControlledState.get.manuallyChangedPositionsThisTurn = true
   }
@@ -25,7 +25,7 @@ sealed trait NormalOrFlipSummon extends Summon
 trait NormalSummon extends NormalOrFlipSummon
 
 class NormalSummonImpl(val monster: Monster) extends NormalSummon {
-  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
     monster.Owner.field.placeAsMonster(monster, Attack, NormalSummoned)
     super.doAction()
   }
@@ -34,7 +34,7 @@ class NormalSummonImpl(val monster: Monster) extends NormalSummon {
 trait TributeSummon extends NormalSummon
 
 class TributeSummonImpl(override val monster: Monster) extends NormalSummonImpl(monster) with TributeSummon {
-  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
     val toTribute = monster.Owner.selectSummonMaterial(TributeSummonCriteria(monster.Owner, monster))
     for (tribute <- toTribute) {
       tribute.sendToGrave()
@@ -52,7 +52,7 @@ class TributeSummonImpl(override val monster: Monster) extends NormalSummonImpl(
 trait FlipSummon extends NormalOrFlipSummon with SwitchPosition
 
 class FlipSummonImpl(override val monster: Monster)(implicit override val eventsModule: EventsModule) extends FlipSummon {
-  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
     super.doAction()
   }
 }
@@ -60,7 +60,7 @@ class FlipSummonImpl(override val monster: Monster)(implicit override val events
 trait SetAsMonster extends SummonOrSet with SetCard
 
 class SetAsMonsterImpl(override val monster: Monster) extends SetAsMonster {
-  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
     monster.Owner.field.placeAsMonster(monster, Set, NotSummoned)
     super.doAction()
   }
@@ -69,7 +69,7 @@ class SetAsMonsterImpl(override val monster: Monster) extends SetAsMonster {
 trait TributeSet extends SetAsMonster
 
 class TributeSetImpl(monster: Monster) extends SetAsMonsterImpl(monster) with TributeSet {
-  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
     val summonCriteria = TributeSummonCriteria(monster.Owner, monster)
     val toTribute = monster.Owner.selectSummonMaterial(summonCriteria)
     for (tribute <- toTribute) {
@@ -85,7 +85,7 @@ trait SpecialSummon extends Summon {
 }
 
 case class SpecialSummonImpl(override val player: Player, monster: Monster, position: Position) extends SpecialSummon {
-  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
     player.field.placeAsMonster(monster, position, SpecialSummoned)
     super.doAction()
   }

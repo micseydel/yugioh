@@ -17,7 +17,7 @@ trait Deck {
 
   def fromTop(): AnyCard = fromTop(1).head
 
-  def remaining = cards.size
+  def remaining: Int = cards.size
 
   /**
     * An EmptyDeck GameLoss exception will be thrown if the deck is empty.
@@ -26,14 +26,14 @@ trait Deck {
     try {
       for (_ <- 1 to howMany) yield cards.remove(0)
     } catch {
-      case outOfBounds: IndexOutOfBoundsException => throw EmptyDeck(owner)
+      case _: IndexOutOfBoundsException => throw EmptyDeck(owner)
     }
   }
 }
 
 class TestDeck(val owner: Player) extends Deck {
   // TODO LOW: spells+traps for the deck
-  val cards = ListBuffer(
+  override val cards: ListBuffer[AnyCard] = ListBuffer(
     // Monsters
     AncientElf,
     Ansatsu,

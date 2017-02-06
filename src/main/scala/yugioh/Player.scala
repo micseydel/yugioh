@@ -66,9 +66,9 @@ trait Player extends Cause {
     */
   def selectSpecialSummonPosition(monster: Monster, positions: Seq[Position])(implicit gameState: GameState): Position
 
-  override def toString = name
+  override def toString: String = name
 
-  def opponent(implicit gameState: GameState) = {
+  def opponent(implicit gameState: GameState): Player = {
     gameState.turnPlayers.other(this)
   }
 }
@@ -96,9 +96,9 @@ trait CommandLineHumanPlayerModuleComponent {
   class CommandLineHumanPlayer(playerName: String) extends Player {
     Me =>
 
-    val name = playerName
+    val name: String = playerName
 
-    override val field = fieldModule.createField
+    override val field: Field = fieldModule.createField
 
     override val deck: Deck = new TestDeck(this) // TODO: be more than just a stub
     eventsModule.observe {
@@ -140,7 +140,7 @@ trait CommandLineHumanPlayerModuleComponent {
       println(s"Turn player ${turnPlayers.turnPlayer} (${turnPlayers.turnPlayer.lifePoints})\n")
     }
 
-    override def chooseAction(actions: Seq[Action])(implicit gameState: GameState) = {
+    override def chooseAction(actions: Seq[Action])(implicit gameState: GameState): Action = {
       gameState match {
         case GameState(_, _, fastEffectTiming, phase, step, _) =>
           if (actions.size == 1) {
@@ -156,14 +156,14 @@ trait CommandLineHumanPlayerModuleComponent {
     override def cardToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[AnyCard] = {
       val criteria = new Criteria[AnyCard] {
         override def meetable(implicit gameState: GameState) = true
-        override def validSelection[T >: AnyCard](choices: Seq[T])(implicit gameState: GameState) = choices.size == hand.size - Constants.HandSizeLimit
-        override def availableChoices(implicit gameState: GameState) = hand
+        override def validSelection[T >: AnyCard](choices: Seq[T])(implicit gameState: GameState): Boolean = choices.size == hand.size - Constants.HandSizeLimit
+        override def availableChoices(implicit gameState: GameState): ListBuffer[AnyCard] = hand
       }
 
       selectMultiple(s"Must discard for hand size limit ($criteria):", criteria)
     }
 
-    override def enterBattlePhase(implicit gameState: GameState) = {
+    override def enterBattlePhase(implicit gameState: GameState): Boolean = {
       print("MP1 is ending; enter BP? (If not, will go to EP) ")
       StdIn.readBoolean()
     }
@@ -193,8 +193,7 @@ trait CommandLineHumanPlayerModuleComponent {
     /**
       * Get some of the values from the choices.
       */
-    private def selectMultiple[A](prompt: String, criteria: Criteria[A])
-      (implicit gameState: GameState): Seq[A] = {
+    private def selectMultiple[A](prompt: String, criteria: Criteria[A])(implicit gameState: GameState): Seq[A] = {
       println(prompt)
 
       val choices = criteria.availableChoices
@@ -216,14 +215,15 @@ trait CommandLineHumanPlayerModuleComponent {
       */
     override def consentToEnd(implicit gameState: GameState): Boolean = {
       gameState match {
-        case GameState(_, TurnPlayers(Me, _), _, phase@(MainPhase | BattlePhase | MainPhase2 | EndPhase), step, _) if !step.isInstanceOf[DamageStepSubStep] && !step.isInstanceOf[BattleStepWithPendingAttack] =>
+        case GameState(_, TurnPlayers(Me, _), _, phase@(MainPhase | BattlePhase | MainPhase2 | EndPhase), step, _)
+            if !step.isInstanceOf[DamageStepSubStep] && !step.isInstanceOf[BattleStepWithPendingAttack] =>
           print(s"End ${Option(step).getOrElse(phase)}? ")
           StdIn.readBoolean()
         case _ => true
       }
     }
 
-    override def selectSummonMaterial(summonCriteria: SummonCriteria)(implicit gameState: GameState) = {
+    override def selectSummonMaterial(summonCriteria: SummonCriteria)(implicit gameState: GameState): Seq[Monster] = {
       summonCriteria match {
         case TributeSummonCriteria(_, _, requiredTributes) if field.monsterZones.count(_.isDefined) == requiredTributes =>
           // only one possibility, do it automatically
@@ -237,14 +237,14 @@ trait CommandLineHumanPlayerModuleComponent {
       select(s"Select target for $attacker", potentialTargets)
     }
 
-    override def selectEffectTargets[C <: AnyCard](criteria: Criteria[C])(implicit gameState: GameState) = {
+    override def selectEffectTargets[C <: AnyCard](criteria: Criteria[C])(implicit gameState: GameState): Seq[C] = {
       selectMultiple(s"Select targets for effect.", criteria)
     }
 
     /**
       * For a monster in the process of being special summoned, select from positions options which position to SS in.
       */
-    override def selectSpecialSummonPosition(monster: Monster, positions: Seq[Position])(implicit gameState: GameState) = {
+    override def selectSpecialSummonPosition(monster: Monster, positions: Seq[Position])(implicit gameState: GameState): Position = {
       select(s"Select position to special summon $monster.", positions)
     }
   }
@@ -262,7 +262,7 @@ trait PassivePlayerModuleComponent {
 
   //noinspection NotImplementedCode - explicitly ignoring the ??? here since we don't want to bother with it
   class PassivePlayer extends Player {
-    override val field = fieldModule.createField
+    override val field: Field = fieldModule.createField
     override val name = "PassivePlayer"
     override val deck = new TestDeck(this)
     override def cardToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[AnyCard] = Seq(hand.head)
@@ -272,6 +272,6 @@ trait PassivePlayerModuleComponent {
     override def selectAttackTarget(attacker: Monster, potentialTargets: Seq[Monster])(implicit gameState: GameState) = ???
     override def selectEffectTargets[C <: AnyCard](criteria: Criteria[C])(implicit gameState: GameState) = ???
     override def selectSpecialSummonPosition(monster: Monster, positions: Seq[Position])(implicit gameState: GameState) = ???
-    override def chooseAction(actions: Seq[Action])(implicit gameState: GameState) = actions.head
+    override def chooseAction(actions: Seq[Action])(implicit gameState: GameState): Action = actions.head
   }
 }

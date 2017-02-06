@@ -12,10 +12,10 @@ object Main extends DefaultPlayGameComponent
     with CommandLineHumanPlayerModuleComponent
     with PassivePlayerModuleComponent {
 
-  val player1 = newCommandLineHumanPlayer("Human")
-  val player2 = newPassivePlayer
+  val player1: Player = newCommandLineHumanPlayer("Human")
+  val player2: Player = newPassivePlayer
 
-  override val Players = (player1, player2)
+  override val Players: (Player, Player) = (player1, player2)
 
   def main(args: Array[String]): Unit = {
     try {

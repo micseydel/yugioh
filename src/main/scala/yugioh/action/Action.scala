@@ -46,7 +46,7 @@ trait InherentAction extends Action {
     */
   def also(action: InherentAction): InherentAction = {
     new InherentAction {
-      override val player = InherentAction.this.player
+      override val player: Player = InherentAction.this.player
 
       override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
         InherentAction.this.doAction()
@@ -61,7 +61,7 @@ trait InherentAction extends Action {
     */
   def andIfYouDo(action: InherentAction): InherentAction = {
     new InherentAction {
-      override val player = InherentAction.this.player
+      override val player: Player = InherentAction.this.player
 
       override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
         InherentAction.this.doActionAndEmitEvent() // TODO: detect success before executing the next action
@@ -75,7 +75,7 @@ trait InherentAction extends Action {
     */
   def andThen(action: InherentAction): InherentAction = {
     new InherentAction {
-      override val player = InherentAction.this.player
+      override val player: Player = InherentAction.this.player
 
       override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
         InherentAction.this.doAction()

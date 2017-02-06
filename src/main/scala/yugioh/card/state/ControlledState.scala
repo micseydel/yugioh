@@ -20,7 +20,7 @@ trait ControlledState {
 }
 
 case class SpellOrTrapControlledState(var faceup: Boolean) extends ControlledState {
-  override def close() = ()
+  override def close(): Unit = ()
 }
 
 case class MonsterControlledState(
@@ -37,5 +37,5 @@ case class MonsterControlledState(
 
   override def faceup: Boolean = Position.FaceUp.contains(position)
 
-  override def close() = Subscription.dispose()
+  override def close(): Unit = Subscription.dispose()
 }

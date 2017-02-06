@@ -56,7 +56,7 @@ trait Effect {
     *
     * TODO: infer state changes (e.g. "once per turn")
     */
-  //noinspection ConvertExpressionToSAM
+  //noinspection ConvertExpressionToSAM - implicits are not supported by SAMs
   val ActivationConditions: Conditions = new Conditions {
     override def met(implicit gameState: GameState): Boolean = {
       !Card.activated &&
@@ -103,7 +103,7 @@ trait Effect {
   /**
     * Helper method for determining if an effect targets or not.
     */
-  final def doesTarget(implicit gameState: GameState) = maybeTargetCriteria.isDefined
+  final def doesTarget(implicit gameState: GameState): Boolean = maybeTargetCriteria.isDefined
 }
 
 /**

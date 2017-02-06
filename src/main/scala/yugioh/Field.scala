@@ -8,6 +8,7 @@ import yugioh.card.spell.FieldSpell
 import yugioh.card.state._
 import yugioh.events.{EventsModule, EventsModuleComponent}
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 /**
@@ -61,13 +62,13 @@ trait DefaultFieldModuleComponent extends FieldModuleComponent {
 
   implicit def fieldModule = new FieldModule {
     override def createField = new Field {
-      override def placeAsMonster(monster: Monster, position: Position, howSummoned: HowSummoned, locationPreference: Option[Int])(implicit gameState: GameState, actionModule: ActionModule) = {
+      override def placeAsMonster(monster: Monster, position: Position, howSummoned: HowSummoned, locationPreference: Option[Int])(implicit gameState: GameState, actionModule: ActionModule): InMonsterZone = {
         monster.maybeControlledState = Some(MonsterControlledState(position))
         monster.maybeMonsterFieldState = Some(MonsterFieldState(howSummoned))
         placeAsHelper(monsterZones, InMonsterZone.MonsterZones)(monster, locationPreference)
       }
 
-      override def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, faceup: Boolean, locationPreference: Option[Int])(implicit gameState: GameState, actionModule: ActionModule) = {
+      override def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, faceup: Boolean, locationPreference: Option[Int])(implicit gameState: GameState, actionModule: ActionModule): InSpellTrapZone = {
         spellOrTrap.maybeControlledState = Some(SpellOrTrapControlledState(faceup))
         placeAsHelper(spellTrapZones, InSpellTrapZone.SpellTrapZones)(spellOrTrap, locationPreference)
       }
@@ -103,11 +104,11 @@ trait DefaultFieldModuleComponent extends FieldModuleComponent {
         toWhere
       }
 
-      def removeFromMonsterZone[Z <: InMonsterZone](monsterZone: Z) = {
+      def removeFromMonsterZone[Z <: InMonsterZone](monsterZone: Z): Unit = {
         removeFromHelper(monsterZones, monsterZone, InMonsterZone.MonsterZones)
       }
 
-      def removeFromSpellTrapZone[Z <: InSpellTrapZone](spellTrapZone: Z) = {
+      def removeFromSpellTrapZone[Z <: InSpellTrapZone](spellTrapZone: Z): Unit = {
         removeFromHelper(spellTrapZones, spellTrapZone, InSpellTrapZone.SpellTrapZones)
       }
 
@@ -115,7 +116,7 @@ trait DefaultFieldModuleComponent extends FieldModuleComponent {
         removeFrom.update(zones.indexOf(zone), None)
       }
 
-      override def actions(implicit gameState: GameState, actionModule: ActionModule) = {
+      override def actions(implicit gameState: GameState, actionModule: ActionModule): mutable.ArraySeq[Action] = {
         ((monsterZones ++ spellTrapZones :+ fieldSpellZone :+ leftPendulumZone :+ rightPendulumZone).flatten
           ++ graveyard ++ banished).flatMap(_.actions)
       }
@@ -217,7 +218,7 @@ object Location {
   val SpellTrapZones = Set(InSpellTrap0, InSpellTrap1, InSpellTrap2, InSpellTrap3, InSpellTrap4)
   val PendulumZones = Set(InLeftPendulumZone, InRightPendulumZone)
 
-  val FieldZones = Seq(MonsterZones, SpellTrapZones, Set(InFieldSpell), PendulumZones).map(_.asInstanceOf[Set[InFieldZone]]).reduce(_ & _)
+  val FieldZones: Set[InFieldZone] = Seq(MonsterZones, SpellTrapZones, Set(InFieldSpell), PendulumZones).map(_.asInstanceOf[Set[InFieldZone]]).reduce(_ & _)
 
-  val Locations = FieldZones.asInstanceOf[Set[Location]] & Set(InDeck, InHand, InGraveyard, InBanished)
+  val Locations: Set[Location] = FieldZones.asInstanceOf[Set[Location]] & Set(InDeck, InHand, InGraveyard, InBanished)
 }

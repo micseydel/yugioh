@@ -23,11 +23,11 @@ import scala.collection.mutable.ListBuffer
   * There is one additional state, CheckForTrigger which represents the yellow box above B, and null indicates exit.
   */
 sealed trait FastEffectTiming {
-  override def toString = this.getClass.getSimpleName
+  override def toString: String = this.getClass.getSimpleName
 
   def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): FastEffectTiming
 
-  protected def actionsForPlayer(player: Player)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  protected def actionsForPlayer(player: Player)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Seq[Action] = {
     if (gameState.turnPlayers.turnPlayer == player) {
       turnPlayerActions
     } else {
@@ -35,7 +35,7 @@ sealed trait FastEffectTiming {
     }
   }
 
-  protected def turnPlayerActions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  protected def turnPlayerActions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Seq[Action] = {
     val turnPlayers = gameState.turnPlayers
 
     // field includes grave + banished
@@ -46,7 +46,7 @@ sealed trait FastEffectTiming {
       turnPlayers.opponent.field.actions
   }
 
-  protected def opponentActions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  protected def opponentActions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Seq[Action] = {
     val turnPlayers = gameState.turnPlayers
 
     // field includes grave + banished
@@ -62,7 +62,7 @@ object FastEffectTiming {
     * Defaults to starting in open game state, but allows for starting elsewhere (e.g. CheckForTrigger at start of DP).
     */
   def loop(gameState: GameState, start: FastEffectTiming = OpenGameState)
-          (implicit eventsModule: EventsModule, actionModule: ActionModule) = {
+          (implicit eventsModule: EventsModule, actionModule: ActionModule): Unit = {
     var state = start
     while (state != null) {
       state = state.next(gameState.copy(fastEffectTiming = state), eventsModule, actionModule)
@@ -74,7 +74,7 @@ object FastEffectTiming {
   * A in the fast effect timing chart.
   */
 object OpenGameState extends FastEffectTiming {
-  override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): FastEffectTiming = {
     val choice = gameState.turnPlayers.turnPlayer.chooseAction(turnPlayerActions)
 
     var lastThingsToHappen = new ListBuffer[Event]()
@@ -92,10 +92,10 @@ object OpenGameState extends FastEffectTiming {
     eventsModule.emit(TimeSeparationEvent)
 
     choice match {
-      case pass: PassPriority => TryToEnd
+      case _: PassPriority => TryToEnd
       case activation: Activation => ChainRules(List(activation), Nil)
-      case attackDeclaration: DeclareAttack => null // BattlePhaseStep will change, manually go to ChainRules
-      case action: InherentAction => CheckForTrigger(lastThingsToHappen.toList)
+      case _: DeclareAttack => null // BattlePhaseStep will change, manually go to ChainRules
+      case _: InherentAction => CheckForTrigger(lastThingsToHappen.toList)
     }
   }
 }
@@ -109,7 +109,7 @@ sealed trait PlayerFastEffects extends FastEffectTiming
   * B in the fast effect timing chart. Turn player can use fast effects.
   */
 case class TurnPlayerFastEffects(inResponseTo: List[Event]) extends PlayerFastEffects {
-  override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): FastEffectTiming = {
     nextWithUpdatedGameState(gameState.copy(inResponseTo = inResponseTo), eventsModule, actionModule)
   }
 
@@ -121,8 +121,8 @@ case class TurnPlayerFastEffects(inResponseTo: List[Event]) extends PlayerFastEf
     eventsModule.emit(TimeSeparationEvent)
 
     choice match {
-      case pass: PassPriority => OpposingPlayerFastEffects
       case activation: Activation => ChainRules(List(activation), inResponseTo)
+      case _: PassPriority => OpposingPlayerFastEffects
       case _: InherentAction => throw new IllegalStateException("Inherent actions cannot be taken when game state is closed.")
     }
   }
@@ -132,7 +132,7 @@ case class TurnPlayerFastEffects(inResponseTo: List[Event]) extends PlayerFastEf
   * C in the fast effect timing chart. Opposing player can use fast effects.
   */
 object OpposingPlayerFastEffects extends PlayerFastEffects {
-  override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): FastEffectTiming = {
     val choice = gameState.turnPlayers.opponent.chooseAction(opponentActions)
 
     choice.execute()
@@ -140,7 +140,7 @@ object OpposingPlayerFastEffects extends PlayerFastEffects {
     eventsModule.emit(TimeSeparationEvent)
 
     choice match {
-      case pass: PassPriority => OpenGameState
+      case _: PassPriority => OpenGameState
       case activation: Activation => ChainRules(List(activation), Nil)
       case _: InherentAction => throw new IllegalStateException("Inherent actions cannot be taken by the opposing player.")
     }
@@ -155,7 +155,7 @@ object OpposingPlayerFastEffects extends PlayerFastEffects {
   *                     and MUST be None coming from E.
   */
 case class ChainRules(startingChain: List[Activation], inResponseTo: List[Event]) extends FastEffectTiming {
-  override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): FastEffectTiming = {
     nextWithUpdatedGameState(gameState.copy(inResponseTo = inResponseTo), eventsModule, actionModule)
   }
 
@@ -251,7 +251,7 @@ case class ChainRules(startingChain: List[Activation], inResponseTo: List[Event]
   * Opponent can use fast effects or pass, and if they pass, we check with both players to see if they wish to end turn.
   */
 object TryToEnd extends FastEffectTiming {
-  override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): FastEffectTiming = {
     val turnPlayers = gameState.turnPlayers
     val choice = turnPlayers.opponent.chooseAction(opponentActions)
 
@@ -261,7 +261,7 @@ object TryToEnd extends FastEffectTiming {
 
     choice match {
       case activation: Activation => ChainRules(List(activation), Nil)
-      case pass: PassPriority =>
+      case _: PassPriority =>
         if (turnPlayers.turnPlayer.consentToEnd && turnPlayers.opponent.consentToEnd) {
           // hand size limit logic
           if (gameState.phase == EndPhase && turnPlayers.turnPlayer.hand.size > Constants.HandSizeLimit) {
@@ -298,7 +298,7 @@ case class CheckForTrigger(inResponseTo: List[Event]) extends FastEffectTiming {
     s"${this.getClass}(mandatoryOnly = $mandatoryOnly)"
   }
 
-  override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = {
+  override def next(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): FastEffectTiming = {
     nextWithUpdatedGameState(gameState.copy(inResponseTo = inResponseTo), eventsModule, actionModule)
   }
 
@@ -333,7 +333,7 @@ case class CheckForTrigger(inResponseTo: List[Event]) extends FastEffectTiming {
             case activation: Activation =>
               segocChain = activation :: segocChain
               eventsModule.emit(TimeSeparationEvent)
-            case pass: PassPriority =>
+            case _: PassPriority =>
               // this is fine, we'll just exit at the end of the loop
             case _: InherentAction =>
               throw new IllegalStateException("Inherent actions cannot be taken when game state is closed.")

@@ -17,7 +17,7 @@ case class GameState(mutableGameState: MutableGameState,
                      phase: Phase = null,
                      step: Step = null,
                      inResponseTo: List[Event] = Nil) {
-  def turnCount = mutableGameState.turnCount
-  def hasNormalSummonedThisTurn = mutableGameState.hasNormalSummonedThisTurn
+  def turnCount: Int = mutableGameState.turnCount
+  def hasNormalSummonedThisTurn: Boolean = mutableGameState.hasNormalSummonedThisTurn
   // TODO LOW: history
 }

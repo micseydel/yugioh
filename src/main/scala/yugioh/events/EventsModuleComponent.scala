@@ -55,7 +55,7 @@ object DefaultEventsModule extends EventsModule {
     })
   }
 
-  override def emit[E <: Event](event: E) = {
+  override def emit[E <: Event](event: E): E = {
     for (observer <- observers) {
       observer.notify(event)
     }
@@ -63,7 +63,7 @@ object DefaultEventsModule extends EventsModule {
     event
   }
 
-  override def emit(action: Action) = {
+  override def emit(action: Action): ActionEvent = {
     emit(ActionEvent(action))
   }
 }
