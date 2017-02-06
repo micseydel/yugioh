@@ -29,7 +29,7 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
     /**
       * A GameLossException will be thrown to end the game.
       */
-    def mainLoop() = {
+    def mainLoop(): Unit = {
       setupObservables()
 
       // before turns start, each player draws
@@ -84,6 +84,7 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
       // listen for changes in lifepoints, potentially issue a game loss
       eventsModule.observe {
         case ActionEvent(ChangeLifePoints(lifePointsChange, player)) =>
+          player.lifePoints -= lifePointsChange
           if (player.lifePoints <= 0) {
             throw OutOfLifepoints(player)
           }
