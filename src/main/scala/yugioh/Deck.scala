@@ -32,8 +32,7 @@ trait Deck {
 }
 
 class TestDeck(val owner: Player) extends Deck {
-  // TODO LOW: spells+traps for the deck
-  override val cards: ListBuffer[AnyCard] = ListBuffer(
+  override val cards: ListBuffer[AnyCard] = ListBuffer[InstantiableCard[_ <: AnyCard]](
     // Monsters
     AncientElf,
     Ansatsu,

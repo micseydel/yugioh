@@ -6,7 +6,7 @@ import yugioh.events.Event
 /**
   * @param mutableGameState state which changes as the game progresses
   * @param turnPlayers null before the first turn begins
-  * @param fastEffectTiming state in the fast effect tiing state machine
+  * @param fastEffectTiming state in the fast effect timing state machine
   * @param phase phase in the phase state machine
   * @param step optional, step in battle phase
   * @param inResponseTo the "last thing(s) to happen" which can be responded to at this time

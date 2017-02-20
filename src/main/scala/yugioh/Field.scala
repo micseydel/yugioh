@@ -7,6 +7,7 @@ import yugioh.card.monster.{Monster, PendulumMonster, Position}
 import yugioh.card.spell.FieldSpell
 import yugioh.card.state._
 import yugioh.events.{EventsModule, EventsModuleComponent}
+import yugioh.Util.remove
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -77,9 +78,6 @@ trait DefaultFieldModuleComponent extends FieldModuleComponent {
         (card: C, locationPreference: Option[Int])(implicit gameState: GameState, actionModule: ActionModule): Z = {
         val position = locationPreference.getOrElse(PositionPriorities.filter(destinationArray(_).isEmpty).head)
         destinationArray.update(position, Some(card))
-
-        // TODO LOW: want to make this an implicit in the utils, clean up the two deck situations
-        def remove[T](buffer: ListBuffer[T], element: T): Unit = buffer.remove(buffer.indexOf(element))
 
         // remove it from its previous location
         card.location match {

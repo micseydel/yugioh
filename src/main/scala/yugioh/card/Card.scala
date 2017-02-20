@@ -86,7 +86,7 @@ trait SpellOrTrap extends EffectCard[SpellOrTrapControlledState] { // TODO: spel
 /**
   * Should not be inherited from outside of game mechanics. Instead, use one of:
   * NormalTrap, ContinuousTrap, CounterTrap.
-  * TODO LOW: refactor to be `sealed`
+  * TODO LOW: refactor to be `sealed` (non-trivial)
   */
 trait NonContinuousSpellOrTrap extends SpellOrTrap {
   /**
@@ -101,6 +101,7 @@ trait NonContinuousSpellOrTrap extends SpellOrTrap {
 
 trait ContinuousSpellOrTrap extends SpellOrTrap
 
+// inherent action
 trait SetAsSpellOrTrap extends SetCard {
   val spellOrTrap: SpellOrTrap
 }

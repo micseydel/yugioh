@@ -100,7 +100,7 @@ trait CommandLineHumanPlayerModuleComponent {
 
     override val field: Field = fieldModule.createField
 
-    override val deck: Deck = new TestDeck(this) // TODO: be more than just a stub
+    override val deck: Deck = new TestDeck(this)
     eventsModule.observe {
       case TurnStartEvent(turnPlayers, mutableGameState) =>
         println(s"\nTurn #${mutableGameState.turnCount}")
