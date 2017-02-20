@@ -70,7 +70,7 @@ trait DefaultActionModuleComponent extends ActionModuleComponent {
       new SetAsMonsterImpl(monster)
     }
 
-    override def newSpecialSummon(controller: Player, monster: Monster, position: Position) = {
+    override def newSpecialSummon(controller: Player, monster: Monster, position: Position): SpecialSummonImpl = {
       SpecialSummonImpl(controller, monster, position)
     }
 

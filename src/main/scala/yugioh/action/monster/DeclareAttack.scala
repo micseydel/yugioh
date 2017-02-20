@@ -7,15 +7,15 @@ import yugioh.events.{EventsModule, GamePlayEvent}
 
 sealed trait DeclareAttack extends InherentAction {
   val attacker: Monster
-  val player = attacker.controller
+  val player: Player = attacker.controller
 }
 
 case class DeclareAttackOnMonster(attacker: Monster, target: Monster) extends DeclareAttack {
-  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = ()
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = ()
 }
 
 case class DeclareDirectAttack(attacker: Monster) extends DeclareAttack {
-  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule) = ()
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = ()
 }
 
 case class Battle(attacker: Monster, maybeTarget: Option[Monster]) extends GamePlayEvent

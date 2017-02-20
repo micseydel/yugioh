@@ -10,7 +10,7 @@ object Util {
     *
     * From http://stackoverflow.com/a/2842640/1157440
     */
-  implicit def intWithTimes(n: Int): Object {def times(f: => Unit): Unit} = new {
+  implicit def intWithTimes(n: Int): Object {} = new {
     def times(f: => Unit): Unit = 1 to n foreach { _ => f }
   }
 }
