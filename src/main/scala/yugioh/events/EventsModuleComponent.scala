@@ -7,6 +7,7 @@ import scala.collection.mutable.ListBuffer
 
 sealed trait Event
 
+// TODO this should have scaladoc
 trait GamePlayEvent extends Event
 
 case class ActionEvent(action: Action) extends Event
