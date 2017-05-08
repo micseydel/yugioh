@@ -7,8 +7,8 @@ import yugioh.card.monster._
   */
 trait FieldState
 
-case class MonsterFieldState(var howSummoned: HowSummoned) extends FieldState {
-  def properlySummoned(monster: Monster): Boolean = {
+case class MonsterFieldState(monster: Monster, var howSummoned: HowSummoned) extends FieldState {
+  def properlySummoned: Boolean = {
     monster match {
       case _: FusionMonster => FusionSummoned(monster)
       case _: SynchroMonster => SynchroSummoned(monster)

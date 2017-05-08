@@ -27,7 +27,7 @@ trait Monster extends Card[MonsterControlledState] {
     * @return true iff monster was properly summoned
     */
   def properlySummoned: Boolean = {
-    maybeMonsterFieldState.exists(_.properlySummoned(this)) // TODO LOW: cleanup ("this" shouldn't be necessary)
+    maybeMonsterFieldState.exists(_.properlySummoned)
   }
 
   /**
