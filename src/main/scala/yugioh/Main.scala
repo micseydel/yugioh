@@ -10,7 +10,9 @@ object Main extends DefaultPlayGameComponent
     with DefaultBattlePhaseModuleComponent
     with DefaultActionModuleComponent
     with CommandLineHumanPlayerModuleComponent
-    with PassivePlayerModuleComponent {
+    with DefaultRandomnessModuleComponent
+    with PassivePlayerModuleComponent
+    with DefaultDeckModuleComponent {
 
   val player1: Player = newCommandLineHumanPlayer("Human")
   val player2: Player = newPassivePlayer

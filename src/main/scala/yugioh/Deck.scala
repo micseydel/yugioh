@@ -1,8 +1,5 @@
 package yugioh
 
-import java.util
-import java.util.Collections
-
 import yugioh.card.Card.AnyCard
 import yugioh.card.library._
 
@@ -13,7 +10,7 @@ trait Deck {
 
   val owner: Player
 
-  def shuffle(): Unit = Collections.shuffle(util.Arrays.asList(cards: _*))
+  def shuffle(): Unit
 
   def fromTop(): AnyCard = fromTop(1).head
 
@@ -31,59 +28,78 @@ trait Deck {
   }
 }
 
-class TestDeck(val owner: Player) extends Deck {
-  override val cards: ListBuffer[AnyCard] = ListBuffer[InstantiableCard[_ <: AnyCard]](
-    // Monsters
-    AncientElf,
-    Ansatsu,
-    BaronOfTheFiendSword,
-    BeaverWarrior,
-    CelticGuard,
-    ClawReacher,
-    CurseOfDragon,
-    DarkMagician,
-    DomaTheAngelOfSilence,
-    DragonZombie,
-    FeralImp,
-    GaiaTheFierceKnight,
-    GiantSoldierOfStone,
-    GreatWhite,
-    MagicalGhost,
-    MammothGraveyard,
-    ManEaterBug,
-    ManEatingTreasureChest,
-    MysticClown,
-    MysticalElf,
-    NeoTheMagicSwordsman,
-    SilverFang,
-    SorcererOfTheDoomed,
-    SummonedSkull,
-    TheSternMystic,
-    TrapMaster,
-    WallOfIllusion,
-    WingedDragonGuardOftheFortressNo1,
-    WittyPhantom,
-    // Traps
-    //CastleWalls,
-    //DragonCaptureJar,
-    //Reinforcements,
-    //ReverseTrap,
-    TrapHole,
-    //UltimateOffering,
-    //Waboku,
-    // Spells - though Dian Keto is above for easier testing
-    //BookOfSecretArts,
-    CardDestruction,
-    //ChangeOfHeart
-    DarkHole,
-    DianKetoTheCureMaster,
-    //DeSpell
-    //Fissure
-    //LastWill
-    MonsterReborn
-    //RemoveTrap,
-    //SoulExchange,
-    //SwordOfDarkDestruction,
-    //Yami
-  ).map(_(owner))
+trait DeckModule {
+  def newDeck(player: Player): Deck
+}
+
+trait DeckModuleComponent {
+  def deckModule: DeckModule
+}
+
+trait DefaultDeckModuleComponent extends DeckModuleComponent {
+  self: RandomnessModuleComponent =>
+
+  def deckModule = new DeckModule {
+    override def newDeck(player: Player): Deck = new Deck {
+
+      override def shuffle(): Unit = randomness.shuffle(cards)
+
+      override val owner: Player = player
+
+      override val cards: ListBuffer[_ <: AnyCard] = ListBuffer[InstantiableCard[_ <: AnyCard]](
+        // Monsters
+        AncientElf,
+        Ansatsu,
+        BaronOfTheFiendSword,
+        BeaverWarrior,
+        CelticGuard,
+        ClawReacher,
+        CurseOfDragon,
+        DarkMagician,
+        DomaTheAngelOfSilence,
+        DragonZombie,
+        FeralImp,
+        GaiaTheFierceKnight,
+        GiantSoldierOfStone,
+        GreatWhite,
+        MagicalGhost,
+        MammothGraveyard,
+        ManEaterBug,
+        ManEatingTreasureChest,
+        MysticClown,
+        MysticalElf,
+        NeoTheMagicSwordsman,
+        SilverFang,
+        SorcererOfTheDoomed,
+        SummonedSkull,
+        TheSternMystic,
+        TrapMaster,
+        WallOfIllusion,
+        WingedDragonGuardOftheFortressNo1,
+        WittyPhantom,
+        // Traps
+        //CastleWalls,
+        //DragonCaptureJar,
+        //Reinforcements,
+        //ReverseTrap,
+        TrapHole,
+        //UltimateOffering,
+        //Waboku,
+        // Spells - though Dian Keto is above for easier testing
+        //BookOfSecretArts,
+        CardDestruction,
+        //ChangeOfHeart
+        DarkHole,
+        DianKetoTheCureMaster,
+        //DeSpell
+        //Fissure
+        //LastWill
+        MonsterReborn
+        //RemoveTrap,
+        //SoulExchange,
+        //SwordOfDarkDestruction,
+        //Yami
+      ).map(_(owner))
+    }
+  }
 }

@@ -89,7 +89,8 @@ case class TurnPlayers(turnPlayer: Player, opponent: Player) {
 
 trait CommandLineHumanPlayerModuleComponent {
   self: EventsModuleComponent
-    with FieldModuleComponent =>
+    with FieldModuleComponent
+    with DeckModuleComponent =>
 
   def newCommandLineHumanPlayer(playerName: String) = new CommandLineHumanPlayer(playerName)
 
@@ -100,7 +101,8 @@ trait CommandLineHumanPlayerModuleComponent {
 
     override val field: Field = fieldModule.createField
 
-    override val deck: Deck = new TestDeck(this)
+    override val deck: Deck = deckModule.newDeck(this)
+
     eventsModule.observe {
       case TurnStartEvent(turnPlayers, mutableGameState) =>
         println(s"\nTurn #${mutableGameState.turnCount}")
@@ -256,7 +258,8 @@ trait CommandLineHumanPlayerModuleComponent {
   * When given an option like discarding for hand size or choosing an action, will just select the first.
   */
 trait PassivePlayerModuleComponent {
-  self: FieldModuleComponent =>
+  self: FieldModuleComponent
+    with DeckModuleComponent =>
 
   def newPassivePlayer = new PassivePlayer
 
@@ -264,7 +267,7 @@ trait PassivePlayerModuleComponent {
   class PassivePlayer extends Player {
     override val field: Field = fieldModule.createField
     override val name = "PassivePlayer"
-    override val deck = new TestDeck(this)
+    override val deck: Deck = deckModule.newDeck(this)
     override def cardToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[AnyCard] = Seq(hand.head)
     override def consentToEnd(implicit gameState: GameState) = true
     override def enterBattlePhase(implicit gameState: GameState) = false

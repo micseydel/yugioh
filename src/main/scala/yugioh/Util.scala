@@ -1,5 +1,8 @@
 package yugioh
 
+import java.util
+import java.util.Collections
+
 import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
@@ -27,4 +30,19 @@ object Constants {
   val InitialHandSize = 5
   val HandSizeLimit = 6
   val InitialLifePoints = 8000
+}
+
+trait RandomnnessModule {
+  def shuffle(xs: ListBuffer[_]): Unit
+}
+
+trait RandomnessModuleComponent {
+  def randomness: RandomnnessModule
+}
+
+trait DefaultRandomnessModuleComponent extends RandomnessModuleComponent {
+  //noinspection ConvertExpressionToSAM
+  def randomness: RandomnnessModule = new RandomnnessModule {
+    override def shuffle(xs: ListBuffer[_]): Unit = Collections.shuffle(util.Arrays.asList(xs: _*))
+  }
 }
