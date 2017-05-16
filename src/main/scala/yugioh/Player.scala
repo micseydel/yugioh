@@ -270,7 +270,7 @@ trait PassivePlayerModuleComponent {
     override def enterBattlePhase(implicit gameState: GameState) = false
     override def selectSummonMaterial(summonCriteria: SummonCriteria)(implicit gameState: GameState): Seq[Monster] = ???
     override def selectAttackTarget(attacker: Monster, potentialTargets: Seq[Monster])(implicit gameState: GameState): Monster = ???
-    override def selectEffectTargets[C <: AnyCard](criteria: Criteria[C])(implicit gameState: GameState): C = ???
+    override def selectEffectTargets[C <: AnyCard](criteria: Criteria[C])(implicit gameState: GameState): Seq[C] = ???
     override def selectSpecialSummonPosition(monster: Monster, positions: Seq[Position])(implicit gameState: GameState): Position = ???
     override def chooseAction(actions: Seq[Action])(implicit gameState: GameState): Action = actions.head
   }
