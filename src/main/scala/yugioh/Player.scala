@@ -41,7 +41,7 @@ trait Player extends Cause {
     hand ++= toAdd
   }
 
-  def cardToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[AnyCard]
+  def cardsToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[AnyCard]
 
   /**
     * Ask player if they wish to end the phase or step.
@@ -155,7 +155,7 @@ trait CommandLineHumanPlayerModuleComponent {
       }
     }
 
-    override def cardToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[AnyCard] = {
+    override def cardsToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[AnyCard] = {
       val criteria = new Criteria[AnyCard] {
         override def meetable(implicit gameState: GameState) = true
         override def validSelection[T >: AnyCard](choices: Seq[T])(implicit gameState: GameState): Boolean = choices.size == hand.size - Constants.HandSizeLimit
@@ -268,7 +268,7 @@ trait PassivePlayerModuleComponent {
     override val field: Field = fieldModule.createField
     override val name = "PassivePlayer"
     override val deck: Deck = deckModule.newDeck(this)
-    override def cardToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[AnyCard] = Seq(hand.head)
+    override def cardsToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[AnyCard] = Seq(hand.head)
     override def consentToEnd(implicit gameState: GameState) = true
     override def enterBattlePhase(implicit gameState: GameState) = false
     override def selectSummonMaterial(summonCriteria: SummonCriteria)(implicit gameState: GameState): Seq[Monster] = ???

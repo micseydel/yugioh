@@ -41,7 +41,7 @@ trait DiscardForHandSizeLimit extends Discard
 
 class DiscardForHandSizeLimitImpl(implicit gameState: GameState) extends DiscardImpl(
   gameState.turnPlayers.turnPlayer,
-  gameState.turnPlayers.turnPlayer.cardToDiscardForHandSizeLimit
+  gameState.turnPlayers.turnPlayer.cardsToDiscardForHandSizeLimit
 ) with DiscardForHandSizeLimit
 
 trait Draw extends InherentAction
