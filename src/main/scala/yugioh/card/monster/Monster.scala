@@ -42,7 +42,7 @@ trait Monster extends Card[MonsterControlledState] {
     gameState match {
       case GameState(MutableGameState(_, hasNormalSummonedThisTurn, _), TurnPlayers(Owner, _), OpenGameState, phase, _, _) =>
         phase match {
-          case MainPhase | MainPhase2 =>
+          case _: MainPhase =>
             mainPhaseActions(hasNormalSummonedThisTurn)
           case BattlePhase =>
             battlePhaseActions

@@ -217,7 +217,7 @@ trait CommandLineHumanPlayerModuleComponent {
       */
     override def consentToEnd()(implicit gameState: GameState): Boolean = {
       gameState match {
-        case GameState(_, TurnPlayers(Me, _), _, phase@(MainPhase | BattlePhase | MainPhase2 | EndPhase), step, _)
+        case GameState(_, TurnPlayers(Me, _), _, phase@(MainPhase1 | BattlePhase | MainPhase2 | EndPhase), step, _)
             if !step.isInstanceOf[DamageStepSubStep] && !step.isInstanceOf[BattleStepWithPendingAttack] =>
           print(s"End ${Option(step).getOrElse(phase)}? ")
           StdIn.readBoolean()

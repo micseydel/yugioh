@@ -13,6 +13,8 @@ sealed trait Phase {
           (implicit eventsModule: EventsModule, actionModule: ActionModule, battlePhaseModule: BattlePhaseModule): Phase
 }
 
+sealed trait MainPhase extends Phase
+
 
 case object DrawPhase extends Phase {
   val abbreviation = "DP"
@@ -37,13 +39,13 @@ case object StandbyPhase extends Phase {
   val abbreviation = "SP"
 
   override def next(gameState: GameState)
-                   (implicit eventsModule: EventsModule, actionModule: ActionModule, battlePhaseModule: BattlePhaseModule): MainPhase.type = {
+                   (implicit eventsModule: EventsModule, actionModule: ActionModule, battlePhaseModule: BattlePhaseModule): MainPhase1.type = {
     FastEffectTiming.loop(gameState.copy(phase = this))
-    MainPhase
+    MainPhase1
   }
 }
 
-case object MainPhase extends Phase {
+case object MainPhase1 extends MainPhase {
   val abbreviation = "MP"
 
   /**
@@ -72,7 +74,7 @@ case object BattlePhase extends Phase {
   }
 }
 
-case object MainPhase2 extends Phase {
+case object MainPhase2 extends MainPhase {
   val abbreviation = "MP2"
 
   override def next(gameState: GameState)
@@ -93,8 +95,7 @@ case object EndPhase extends Phase {
 }
 
 object Phase {
-  val Phases = Seq(DrawPhase, StandbyPhase, MainPhase, BattlePhase, MainPhase2, EndPhase)
-  val MainPhases = Seq(MainPhase, MainPhase2)
+  val Phases = Seq(DrawPhase, StandbyPhase, MainPhase1, BattlePhase, MainPhase2, EndPhase)
 }
 
 

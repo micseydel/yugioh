@@ -10,7 +10,7 @@ sealed trait Spell extends SpellOrTrap {
   override def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Seq[Action] = {
     val maybeActivation = if (Effects.size == 1) {
       gameState match {
-        case GameState(_, TurnPlayers(Owner, _), OpenGameState, MainPhase | MainPhase2, _, _) if canActivate =>
+        case GameState(_, TurnPlayers(Owner, _), OpenGameState, _: MainPhase, _, _) if canActivate =>
           Seq(CardActivation(this, Owner))
         case _ => Seq()
       }
@@ -41,7 +41,7 @@ trait FieldSpell extends Spell
 trait SpellEffect extends Effect {
   override def activationTimingCorrect(implicit gameState: GameState): Boolean = {
     gameState match {
-      case GameState(_, TurnPlayers(Card.Owner, _), OpenGameState, MainPhase | MainPhase2, _, _) => true
+      case GameState(_, TurnPlayers(Card.Owner, _), OpenGameState, _: MainPhase, _, _) => true
       case _ => false
     }
   }

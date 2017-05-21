@@ -76,7 +76,7 @@ trait SpellOrTrap extends EffectCard[SpellOrTrapControlledState] { // TODO: spel
 
   override def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Seq[Action] = {
     gameState match {
-      case GameState(_, TurnPlayers(Owner, _), OpenGameState, MainPhase | MainPhase2, _, _) if InHand(this) =>
+      case GameState(_, TurnPlayers(Owner, _), OpenGameState, _: MainPhase, _, _) if InHand(this) =>
         Seq(actionModule.newSetAsSpellOrTrap(this))
       case _ => Seq()
     }
