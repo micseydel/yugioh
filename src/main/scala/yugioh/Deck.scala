@@ -39,6 +39,7 @@ trait DeckModuleComponent {
 trait DefaultDeckModuleComponent extends DeckModuleComponent {
   self: RandomnessModuleComponent =>
 
+  //noinspection ConvertExpressionToSAM
   def deckModule = new DeckModule {
     override def newDeck(player: Player): Deck = new Deck {
 
