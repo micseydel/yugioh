@@ -28,7 +28,7 @@ trait Player extends Cause {
     *
     * @return true to enter BP, otherwise go to EP
     */
-  def enterBattlePhase(implicit gameState: GameState): Boolean
+  def enterBattlePhase()(implicit gameState: GameState): Boolean
 
   def draw()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = draw(1)
   def draw(howMany: Int)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
@@ -41,12 +41,12 @@ trait Player extends Cause {
     hand ++= toAdd
   }
 
-  def cardsToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[AnyCard]
+  def cardsToDiscardForHandSizeLimit()(implicit gameState: GameState): Seq[AnyCard]
 
   /**
     * Ask player if they wish to end the phase or step.
     */
-  def consentToEnd(implicit gameState: GameState): Boolean
+  def consentToEnd()(implicit gameState: GameState): Boolean
 
   /**
     * Ask a player what summon material (tribute, synchro, etc.) they wish to use for toSummon.
@@ -155,7 +155,7 @@ trait CommandLineHumanPlayerModuleComponent {
       }
     }
 
-    override def cardsToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[AnyCard] = {
+    override def cardsToDiscardForHandSizeLimit()(implicit gameState: GameState): Seq[AnyCard] = {
       val criteria = new Criteria[AnyCard] {
         override def meetable(implicit gameState: GameState) = true
         override def validSelection[T >: AnyCard](choices: Seq[T])(implicit gameState: GameState): Boolean = choices.size == hand.size - Constants.HandSizeLimit
@@ -165,7 +165,7 @@ trait CommandLineHumanPlayerModuleComponent {
       selectMultiple(s"Must discard for hand size limit ($criteria):", criteria)
     }
 
-    override def enterBattlePhase(implicit gameState: GameState): Boolean = {
+    override def enterBattlePhase()(implicit gameState: GameState): Boolean = {
       print("MP1 is ending; enter BP? (If not, will go to EP) ")
       StdIn.readBoolean()
     }
@@ -215,7 +215,7 @@ trait CommandLineHumanPlayerModuleComponent {
     /**
       * After SP, will ask via StdIn, otherwise just consents.
       */
-    override def consentToEnd(implicit gameState: GameState): Boolean = {
+    override def consentToEnd()(implicit gameState: GameState): Boolean = {
       gameState match {
         case GameState(_, TurnPlayers(Me, _), _, phase@(MainPhase | BattlePhase | MainPhase2 | EndPhase), step, _)
             if !step.isInstanceOf[DamageStepSubStep] && !step.isInstanceOf[BattleStepWithPendingAttack] =>
@@ -268,9 +268,9 @@ trait PassivePlayerModuleComponent {
     override val field: Field = fieldModule.createField
     override val name = "PassivePlayer"
     override val deck: Deck = deckModule.newDeck(this)
-    override def cardsToDiscardForHandSizeLimit(implicit gameState: GameState): Seq[AnyCard] = Seq(hand.head)
-    override def consentToEnd(implicit gameState: GameState) = true
-    override def enterBattlePhase(implicit gameState: GameState) = false
+    override def cardsToDiscardForHandSizeLimit()(implicit gameState: GameState): Seq[AnyCard] = Seq(hand.head)
+    override def consentToEnd()(implicit gameState: GameState) = true
+    override def enterBattlePhase()(implicit gameState: GameState) = false
     override def selectSummonMaterial(summonCriteria: SummonCriteria)(implicit gameState: GameState): Seq[Monster] = ???
     override def selectAttackTarget(attacker: Monster, potentialTargets: Seq[Monster])(implicit gameState: GameState): Monster = ???
     override def selectEffectTargets[C <: AnyCard](criteria: Criteria[C])(implicit gameState: GameState): Seq[C] = ???
