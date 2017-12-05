@@ -3,7 +3,7 @@ package yugioh.action
 import yugioh.action.monster.{FlipSummon, SpecialSummon, _}
 import yugioh.card.Card.AnyCard
 import yugioh.card.monster.{Monster, Position}
-import yugioh.card.{SetAsSpellOrTrap, SetAsSpellOrTrapImpl, SpellOrTrap}
+import yugioh.card.SpellOrTrap
 import yugioh.events.EventsModule
 import yugioh.{GameState, Player}
 
@@ -48,7 +48,7 @@ trait ActionModuleComponent {
 }
 
 trait DefaultActionModuleComponent extends ActionModuleComponent {
-  def actionModule = new ActionModule {
+  def actionModule: ActionModule = new ActionModule {
 
     override def newSetAsSpellOrTrap(spellOrTrap: SpellOrTrap): SetAsSpellOrTrap = {
       new SetAsSpellOrTrapImpl(spellOrTrap)

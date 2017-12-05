@@ -1,9 +1,9 @@
 package yugioh.card.library
 
 import yugioh.action._
+import yugioh.card.Card.AnyCard
 import yugioh.card._
 import yugioh.card.monster.{Attack, Defense, Monster}
-import yugioh.card.spell.{NormalSpell, SpellEffect}
 import yugioh.events.EventsModule
 import yugioh.{Criteria, GameState, InGraveyard, Player}
 
@@ -21,10 +21,10 @@ class CardDestruction(val Owner: Player) extends NormalSpell {
     override lazy val Card: CardDestruction = CardDestruction.this
     override val EffectType: EffectType = Effect
     override val Cost: InherentAction = NoAction(Card.Owner)
-    override val maybeTargetCriteria = None
-    override val maybeCostCriteria = None
+    override val maybeTargetCriteria: Option[Criteria[AnyCard]] = None
+    override val maybeCostCriteria: Option[Criteria[AnyCard]] = None
 
-    override val Resolution = new InherentAction {
+    override val Resolution: InherentAction = new InherentAction {
       override val player: Player = controller
 
       case class DiscardBothHands() extends InherentAction {
@@ -68,7 +68,7 @@ class DarkHole(val Owner: Player) extends NormalSpell {
   class DarkHoleEffect extends SpellEffect {
     override val Card: DarkHole = DarkHole.this
 
-    override val Resolution = new InherentAction {
+    override val Resolution: InherentAction = new InherentAction {
       override val player: Player = Owner
       override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
         actionModule.newDestroy(Owner, gameState.turnPlayers.both.flatMap(_.field.monsterZones).flatten)
@@ -77,8 +77,8 @@ class DarkHole(val Owner: Player) extends NormalSpell {
 
     override val EffectType: EffectType = Effect
     override val Cost: InherentAction = NoAction(Card.Owner)
-    override val maybeTargetCriteria = None
-    override val maybeCostCriteria = None
+    override val maybeTargetCriteria: Option[Criteria[AnyCard]] = None
+    override val maybeCostCriteria: Option[Criteria[AnyCard]] = None
 
     override def specialActivationConditionsMet(implicit gameState: GameState): Option[Boolean] = {
       Some(gameState.turnPlayers.both.flatMap(_.field.monsterZones).flatten.nonEmpty)
@@ -95,7 +95,7 @@ class DianKetoTheCureMaster(val Owner: Player) extends NormalSpell {
   class DianKetoTheCureMasterEffect extends SpellEffect {
     override val Card: DianKetoTheCureMaster = DianKetoTheCureMaster.this
 
-    override val Resolution = new InherentAction {
+    override val Resolution: InherentAction = new InherentAction {
       override val player: Player = Card.Owner
       override def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
         actionModule.newChangeLifePoints(1000, player).execute()
@@ -104,8 +104,8 @@ class DianKetoTheCureMaster(val Owner: Player) extends NormalSpell {
 
     override val EffectType: EffectType = Effect
     override val Cost: InherentAction = NoAction(Card.Owner)
-    override val maybeTargetCriteria = None
-    override val maybeCostCriteria = None
+    override val maybeTargetCriteria: Option[Criteria[AnyCard]] = None
+    override val maybeCostCriteria: Option[Criteria[AnyCard]] = None
   }
 }
 
@@ -118,7 +118,7 @@ class MonsterReborn(val Owner: Player) extends NormalSpell {
   class MonsterRebornEffect extends SpellEffect {
     override val Card: MonsterReborn = MonsterReborn.this
 
-    override val Resolution = new InherentAction {
+    override val Resolution: InherentAction = new InherentAction {
       override def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
         val target = selectedTargets match {
           case Seq(monster: Monster) =>
@@ -138,7 +138,7 @@ class MonsterReborn(val Owner: Player) extends NormalSpell {
 
     override val EffectType: EffectType = Effect
     override val Cost: InherentAction = NoAction(Card.Owner)
-    override val maybeCostCriteria = None
+    override val maybeCostCriteria: Option[Criteria[AnyCard]] = None
 
     override val maybeTargetCriteria = Some(new Criteria[Monster] {
       override def meetable(implicit gameState: GameState): Boolean = availableChoices.nonEmpty

@@ -1,6 +1,7 @@
 package yugioh.action
 
 import yugioh.card.Card.AnyCard
+import yugioh.card.SpellOrTrap
 import yugioh.events.EventsModule
 import yugioh.{GameState, Player}
 
@@ -19,9 +20,31 @@ case class PassPriority(player: Player) extends InherentAction {
   override def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = ()
 }
 
-trait PlaceOnField extends InherentAction // TODO
+sealed trait CardMoved
 
-trait SetCard extends InherentAction
+trait PlaceOnField extends InherentAction with CardMoved
+
+trait SetCard extends PlaceOnField
+
+// inherent action
+trait SetAsSpellOrTrap extends SetCard {
+  val spellOrTrap: SpellOrTrap
+}
+
+class SetAsSpellOrTrapImpl(override val spellOrTrap: SpellOrTrap) extends SetAsSpellOrTrap {
+  override val player: Player = spellOrTrap.Owner
+
+  override val toString = s"SetAsSpellOrTrap($spellOrTrap)"
+
+  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
+    if (player.field.hasFreeSpellOrTrapZone) {
+      player.field.placeAsSpellOrTrap(spellOrTrap, faceup = false)
+      spellOrTrap.maybeTurnSet = Some(gameState.turnCount)
+    } else {
+      throw new IllegalStateException(s"Tried to set $spellOrTrap but there was no space.")
+    }
+  }
+}
 
 trait Discard extends InherentAction
 

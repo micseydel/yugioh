@@ -5,8 +5,7 @@ import yugioh.action.monster.NormalOrFlipSummon
 import yugioh.action.{ActionModule, InherentAction, NoAction}
 import yugioh.card.Card.AnyCard
 import yugioh.card.monster.Monster
-import yugioh.card.trap.{NormalTrap, TrapEffect}
-import yugioh.card.{Effect, EffectType}
+import yugioh.card.{Effect, EffectType, NormalTrap, TrapEffect}
 import yugioh.events.{ActionEvent, EventsModule}
 
 // mostly for IDE navigation

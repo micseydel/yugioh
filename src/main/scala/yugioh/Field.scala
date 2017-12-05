@@ -2,9 +2,8 @@ package yugioh
 
 import yugioh.action.{Action, ActionModule}
 import yugioh.card.Card.AnyCard
-import yugioh.card.SpellOrTrap
+import yugioh.card.{FieldSpell, SpellOrTrap}
 import yugioh.card.monster.{Monster, PendulumMonster, Position}
-import yugioh.card.spell.FieldSpell
 import yugioh.card.state._
 import yugioh.events.{EventsModule, EventsModuleComponent}
 import yugioh.Util.remove
@@ -61,8 +60,8 @@ trait FieldModuleComponent {
 trait DefaultFieldModuleComponent extends FieldModuleComponent {
   self: EventsModuleComponent =>
 
-  implicit def fieldModule = new FieldModule {
-    override def createField = new Field {
+  implicit def fieldModule: FieldModule = new FieldModule {
+    override def createField: Field = new Field {
       override def placeAsMonster(monster: Monster, position: Position, howSummoned: HowSummoned, locationPreference: Option[Int])(implicit gameState: GameState, actionModule: ActionModule): InMonsterZone = {
         monster.maybeControlledState = Some(MonsterControlledState(position))
         monster.maybeMonsterFieldState = Some(MonsterFieldState(monster, howSummoned))
@@ -110,7 +109,7 @@ trait DefaultFieldModuleComponent extends FieldModuleComponent {
         removeFromHelper(spellTrapZones, spellTrapZone, InSpellTrapZone.SpellTrapZones)
       }
 
-      private def removeFromHelper[T](removeFrom: Array[Option[T]], zone: InFieldZone, zones: Seq[InFieldZone]) = {
+      private def removeFromHelper[T](removeFrom: Array[Option[T]], zone: InFieldZone, zones: Seq[InFieldZone]): Unit = {
         removeFrom.update(zones.indexOf(zone), None)
       }
 

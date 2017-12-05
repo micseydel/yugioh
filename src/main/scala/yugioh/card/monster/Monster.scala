@@ -146,9 +146,9 @@ trait FusionMonster extends ExtraDeckMonster
 trait SynchroMonster extends ExtraDeckMonster
 
 trait XyzMonster extends ExtraDeckMonster {
-  override val MaybePrintedLevel = None
+  override val MaybePrintedLevel: None.type = None
   //noinspection NotImplementedCode
-  override val MaybePrintedRank = ??? // TODO LOW: nicer way to be convenient elsewhere but force rank definition here?
+  override val MaybePrintedRank: Nothing = ??? // TODO LOW: nicer way to be convenient elsewhere but force rank definition here?
 }
 
 trait PendulumMonster extends Monster

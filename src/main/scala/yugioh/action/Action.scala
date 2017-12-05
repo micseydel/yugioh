@@ -2,8 +2,7 @@ package yugioh.action
 
 import com.typesafe.scalalogging.Logger
 import yugioh._
-import yugioh.card.trap.Trap
-import yugioh.card.{Effect, SpellOrTrap}
+import yugioh.card.{Effect, SpellOrTrap, Trap}
 import yugioh.events.{ActionEvent, EventsModule, TimeSeparationEvent}
 
 

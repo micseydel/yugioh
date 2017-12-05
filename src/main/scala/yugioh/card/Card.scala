@@ -1,8 +1,8 @@
 package yugioh.card
 
+import sun.reflect.generics.reflectiveObjects.NotImplementedException
 import yugioh._
-import yugioh.action.{Action, ActionModule, SetCard}
-import yugioh.card.monster.Monster
+import yugioh.action.{Action, ActionModule, CardActivation}
 import yugioh.card.state.{ControlledState, SpellOrTrapControlledState}
 import yugioh.events.EventsModule
 
@@ -86,9 +86,8 @@ trait SpellOrTrap extends EffectCard[SpellOrTrapControlledState] { // TODO: spel
 /**
   * Should not be inherited from outside of game mechanics. Instead, use one of:
   * NormalTrap, ContinuousTrap, CounterTrap.
-  * TODO LOW: refactor to be `sealed` (non-trivial)
   */
-trait NonContinuousSpellOrTrap extends SpellOrTrap {
+sealed trait NonContinuousSpellOrTrap extends SpellOrTrap {
   /**
     * After a chain has resolved that involved this card, and it remains on the field, send it to grave.
     */
@@ -101,36 +100,87 @@ trait NonContinuousSpellOrTrap extends SpellOrTrap {
 
 trait ContinuousSpellOrTrap extends SpellOrTrap
 
-// inherent action
-trait SetAsSpellOrTrap extends SetCard {
-  val spellOrTrap: SpellOrTrap
+// spells
+
+sealed trait Spell extends SpellOrTrap {
+  override def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Seq[Action] = {
+    val maybeActivation = if (Effects.size == 1) {
+      gameState match {
+        case GameState(_, TurnPlayers(Owner, _), OpenGameState, _: MainPhase, _, _) if canActivate =>
+          Seq(CardActivation(this, Owner))
+        case _ => Seq()
+      }
+    } else {
+      throw new NotImplementedException()
+    }
+
+    // super allows setting
+    super.actions ++ maybeActivation
+  }
+
+  private def canActivate(implicit gameState: GameState): Boolean = {
+    // also assumes a single effect
+    assert(Effects.length == 1, "Code assumes only a single effect will be present.")
+
+    // if activation condition is met, and the spell is either already on the field or it's in hand and there's space to place it...
+    Effects.head.ActivationConditions.met && (InSpellTrapZone(this) || (InHand(this) && controller.field.hasFreeSpellOrTrapZone))
+  }
 }
 
-class SetAsSpellOrTrapImpl(override val spellOrTrap: SpellOrTrap) extends SetAsSpellOrTrap {
-  override val player: Player = spellOrTrap.Owner
+trait NormalSpell extends Spell with NonContinuousSpellOrTrap
+trait QuickPlaySpell extends Spell with NonContinuousSpellOrTrap
+trait RitualSpell extends Spell with NonContinuousSpellOrTrap
+trait EquipSpell extends Spell
+trait ContinuousSpell extends Spell
+trait FieldSpell extends Spell
 
-  override val toString = s"SetAsSpellOrTrap($spellOrTrap)"
-
-  override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
-    if (player.field.hasFreeSpellOrTrapZone) {
-      player.field.placeAsSpellOrTrap(spellOrTrap, faceup = false)
-      spellOrTrap.maybeTurnSet = Some(gameState.turnCount)
-    } else {
-      throw new IllegalStateException(s"Tried to set $spellOrTrap but there was no space.")
+trait SpellEffect extends Effect {
+  override def activationTimingCorrect(implicit gameState: GameState): Boolean = {
+    gameState match {
+      case GameState(_, TurnPlayers(Card.Owner, _), OpenGameState, _: MainPhase, _, _) => true
+      case _ => false
     }
   }
 }
 
-sealed trait Delegate
+// traps
 
-/**
-  * This is a wrapper so that a Monster can be treated as a SpellOrTrap card.
-  */
-trait SpellOrTrapDelegate extends Delegate with SpellOrTrap
+sealed trait Trap extends SpellOrTrap
 
-/**
-  * This is essentially a wrapper that allows a SpellOrTrap to be treated as a Monster card.
-  */
-trait MonsterDelegate extends Delegate with Monster
+trait NormalTrap extends Trap with NonContinuousSpellOrTrap {
+  override def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Seq[Action] = {
+    val maybeActivation = Effects match {
+      case Seq(effect) if canActivate && effect.activationTimingCorrect =>
+        Seq(CardActivation(this, Owner))
+      case _ =>
+        Seq() // subclass will have to write specific logic for this
+    }
 
-sealed trait CardMoved
+    // super handles setting
+    super.actions ++ maybeActivation
+  }
+
+  private def canActivate(implicit gameState: GameState): Boolean = {
+    // if activation condition is met, and the spell is already set on the field, and it wasn't set this turn...
+    Effects.head.ActivationConditions.met && InSpellTrapZone(this) && maybeControlledState.map(!_.faceup).get && maybeTurnSet.exists(_ < gameState.turnCount)
+  }
+}
+
+trait CounterTrap extends Trap with NonContinuousSpellOrTrap
+trait ContinuousTrap extends Trap
+
+trait TrapEffect extends Effect {
+  /**
+    * Applicable for non-counter traps.
+    */
+  override def activationTimingCorrect(implicit gameState: GameState): Boolean = {
+    gameState match {
+      case GameState(_, _, _, _, _: DamageStep, _) =>
+        false
+      case GameState(_, _, _: CheckForTrigger | _: PlayerFastEffects | _: ChainRules, _, _, _) =>
+        true
+      case _ =>
+        false
+    }
+  }
+}
