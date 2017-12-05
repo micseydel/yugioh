@@ -68,11 +68,13 @@ trait EffectCard[CS <: ControlledState] extends Card[CS] {
   val Effects: Seq[Effect]
 }
 
-trait SpellOrTrap extends EffectCard[SpellOrTrapControlledState] { // TODO: spell speed!
+trait SpellOrTrap extends EffectCard[SpellOrTrapControlledState] {
   /**
     * The turn this card was set on the field, if at all.
     */
   var maybeTurnSet: Option[Int] = None
+
+  val spellSpeed: SpellSpeed
 
   override def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Seq[Action] = {
     gameState match {
@@ -127,12 +129,29 @@ sealed trait Spell extends SpellOrTrap {
   }
 }
 
-trait NormalSpell extends Spell with NonContinuousSpellOrTrap
-trait QuickPlaySpell extends Spell with NonContinuousSpellOrTrap
-trait RitualSpell extends Spell with NonContinuousSpellOrTrap
-trait EquipSpell extends Spell
-trait ContinuousSpell extends Spell
-trait FieldSpell extends Spell
+trait NormalSpell extends Spell with NonContinuousSpellOrTrap {
+  override val spellSpeed: SpellSpeed = SpellSpeed1
+}
+
+trait QuickPlaySpell extends Spell with NonContinuousSpellOrTrap {
+  override val spellSpeed: SpellSpeed = SpellSpeed2
+}
+
+trait RitualSpell extends Spell with NonContinuousSpellOrTrap {
+  override val spellSpeed: SpellSpeed = SpellSpeed1
+}
+
+trait EquipSpell extends Spell {
+  override val spellSpeed: SpellSpeed = SpellSpeed1
+}
+
+trait ContinuousSpell extends Spell {
+  override val spellSpeed: SpellSpeed = SpellSpeed1
+}
+
+trait FieldSpell extends Spell {
+  override val spellSpeed: SpellSpeed = SpellSpeed1
+}
 
 trait SpellEffect extends Effect {
   override def activationTimingCorrect(implicit gameState: GameState): Boolean = {
@@ -148,6 +167,8 @@ trait SpellEffect extends Effect {
 sealed trait Trap extends SpellOrTrap
 
 trait NormalTrap extends Trap with NonContinuousSpellOrTrap {
+  override val spellSpeed: SpellSpeed = SpellSpeed2
+
   override def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Seq[Action] = {
     val maybeActivation = Effects match {
       case Seq(effect) if canActivate && effect.activationTimingCorrect =>
@@ -166,8 +187,13 @@ trait NormalTrap extends Trap with NonContinuousSpellOrTrap {
   }
 }
 
-trait CounterTrap extends Trap with NonContinuousSpellOrTrap
-trait ContinuousTrap extends Trap
+trait CounterTrap extends Trap with NonContinuousSpellOrTrap {
+  override val spellSpeed: SpellSpeed = SpellSpeed3
+}
+
+trait ContinuousTrap extends Trap {
+  override val spellSpeed: SpellSpeed = SpellSpeed2
+}
 
 trait TrapEffect extends Effect {
   /**
