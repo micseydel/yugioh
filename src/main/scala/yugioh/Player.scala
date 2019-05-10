@@ -112,7 +112,7 @@ trait CommandLineHumanPlayerModuleComponent {
         println(s"Entering ${phaseStart.phase}")
     }
 
-    private def showField(implicit turnPlayers: TurnPlayers, mutableGameState: MutableGameState) = {
+    private def showField(implicit turnPlayers: TurnPlayers, mutableGameState: MutableGameState): Unit = {
       // TODO LOW: this should happen after any change to the board, and should include field zone and pendulums
 
       println(s"\nOpponent ${turnPlayers.opponent} (${turnPlayers.opponent.lifePoints})")
@@ -156,7 +156,7 @@ trait CommandLineHumanPlayerModuleComponent {
     }
 
     override def cardsToDiscardForHandSizeLimit()(implicit gameState: GameState): Seq[AnyCard] = {
-      val criteria = new Criteria[AnyCard] {
+      val criteria: Criteria[AnyCard] = new Criteria[AnyCard] {
         override def meetable(implicit gameState: GameState) = true
         override def validSelection[T >: AnyCard](choices: Seq[T])(implicit gameState: GameState): Boolean = choices.size == hand.size - Constants.HandSizeLimit
         override def availableChoices(implicit gameState: GameState): ListBuffer[AnyCard] = hand

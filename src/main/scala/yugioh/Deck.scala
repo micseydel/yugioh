@@ -40,7 +40,7 @@ trait DefaultDeckModuleComponent extends DeckModuleComponent {
   self: RandomnessModuleComponent =>
 
   //noinspection ConvertExpressionToSAM
-  def deckModule = new DeckModule {
+  def deckModule: DeckModule = new DeckModule {
     override def newDeck(player: Player): Deck = new Deck {
 
       override def shuffle(): Unit = randomness.shuffle(cards)
@@ -86,7 +86,6 @@ trait DefaultDeckModuleComponent extends DeckModuleComponent {
         TrapHole,
         //UltimateOffering,
         //Waboku,
-        // Spells - though Dian Keto is above for easier testing
         //BookOfSecretArts,
         CardDestruction,
         //ChangeOfHeart

@@ -70,5 +70,5 @@ object DefaultEventsModule extends EventsModule {
 }
 
 trait DefaultEventsModuleComponent extends EventsModuleComponent {
-  def eventsModule = DefaultEventsModule
+  def eventsModule: DefaultEventsModule.type = DefaultEventsModule
 }

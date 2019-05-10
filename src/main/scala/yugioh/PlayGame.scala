@@ -1,6 +1,6 @@
 package yugioh
 
-import yugioh.action.{ActionModuleComponent, ChangeLifePoints}
+import yugioh.action.ActionModuleComponent
 import yugioh.action.monster.{DeclareAttack, NormalSummon, SetAsMonster}
 import yugioh.events._
 
@@ -34,7 +34,7 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
 
       // before turns start, each player draws
       for (player <- IterablePlayers) {
-        implicit val gameState = GameState(mutableGameState, null)
+        implicit val gameState: GameState = GameState(mutableGameState, null)
         player.draw(Constants.InitialHandSize)
       }
 
@@ -76,9 +76,8 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
       // listen for an attack declaration, tag that monster as having attacked
       eventsModule.observe {
         case ActionEvent(attackDeclaration: DeclareAttack) =>
-          for (monsterControlledState <- attackDeclaration.attacker.maybeControlledState) {
-            monsterControlledState.attackedThisTurn = true
-          }
+          // we use get here because it would be a bug for an attacker to not have controlled state
+          attackDeclaration.attacker.maybeControlledState.get.attackedThisTurn = true
       }
     }
   }
