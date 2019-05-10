@@ -80,15 +80,6 @@ trait DefaultPlayGameComponent extends PlayGameComponent {
             monsterControlledState.attackedThisTurn = true
           }
       }
-
-      // listen for changes in lifepoints, potentially issue a game loss
-      eventsModule.observe {
-        case ActionEvent(ChangeLifePoints(lifePointsChange, player)) =>
-          player.lifePoints -= lifePointsChange
-          if (player.lifePoints <= 0) {
-            throw OutOfLifepoints(player)
-          }
-      }
     }
   }
 }

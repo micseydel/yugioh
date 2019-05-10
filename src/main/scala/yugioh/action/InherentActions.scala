@@ -3,7 +3,7 @@ package yugioh.action
 import yugioh.card.Card.AnyCard
 import yugioh.card.SpellOrTrap
 import yugioh.events.EventsModule
-import yugioh.{GameState, Player}
+import yugioh.{GameState, OutOfLifepoints, Player}
 
 // purely for IDE navigation
 private[this] object InherentActions
@@ -105,5 +105,9 @@ case class DestroyImpl(override val player: Player, override val cards: Seq[AnyC
 case class ChangeLifePoints(lifePointsChange: Int, player: Player) extends InherentAction {
   override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
     player.lifePoints += lifePointsChange
+
+    if (player.lifePoints <= 0) {
+      throw OutOfLifepoints(player)
+    }
   }
 }
