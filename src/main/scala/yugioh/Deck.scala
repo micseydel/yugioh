@@ -2,6 +2,7 @@ package yugioh
 
 import yugioh.card.Card.AnyCard
 import yugioh.card.library._
+import yugioh.card.library.traps.TrapHole
 
 import scala.collection.mutable.ListBuffer
 

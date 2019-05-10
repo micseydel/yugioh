@@ -1,15 +1,13 @@
-package yugioh.card.library
+package yugioh.card.library.traps
 
-import yugioh._
-import yugioh.action.monster.NormalOrFlipSummon
+import yugioh.{Criteria, GameState, Player, PlayerFastEffects}
 import yugioh.action.{ActionModule, InherentAction, NoAction}
+import yugioh.action.monster.NormalOrFlipSummon
 import yugioh.card.Card.AnyCard
-import yugioh.card.monster.Monster
 import yugioh.card.{Effect, EffectType, NormalTrap, TrapEffect}
+import yugioh.card.library.InstantiableCard
+import yugioh.card.monster.Monster
 import yugioh.events.{ActionEvent, EventsModule}
-
-// mostly for IDE navigation
-private[this] object Traps
 
 object TrapHole extends InstantiableCard[TrapHole]
 class TrapHole(val Owner: Player) extends NormalTrap {
