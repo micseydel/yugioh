@@ -23,13 +23,18 @@ case class SpellOrTrapControlledState(var faceup: Boolean) extends ControlledSta
   override def close(): Unit = ()
 }
 
+sealed trait AttackModifier
+
+case class AttackDelta(value: Int) extends AttackModifier
+
 case class MonsterControlledState(
   var position: Position,
   var attackedThisTurn: Boolean = false,
   var manuallyChangedPositionsThisTurn: Boolean = false, // also set to true if attacked
-  var isPiercing: Boolean = false
+  var isPiercing: Boolean = false,
+  var maybeAttackModifiers: List[AttackModifier] = Nil
 )(implicit eventsModule: EventsModule) extends ControlledState {
-  private[this] val Subscription = eventsModule.observe {
+  private[this] val subscription = eventsModule.observe {
     case TurnEndEvent =>
       attackedThisTurn = false
       manuallyChangedPositionsThisTurn = false
@@ -37,5 +42,5 @@ case class MonsterControlledState(
 
   override def faceup: Boolean = Position.FaceUp.contains(position)
 
-  override def close(): Unit = Subscription.dispose()
+  override def close(): Unit = subscription.dispose()
 }

@@ -1,7 +1,9 @@
 package yugioh
 
-import yugioh.action.{Action, ActionModule, Cause}
+import yugioh.action._
+import yugioh.action.card.CardMovedAction
 import yugioh.card.Card.AnyCard
+import yugioh.card.SpellOrTrap
 import yugioh.card.monster._
 import yugioh.events.{EventsModule, EventsModuleComponent, PhaseStartEvent, TurnStartEvent}
 
@@ -30,12 +32,10 @@ trait Player extends Cause {
     */
   def enterBattlePhase()(implicit gameState: GameState): Boolean
 
-  def draw()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = draw(1)
-  def draw(howMany: Int)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
+  def draw(howMany: Int = 1)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
     val toAdd = deck.fromTop(howMany)
     for (card <- toAdd) {
-      card.location = InHand
-      card.notifyMoved()
+      CardMovedAction(PlayerCause(this), card, InDeck, InHand).execute()
     }
 
     hand ++= toAdd
@@ -59,7 +59,7 @@ trait Player extends Cause {
   /**
     * When an effect needs to select a target, this is how an activation asks a player what targets to use.
     */
-  def selectEffectTargets[C <: AnyCard](criteria: Criteria[C])(implicit gameState: GameState): Seq[C]
+  def selectEffectTargets(criteria: Criteria[AnyCard])(implicit gameState: GameState, eventsModule: EventsModule): Seq[Target[_]]
 
   /**
     * For a monster in the process of being special summoned, select from positions options which position to SS in.
@@ -212,6 +212,10 @@ trait CommandLineHumanPlayerModuleComponent {
       selection
     }
 
+    private def selectMultipleCards(prompt: String, criteria: Criteria[AnyCard])(implicit gameState: GameState): Seq[AnyCard] = {
+      selectMultiple[AnyCard](prompt, criteria)
+    }
+
     /**
       * After SP, will ask via StdIn, otherwise just consents.
       */
@@ -239,8 +243,15 @@ trait CommandLineHumanPlayerModuleComponent {
       select(s"Select target for $attacker", potentialTargets)
     }
 
-    override def selectEffectTargets[C <: AnyCard](criteria: Criteria[C])(implicit gameState: GameState): Seq[C] = {
-      selectMultiple(s"Select targets for effect.", criteria)
+    def selectEffectTargets(criteria: Criteria[AnyCard])(implicit gameState: GameState, eventsModule: EventsModule): Seq[Target[_]] = {
+      val cards = selectMultipleCards(s"Select targets for effect.", criteria)
+
+      cards.map {
+        case monster: Monster =>
+          MonsterTarget(monster, monster.location)
+        case spellOrTrap: SpellOrTrap =>
+          SpellOrTrapTarget(spellOrTrap, spellOrTrap.location)
+      }
     }
 
     /**
@@ -273,7 +284,7 @@ trait PassivePlayerModuleComponent {
     override def enterBattlePhase()(implicit gameState: GameState) = false
     override def selectSummonMaterial(summonCriteria: SummonCriteria)(implicit gameState: GameState): Seq[Monster] = ???
     override def selectAttackTarget(attacker: Monster, potentialTargets: Seq[Monster])(implicit gameState: GameState): Monster = ???
-    override def selectEffectTargets[C <: AnyCard](criteria: Criteria[C])(implicit gameState: GameState): Seq[C] = ???
+    override def selectEffectTargets(criteria: Criteria[AnyCard])(implicit gameState: GameState, eventsModule: EventsModule): Seq[Target[_]] = ???
     override def selectSpecialSummonPosition(monster: Monster, positions: Seq[Position])(implicit gameState: GameState): Position = ???
     override def chooseAction(actions: Seq[Action])(implicit gameState: GameState): Action = actions.head
   }

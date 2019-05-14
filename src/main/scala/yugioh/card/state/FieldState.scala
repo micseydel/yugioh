@@ -7,7 +7,12 @@ import yugioh.card.monster._
   */
 trait FieldState
 
-case class MonsterFieldState(monster: Monster, var howSummoned: HowSummoned) extends FieldState {
+// FIXME: add targetable!
+case class MonsterFieldState(
+                              monster: Monster,
+                              var howSummoned: HowSummoned,
+                              var attackModifiers: List[AttackModifier] = Nil
+                            ) extends FieldState {
   def properlySummoned: Boolean = {
     monster match {
       case _: FusionMonster => FusionSummoned(monster)
@@ -35,6 +40,7 @@ sealed trait SimpleHowSummonedChecker extends HowSummoned {
 case object NotSummoned extends SimpleHowSummonedChecker
 
 sealed trait NormalSummoned extends SimpleHowSummonedChecker
+
 case object NormalSummoned extends NormalSummoned
 
 case object TributeSummoned extends NormalSummoned
@@ -42,10 +48,15 @@ case object TributeSummoned extends NormalSummoned
 case object FlipSummoned extends SimpleHowSummonedChecker
 
 sealed trait SpecialSummoned extends SimpleHowSummonedChecker
+
 case object SpecialSummoned extends SpecialSummoned
 
 case object FusionSummoned extends SpecialSummoned
+
 case object SynchroSummoned extends SpecialSummoned
+
 case object RitualSummoned extends SpecialSummoned
+
 case object XyzSummoned extends SpecialSummoned
+
 case object PendulumSummoned extends SpecialSummoned

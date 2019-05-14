@@ -2,7 +2,7 @@ package yugioh
 
 import yugioh.card.Card.AnyCard
 import yugioh.card.library._
-import yugioh.card.library.traps.TrapHole
+import yugioh.card.library.traps.{Reinforcements, TrapHole}
 
 import scala.collection.mutable.ListBuffer
 
@@ -49,6 +49,7 @@ trait DefaultDeckModuleComponent extends DeckModuleComponent {
       override val owner: Player = player
 
       override val cards: ListBuffer[_ <: AnyCard] = ListBuffer[InstantiableCard[_ <: AnyCard]](
+        Reinforcements,
         // Monsters
         AncientElf,
         Ansatsu,
@@ -82,7 +83,6 @@ trait DefaultDeckModuleComponent extends DeckModuleComponent {
         // Traps
         //CastleWalls,
         //DragonCaptureJar,
-        //Reinforcements,
         //ReverseTrap,
         TrapHole,
         //UltimateOffering,

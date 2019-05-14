@@ -2,7 +2,7 @@ package yugioh.card
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 import yugioh._
-import yugioh.action.{Action, ActionModule, CardActivation}
+import yugioh.action._
 import yugioh.card.state.{ControlledState, SpellOrTrapControlledState}
 import yugioh.events.EventsModule
 
@@ -13,10 +13,24 @@ object Card {
 trait Card[CS <: ControlledState] {
   val PrintedName: String
   val Owner: Player
-  var location: Location = InDeck
-
   var controller: Player = Owner
+
   def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Seq[Action]
+
+  private[this] var _location: Location = InDeck
+
+  def location: Location = _location
+
+  def updateLocation(location: Location)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
+    location match {
+      case InGraveyard | InHand | InBanished =>
+        maybeControlledState = None
+      case _ =>
+        // do nothing
+    }
+
+    _location = location
+  }
 
   private[this] var _maybeControlledState: Option[CS] = None
 
@@ -48,14 +62,9 @@ trait Card[CS <: ControlledState] {
     }.getOrElse(name)
   }
 
-  def discard()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = Owner.field.discard(this)
-  def destroy()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = Owner.field.destroy(this)
-  def sendToGrave()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = Owner.field.sendToGrave(this)
-
-  /**
-    * Allows the card to be notified of when it's moved.
-    */
-  def notifyMoved()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = ()
+  def discard(cause: Cause)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = Owner.field.discard(cause, this)
+  def destroy(cause: Cause)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = Owner.field.destroy(cause, this)
+  def sendToGrave(cause: Cause)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = Owner.field.sendToGrave(cause, this)
 }
 
 object EffectCard {
@@ -95,7 +104,7 @@ sealed trait NonContinuousSpellOrTrap extends SpellOrTrap {
     */
   def afterChainCleanup()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
     if (InSpellTrapZone(this)) {
-      sendToGrave() // TODO: this should be an action for which game mechanics are responsible
+      sendToGrave(GameMechanics)
     }
   }
 }

@@ -207,6 +207,7 @@ case class EndOfTheDamageStep(destroyed: Set[Monster]) extends DamageStepSubStep
                                 (implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Null = {
     for (monster <- destroyed) {
       monster.sendToGrave()
+      DestroyByBattle(monster)
     }
 
     FastEffectTiming.loop(gameState.copy(step = this))

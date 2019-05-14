@@ -1,6 +1,6 @@
 package yugioh.card
 
-import yugioh.action.{ActionModule, InherentAction, NoAction}
+import yugioh.action._
 import yugioh.card.Card.AnyCard
 import yugioh.card.EffectCard.AnyEffectCard
 import yugioh.events.EventsModule
@@ -84,12 +84,17 @@ trait Effect {
   // TODO MEDIUM: these should be first-class and ideally declarative
   val Cost: InherentAction
 
-  lazy val SelectTargets: InherentAction = maybeTargetCriteria.map(TargetCriteria => new InherentAction {
+  lazy val SelectTargets: InherentAction = maybeTargetCriteria.map(targetCriteria => new InherentAction {
     override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
-      selectedTargets = player.selectEffectTargets(TargetCriteria)
+      cause match {
+        case PlayerCause(player) =>
+          selectedTargets = player.selectEffectTargets(targetCriteria)
+        case _ =>
+          throw new RuntimeException("An effect cause was not a player, this was unexpected.")
+      }
     }
 
-    override val player: Player = Card.controller
+    override val cause: Cause = PlayerCause(Card.controller)
   }).getOrElse(NoAction(Card.controller))
 
   // TODO LOW: are targets ever selected before cost?
@@ -98,7 +103,7 @@ trait Effect {
 
   val Resolution: InherentAction
 
-  protected[this] var selectedTargets: Seq[AnyCard] = _
+  protected[this] var selectedTargets: Seq[Target[_]] = _
 
   /**
     * Helper method for determining if an effect targets or not.

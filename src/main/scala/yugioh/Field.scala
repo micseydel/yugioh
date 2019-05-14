@@ -1,12 +1,13 @@
 package yugioh
 
-import yugioh.action.{Action, ActionModule}
+import yugioh.Util.remove
+import yugioh.action.card.CardMovedAction
+import yugioh.action.{Action, ActionModule, Cause}
 import yugioh.card.Card.AnyCard
-import yugioh.card.{FieldSpell, SpellOrTrap}
 import yugioh.card.monster.{Monster, PendulumMonster, Position}
 import yugioh.card.state._
+import yugioh.card.{FieldSpell, SpellOrTrap}
 import yugioh.events.{EventsModule, EventsModuleComponent}
-import yugioh.Util.remove
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -34,14 +35,15 @@ trait Field {
 
   def hasFreeSpellOrTrapZone: Boolean = spellTrapZones.exists(_.isEmpty)
 
-  def placeAsMonster(monster: Monster, position: Position, howSummoned: HowSummoned, positionPreference: Option[Int] = None)(implicit gameState: GameState, actionModule: ActionModule): InMonsterZone
-  def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, faceup: Boolean, positionPreference: Option[Int] = None)(implicit gameState: GameState, actionModule: ActionModule): InSpellTrapZone
+  def placeAsMonster(cause: Cause, monster: Monster, position: Position, howSummoned: HowSummoned, positionPreference: Option[Int] = None)(implicit gameState: GameState, actionModule: ActionModule): InMonsterZone
 
-  def destroy(card: AnyCard)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = sendToGrave(card) // TODO LOW: must consider Bottomless Trap Hole
+  def placeAsSpellOrTrap(cause: Cause, spellOrTrap: SpellOrTrap, faceup: Boolean, positionPreference: Option[Int] = None)(implicit gameState: GameState, actionModule: ActionModule): InSpellTrapZone
 
-  def discard(card: AnyCard)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = sendToGrave(card)
+  def destroy(cause: Cause, card: AnyCard)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = sendToGrave(cause, card) // TODO LOW: must consider Bottomless Trap Hole
 
-  def sendToGrave(card: AnyCard)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit
+  def discard(cause: Cause, card: AnyCard)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = sendToGrave(cause, card)
+
+  def sendToGrave(cause: Cause, card: AnyCard)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit
 
   /**
     * All the actions associated with a field, which includes grave and banished; may be empty.
@@ -62,19 +64,19 @@ trait DefaultFieldModuleComponent extends FieldModuleComponent {
 
   implicit def fieldModule: FieldModule = new FieldModule {
     override def createField: Field = new Field {
-      override def placeAsMonster(monster: Monster, position: Position, howSummoned: HowSummoned, locationPreference: Option[Int])(implicit gameState: GameState, actionModule: ActionModule): InMonsterZone = {
+      override def placeAsMonster(cause: Cause, monster: Monster, position: Position, howSummoned: HowSummoned, locationPreference: Option[Int])(implicit gameState: GameState, actionModule: ActionModule): InMonsterZone = {
         monster.maybeControlledState = Some(MonsterControlledState(position))
         monster.maybeMonsterFieldState = Some(MonsterFieldState(monster, howSummoned))
-        placeAsHelper(monsterZones, InMonsterZone.MonsterZones)(monster, locationPreference)
+        placeAsHelper(monsterZones, InMonsterZone.MonsterZones)(cause, monster, locationPreference)
       }
 
-      override def placeAsSpellOrTrap(spellOrTrap: SpellOrTrap, faceup: Boolean, locationPreference: Option[Int])(implicit gameState: GameState, actionModule: ActionModule): InSpellTrapZone = {
+      override def placeAsSpellOrTrap(cause: Cause, spellOrTrap: SpellOrTrap, faceup: Boolean, locationPreference: Option[Int])(implicit gameState: GameState, actionModule: ActionModule): InSpellTrapZone = {
         spellOrTrap.maybeControlledState = Some(SpellOrTrapControlledState(faceup))
-        placeAsHelper(spellTrapZones, InSpellTrapZone.SpellTrapZones)(spellOrTrap, locationPreference)
+        placeAsHelper(spellTrapZones, InSpellTrapZone.SpellTrapZones)(cause, spellOrTrap, locationPreference)
       }
 
       private def placeAsHelper[C <: AnyCard, Z <: InFieldZone](destinationArray: Array[Option[C]], destinationLocation: Seq[Z])
-        (card: C, locationPreference: Option[Int])(implicit gameState: GameState, actionModule: ActionModule): Z = {
+                                                               (cause: Cause, card: C, locationPreference: Option[Int])(implicit gameState: GameState, actionModule: ActionModule): Z = {
         val position = locationPreference.getOrElse(PositionPriorities.filter(destinationArray(_).isEmpty).head)
         destinationArray.update(position, Some(card))
 
@@ -96,8 +98,7 @@ trait DefaultFieldModuleComponent extends FieldModuleComponent {
         }
 
         val toWhere = destinationLocation(position)
-        card.location = toWhere
-        card.notifyMoved()
+        CardMovedAction(cause, card, card.location, toWhere).execute()
         toWhere
       }
 
@@ -118,7 +119,7 @@ trait DefaultFieldModuleComponent extends FieldModuleComponent {
           ++ graveyard ++ banished).flatMap(_.actions)
       }
 
-      override def sendToGrave(card: AnyCard)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
+      override def sendToGrave(cause: Cause, card: AnyCard)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
         // remove from current location
         card.location match {
           case InDeck =>
@@ -151,11 +152,11 @@ trait DefaultFieldModuleComponent extends FieldModuleComponent {
           case _ => // ignore
         }
 
-        card.location = InGraveyard
-        card.maybeControlledState = None // clear it out if it was present
-        card.notifyMoved()
+        CardMovedAction(cause, card, card.location, InGraveyard).execute()
         graveyard.append(card)
       }
+
+      // TODO: return to hand; should remove the controlled state
     }
   }
 }
@@ -171,8 +172,11 @@ sealed trait SimpleLocationChecker extends Location {
 }
 
 case object InDeck extends SimpleLocationChecker
+
 case object InHand extends SimpleLocationChecker
+
 case object InGraveyard extends SimpleLocationChecker
+
 case object InBanished extends SimpleLocationChecker
 
 sealed trait InFieldZone extends Location
@@ -180,34 +184,49 @@ sealed trait InFieldZone extends Location
 case object InFieldSpell extends InFieldZone
 
 sealed trait InMonsterZone extends InFieldZone
+
 case object InMonster0 extends InMonsterZone
+
 case object InMonster1 extends InMonsterZone
+
 case object InMonster2 extends InMonsterZone
+
 case object InMonster3 extends InMonsterZone
+
 case object InMonster4 extends InMonsterZone
 
 object InMonsterZone {
   val MonsterZones: Seq[InMonsterZone] = Seq(InMonster0, InMonster1, InMonster2, InMonster3, InMonster4)
+
   def apply(location: Location): Boolean = MonsterZones.contains(location)
 }
 
 sealed trait InSpellTrapZone extends InFieldZone
+
 case object InSpellTrap0 extends InSpellTrapZone
+
 case object InSpellTrap1 extends InSpellTrapZone
+
 case object InSpellTrap2 extends InSpellTrapZone
+
 case object InSpellTrap3 extends InSpellTrapZone
+
 case object InSpellTrap4 extends InSpellTrapZone
 
 object InSpellTrapZone {
   val SpellTrapZones: Seq[InSpellTrapZone] = Seq(InSpellTrap0, InSpellTrap1, InSpellTrap2, InSpellTrap3, InSpellTrap4)
+
   def apply(card: SpellOrTrap): Boolean = SpellTrapZones.contains(card.location)
 }
 
 sealed trait InExtraDeck extends InFieldZone
+
 object InExtraDeck extends InExtraDeck
 
 sealed trait InPendulumZone extends InFieldZone
+
 case object InLeftPendulumZone extends InPendulumZone
+
 case object InRightPendulumZone extends InPendulumZone
 
 object Location {

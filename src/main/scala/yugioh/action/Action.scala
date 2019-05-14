@@ -6,18 +6,21 @@ import yugioh.card.{Effect, SpellOrTrap, Trap}
 import yugioh.events.{ActionEvent, EventsModule, TimeSeparationEvent}
 
 
-
 /**
   * TODO: Intended long-term to use the Action design pattern. This needs to be sussed out better before diving into that though.
   */
 sealed trait Action {
-  val player: Player
+  val cause: Cause
 
   protected[this] var previouslyCalled = false
 
   def execute()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): ActionEvent
 }
 
+/**
+  * An inherent action is any action which does not go on a chain.
+  * Note that an inherent action may be wrapped by another kind.
+  */
 trait InherentAction extends Action {
   /**
     * Call doAction() and then emit the event.
@@ -45,7 +48,7 @@ trait InherentAction extends Action {
     */
   def also(action: InherentAction): InherentAction = {
     new InherentAction {
-      override val player: Player = InherentAction.this.player
+      override val cause: Cause = InherentAction.this.cause
 
       override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
         InherentAction.this.doAction()
@@ -60,7 +63,7 @@ trait InherentAction extends Action {
     */
   def andIfYouDo(action: InherentAction): InherentAction = {
     new InherentAction {
-      override val player: Player = InherentAction.this.player
+      override val cause: Cause = InherentAction.this.cause
 
       override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
         InherentAction.this.doActionAndEmitEvent() // TODO: detect success before executing the next action
@@ -74,7 +77,7 @@ trait InherentAction extends Action {
     */
   def andThen(action: InherentAction): InherentAction = {
     new InherentAction {
-      override val player: Player = InherentAction.this.player
+      override val cause: Cause = InherentAction.this.cause
 
       override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
         InherentAction.this.doAction()
@@ -91,6 +94,13 @@ trait InherentAction extends Action {
 sealed trait Activation extends Action {
   val Effect: Effect
 
+  lazy val player: Player = {
+    cause match {
+      case PlayerCause(p) => p
+      case _ => throw new RuntimeException("An activation was cause by a non-player, this was unexpected.")
+    }
+  }
+
   override def execute()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): ActionEvent = {
     Effect.Activation.execute()
   }
@@ -101,7 +111,7 @@ sealed trait Activation extends Action {
   *
   * TODO: make effect optional for card activation, e.g. Ultimate Offering or Skull Lair
   */
-case class CardActivation(Card: SpellOrTrap, player: Player) extends Activation {
+case class CardActivation(Card: SpellOrTrap, cause: Cause) extends Activation {
   private val logger = Logger[CardActivation]
 
   override def execute()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): ActionEvent = {
@@ -113,7 +123,7 @@ case class CardActivation(Card: SpellOrTrap, player: Player) extends Activation 
           logger.debug(s"Trap $Card was activated from hand")
         }
 
-        Card.controller.field.placeAsSpellOrTrap(Card, faceup = true)
+        Card.controller.field.placeAsSpellOrTrap(cause, Card, faceup = true)
       case _: InSpellTrapZone =>
         Card.maybeControlledState.get.faceup = true
       case _ =>
@@ -130,4 +140,10 @@ case class CardActivation(Card: SpellOrTrap, player: Player) extends Activation 
   }
 }
 
-case class EffectActivation(Effect: Effect, player: Player) extends Activation
+object CardActivation {
+  def apply(Card: SpellOrTrap, player: Player): CardActivation = {
+    CardActivation(Card, PlayerCause(player))
+  }
+}
+
+case class EffectActivation(Effect: Effect, cause: Cause) extends Activation

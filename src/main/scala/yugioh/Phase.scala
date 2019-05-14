@@ -21,7 +21,7 @@ case object DrawPhase extends Phase {
 
   override def next(gameState: GameState)
                    (implicit eventsModule: EventsModule, actionModule: ActionModule, battlePhaseModule: BattlePhaseModule): StandbyPhase.type = {
-    implicit val newGameState = gameState.copy(phase = this)
+    implicit val newGameState: GameState = gameState.copy(phase = this)
 
     if (gameState.mutableGameState.turnCount > 1) {
       val drawForTurn = actionModule.newDrawForTurn
@@ -53,7 +53,7 @@ case object MainPhase1 extends MainPhase {
     */
   override def next(gameState: GameState)
                    (implicit eventsModule: EventsModule, actionModule: ActionModule, battlePhaseModule: BattlePhaseModule): Phase = {
-    implicit val newGameState = gameState.copy(phase = this)
+    implicit val newGameState: GameState = gameState.copy(phase = this)
 
     FastEffectTiming.loop(newGameState)
     if (gameState.turnCount > 1 && gameState.turnPlayers.turnPlayer.enterBattlePhase) {
@@ -112,7 +112,7 @@ trait DefaultPhaseModuleComponent extends PhaseModuleComponent {
     with BattlePhaseModuleComponent =>
 
   //noinspection ConvertExpressionToSAM -- can't use implicits with SAMs
-  override def phaseModule = new PhaseModule {
+  override def phaseModule: PhaseModule = new PhaseModule {
     def loop(implicit gameState: GameState, actionModule: ActionModule): Unit = {
       var phase: Phase = DrawPhase
       do {
