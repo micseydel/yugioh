@@ -60,7 +60,7 @@ trait Monster extends Card[MonsterControlledState] {
         maybeLevel.map { level =>
           if (level <= 4) {
             if (Owner.field.hasFreeMonsterZone) {
-              Seq(actionModule.newNormalSummon(this), actionModule.newSetAsMonster(this))
+              Seq(actionModule.newNormalSummon(controller, this), actionModule.newSetAsMonster(controller, this))
             } else {
               Seq()
             }
@@ -73,7 +73,7 @@ trait Monster extends Card[MonsterControlledState] {
             }
 
             if (canTribute) {
-              Seq(actionModule.newTributeSummon(this), actionModule.newTributeSet(this))
+              Seq(actionModule.newTributeSummon(controller, this), actionModule.newTributeSet(controller, this))
             } else {
               Seq()
             }
@@ -81,9 +81,9 @@ trait Monster extends Card[MonsterControlledState] {
         }.getOrElse(Seq())
       case _: InMonsterZone if canSwitchPositions =>
         if (maybeControlledState.get.faceup) {
-          Seq(actionModule.newSwitchPosition(this))
+          Seq(actionModule.newSwitchPosition(controller, this))
         } else {
-          Seq(actionModule.newFlipSummon(this))
+          Seq(actionModule.newFlipSummon(controller, this))
         }
       case _ =>
         Seq()
@@ -105,9 +105,9 @@ trait Monster extends Card[MonsterControlledState] {
             val potentialTargets = opponent.field.monsterZones.toSeq.flatten
             if (potentialTargets.nonEmpty) {
               val target = Controller.selectAttackTarget(this, potentialTargets)
-              Seq(actionModule.newDeclareAttackOnMonster(this, target))
+              Seq(actionModule.newDeclareAttackOnMonster(controller, this, target))
             } else {
-              Seq(actionModule.newDeclareDirectAttack(this))
+              Seq(actionModule.newDeclareDirectAttack(controller, this))
             }
           } else {
             Seq()

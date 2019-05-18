@@ -2,7 +2,7 @@ package yugioh.card
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 import yugioh._
-import yugioh.action.{Action, ActionModule, CardActivation}
+import yugioh.action._
 import yugioh.card.state.{ControlledState, SpellOrTrapControlledState}
 import yugioh.events.EventsModule
 
@@ -48,14 +48,11 @@ trait Card[CS <: ControlledState] {
     }.getOrElse(name)
   }
 
-  def discard()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = Owner.field.discard(this)
-  def destroy()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = Owner.field.destroy(this)
-  def sendToGrave()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = Owner.field.sendToGrave(this)
+  def discard(cause: Cause)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = Owner.field.discard(cause, this)
 
-  /**
-    * Allows the card to be notified of when it's moved.
-    */
-  def notifyMoved()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = ()
+  def destroy(cause: Cause)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = Owner.field.destroy(cause, this)
+
+  def sendToGrave(cause: Cause)(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = Owner.field.sendToGrave(cause, this)
 }
 
 object EffectCard {
@@ -79,7 +76,7 @@ trait SpellOrTrap extends EffectCard[SpellOrTrapControlledState] {
   override def actions(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Seq[Action] = {
     gameState match {
       case GameState(_, TurnPlayers(Owner, _), OpenGameState, _: MainPhase, _, _) if InHand(this) =>
-        Seq(actionModule.newSetAsSpellOrTrap(this))
+        Seq(actionModule.newSetAsSpellOrTrap(Owner, this))
       case _ => Seq()
     }
   }
@@ -95,7 +92,7 @@ sealed trait NonContinuousSpellOrTrap extends SpellOrTrap {
     */
   def afterChainCleanup()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
     if (InSpellTrapZone(this)) {
-      sendToGrave() // TODO: this should be an action for which game mechanics are responsible
+      sendToGrave(GameMechanics)
     }
   }
 }

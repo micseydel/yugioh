@@ -2,7 +2,7 @@ package yugioh.card.monster
 
 sealed trait Position
 
-// there is technically a way to be face down and in attack mode
+// there is technically a way to be face down and in attack mode, but we don't support it
 case object Set extends Position // in defense mode
 case object Attack extends Position
 case object Defense extends Position

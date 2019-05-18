@@ -17,7 +17,7 @@ class CardDestruction(val Owner: Player) extends NormalSpell {
 
   override val Effects: List[Effect] = List(CardDestructionEffect)
 
-  object CardDestructionEffect extends SpellEffect {
+  object CardDestructionEffect extends SpellEffect { cardDestructionEffect =>
     override lazy val Card: CardDestruction = CardDestruction.this
     override val EffectType: EffectType = Effect
     override val Cost: InherentAction = NoAction(Card.Owner)
@@ -25,10 +25,9 @@ class CardDestruction(val Owner: Player) extends NormalSpell {
     override val maybeCostCriteria: Option[Criteria[AnyCard]] = None
 
     override val Resolution: InherentAction = new InherentAction {
-      override val player: Player = controller
+      override val cause: EffectCause = cardDestructionEffect.cause
 
-      case class DiscardBothHands() extends InherentAction {
-        override val player: Player = controller
+      case class DiscardBothHands(cause: Cause) extends InherentAction {
         override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
           for (player <- gameState.turnPlayers.both) {
             actionModule.newDiscard(controller, player.hand).execute()
@@ -36,11 +35,10 @@ class CardDestruction(val Owner: Player) extends NormalSpell {
         }
       }
 
-      case class BothDraw(handSizes: Seq[(Player, Int)]) extends InherentAction {
-        override val player: Player = controller
+      case class BothDraw(cause: Cause, handSizes: Seq[(Player, Int)]) extends InherentAction {
         override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
           for ((player, handSize) <- handSizes) {
-            actionModule.newDraw(player, handSize).execute()
+            actionModule.newDraw(cause, player, handSize).execute()
           }
         }
       }
@@ -48,7 +46,7 @@ class CardDestruction(val Owner: Player) extends NormalSpell {
       override def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
         val handSizes = gameState.turnPlayers.both.map(player => (player, player.hand.size))
 
-        DiscardBothHands().andThen(BothDraw(handSizes)).execute()
+        DiscardBothHands(cause).andThen(BothDraw(cause, handSizes)).execute()
       }
     }
 
@@ -69,7 +67,7 @@ class DarkHole(val Owner: Player) extends NormalSpell {
     override val Card: DarkHole = DarkHole.this
 
     override val Resolution: InherentAction = new InherentAction {
-      override val player: Player = Owner
+      override val cause: Cause = EffectCause(DarkHoleEffect.this, Owner)
       override protected def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
         actionModule.newDestroy(Owner, gameState.turnPlayers.both.flatMap(_.field.monsterZones).flatten)
       }
@@ -96,9 +94,9 @@ class DianKetoTheCureMaster(val Owner: Player) extends NormalSpell {
     override val Card: DianKetoTheCureMaster = DianKetoTheCureMaster.this
 
     override val Resolution: InherentAction = new InherentAction {
-      override val player: Player = Card.Owner
+      override val cause: EffectCause = DianKetoTheCureMasterEffect.this.cause
       override def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
-        actionModule.newChangeLifePoints(1000, player).execute()
+        actionModule.newChangeLifePoints(cause, 1000, activator).execute()
       }
     }
 
@@ -119,6 +117,8 @@ class MonsterReborn(val Owner: Player) extends NormalSpell {
     override val Card: MonsterReborn = MonsterReborn.this
 
     override val Resolution: InherentAction = new InherentAction {
+      override val cause: Cause = MonsterRebornEffect.this.cause
+
       override def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
         val target = selectedTargets match {
           case Seq(monster: Monster) =>
@@ -129,11 +129,9 @@ class MonsterReborn(val Owner: Player) extends NormalSpell {
 
         if (InGraveyard(target) && controller.field.hasFreeMonsterZone) {
           val position = Owner.selectSpecialSummonPosition(target, Seq(Attack, Defense))
-          actionModule.newSpecialSummon(controller, target, position).execute()
+          actionModule.newSpecialSummon(cause, controller, target, position).execute()
         } // else fizzle
       }
-
-      override val player: Player = Card.Owner
     }
 
     override val EffectType: EffectType = Effect

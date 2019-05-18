@@ -1,6 +1,6 @@
 package yugioh
 
-import yugioh.action.{ActionModule, NoAction}
+import yugioh.action.{ActionModule, NoAction, PlayerCause}
 import yugioh.action.monster.{Battle, DeclareAttackOnMonster, DeclareDirectAttack}
 import yugioh.card.monster.{Attack, Defense, Monster, Set}
 import yugioh.events._
@@ -32,6 +32,7 @@ trait DefaultBattlePhaseModuleComponent extends BattlePhaseModuleComponent {
 
 sealed trait BattlePhaseStep extends Step {
   def emitStartEvent()(implicit eventsModule: EventsModule): Unit = eventsModule.emit(BattlePhaseStepStartEvent(this))
+
   def emitEndEvent()(implicit eventsModule: EventsModule): Unit = eventsModule.emit(BattlePhaseStepEndEvent(this))
 
   def next(gameState: GameState)(implicit eventsModule: EventsModule, actionModule: ActionModule): BattlePhaseStep
@@ -49,10 +50,10 @@ case object BattleStep extends BattlePhaseStep {
     var attacker: Monster = null
     var target: Monster = null
     val subscription = eventsModule.observe {
-      case ActionEvent(DeclareAttackOnMonster(theAttacker, theTarget)) =>
+      case ActionEvent(DeclareAttackOnMonster(_, theAttacker, theTarget)) =>
         attacker = theAttacker
         target = theTarget
-      case ActionEvent(DeclareDirectAttack(theAttacker)) =>
+      case ActionEvent(DeclareDirectAttack(_, theAttacker)) =>
         attacker = theAttacker
     }
 
@@ -62,7 +63,6 @@ case object BattleStep extends BattlePhaseStep {
     subscription.dispose()
 
     if (attacker != null) {
-      assert(attacker != null)
       BattleStepWithPendingAttack(Battle(attacker, Option(target)))
     } else {
       EndStep
@@ -145,47 +145,49 @@ case object PerformDamageCalculation extends DamageStepSubStep {
 
     var destroyed: Set[Monster] = collection.immutable.Set()
     val subscription = eventsModule.observe {
-      case ActionEvent(DestroyByBattle(monster, _)) =>
+      case ActionEvent(DestroyByBattle(_, monster, _)) =>
         destroyed += monster
     }
 
     battle match {
       case Battle(attacker, None) =>
-        CauseBattleDamage(gameState.turnPlayers.turnPlayer, gameState.turnPlayers.opponent, attacker.attack).execute()
+        CauseBattleDamage(PlayerCause(attacker.controller), gameState.turnPlayers.turnPlayer, gameState.turnPlayers.opponent, attacker.attack).execute()
       case Battle(attacker, Some(target)) =>
-        for (
-          monsterControlledState <- target.maybeControlledState;
+        for {
+          monsterControlledState <- target.maybeControlledState
           position = monsterControlledState.position
-        ) {
-          position match {
+          turnPlayer = gameState.turnPlayers.turnPlayer
+        }
+        position match {
             case Defense =>
               if (attacker.attack > target.defense) {
                 if (attacker.isPiercing) {
-                  CauseBattleDamage(gameState.turnPlayers.turnPlayer, gameState.turnPlayers.opponent, attacker.attack - target.defense).execute()
+                  CauseBattleDamage(turnPlayer, gameState.turnPlayers.turnPlayer, gameState.turnPlayers.opponent, attacker.attack - target.defense).execute()
                 } else {
-                  NoAction(gameState.turnPlayers.turnPlayer)
-                }.andThen(DestroyByBattle(target, attacker)).execute()
+                  NoAction(turnPlayer)
+                }.andThen(DestroyByBattle(turnPlayer, target, attacker)).execute()
               }
+              // TODO: damage from attacking a monster with higher defense
             case Attack =>
               // if both have 0 attack, nothing happens here
               if (attacker.attack != 0 || target.attack != 0) {
                 val difference = attacker.attack - target.attack
                 (difference.signum match { // get the sign of the difference
                   case -1 => // attacker destroyed
-                    CauseBattleDamage(gameState.turnPlayers.opponent, gameState.turnPlayers.turnPlayer, difference)
-                      .also(DestroyByBattle(attacker, target))
+                    CauseBattleDamage(turnPlayer, gameState.turnPlayers.opponent, gameState.turnPlayers.turnPlayer, difference)
+                      .also(DestroyByBattle(turnPlayer, attacker, target))
                   case 0 =>
-                    DestroyByBattle(attacker, target)
-                      .also(DestroyByBattle(target, attacker))
+                    DestroyByBattle(turnPlayer, attacker, target)
+                      .also(DestroyByBattle(turnPlayer, target, attacker))
                   case 1 => // target destroyed
-                    CauseBattleDamage(gameState.turnPlayers.opponent, gameState.turnPlayers.turnPlayer, difference)
-                      .also(DestroyByBattle(target, attacker))
+                    CauseBattleDamage(turnPlayer, gameState.turnPlayers.opponent, gameState.turnPlayers.turnPlayer, difference)
+                      .also(DestroyByBattle(turnPlayer, target, attacker))
                 }).execute()
               }
             case Set =>
               throw new IllegalStateException("Attacked monster should have been flipped face up.")
           }
-        }
+
     }
 
     subscription.dispose()
@@ -206,7 +208,8 @@ case class EndOfTheDamageStep(destroyed: Set[Monster]) extends DamageStepSubStep
   override def performAndGetNext(battle: Battle)
                                 (implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Null = {
     for (monster <- destroyed) {
-      monster.sendToGrave()
+      monster.sendToGrave(battle.attacker.controller)
+      DestroyByBattle(monster.controller, monster, battle.attacker).execute()
     }
 
     FastEffectTiming.loop(gameState.copy(step = this))

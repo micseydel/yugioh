@@ -8,39 +8,39 @@ import yugioh.events.EventsModule
 import yugioh.{GameState, Player}
 
 trait ActionModule {
-  def newSetAsSpellOrTrap(spellOrTrap: SpellOrTrap): SetAsSpellOrTrap
+  def newSetAsSpellOrTrap(cause: Cause, spellOrTrap: SpellOrTrap): SetAsSpellOrTrap
 
-  def newNormalSummon(monster: Monster): NormalSummon
+  def newNormalSummon(cause: Cause, monster: Monster): NormalSummon
 
-  def newSetAsMonster(monster: Monster): SetAsMonster
+  def newSetAsMonster(cause: Cause, monster: Monster): SetAsMonster
 
-  def newTributeSummon(monster: Monster): TributeSummon
+  def newTributeSummon(cause: Cause, monster: Monster): TributeSummon
 
-  def newTributeSet(monster: Monster): TributeSet
+  def newTributeSet(cause: Cause, monster: Monster): TributeSet
 
-  def newSwitchPosition(monster: Monster)(implicit eventsModule: EventsModule): SwitchPosition
+  def newSwitchPosition(cause: Cause, monster: Monster)(implicit eventsModule: EventsModule): SwitchPosition
 
-  def newFlipSummon(monster: Monster)(implicit eventsModule: EventsModule): FlipSummon
+  def newFlipSummon(cause: Cause, monster: Monster)(implicit eventsModule: EventsModule): FlipSummon
 
-  def newDiscard(cause: Player, hand: Seq[AnyCard]): Discard
+  def newDiscard(cause: Cause, hand: Seq[AnyCard]): Discard
 
-  def newDraw(player: Player, howMany: Int): Draw
+  def newDraw(cause: Cause, player: Player, howMany: Int): Draw
 
   def newDrawForTurn(implicit gameState: GameState): DrawForTurn
 
-  def newDestroy(player: Player, card: AnyCard): Destroy
+  def newDestroy(cause: Cause, card: AnyCard): Destroy = newDestroy(cause, Seq(card))
 
-  def newDestroy(player: Player, cards: Seq[AnyCard]): Destroy
+  def newDestroy(cause: Cause, cards: Seq[AnyCard]): Destroy
 
-  def newSpecialSummon(controller: Player, monster: Monster, position: Position): SpecialSummon
+  def newSpecialSummon(cause: Cause, controller: Player, monster: Monster, position: Position): SpecialSummon
 
   def newDiscardForHandSizeLimit()(implicit gameState: GameState): DiscardForHandSizeLimit
 
-  def newDeclareDirectAttack(monster: Monster): DeclareDirectAttack
+  def newDeclareDirectAttack(cause: Cause, monster: Monster): DeclareDirectAttack
 
-  def newDeclareAttackOnMonster(attacker: Monster, target: Monster): DeclareAttackOnMonster
+  def newDeclareAttackOnMonster(cause: Cause, attacker: Monster, target: Monster): DeclareAttackOnMonster
 
-  def newChangeLifePoints(lifePointsChange: Int, player: Player): ChangeLifePoints
+  def newChangeLifePoints(cause: Cause, lifePointsChange: Int, player: Player): ChangeLifePoints
 }
 
 trait ActionModuleComponent {
@@ -50,64 +50,60 @@ trait ActionModuleComponent {
 trait DefaultActionModuleComponent extends ActionModuleComponent {
   def actionModule: ActionModule = new ActionModule {
 
-    override def newSetAsSpellOrTrap(spellOrTrap: SpellOrTrap): SetAsSpellOrTrap = {
-      new SetAsSpellOrTrapImpl(spellOrTrap)
+    override def newSetAsSpellOrTrap(cause: Cause, spellOrTrap: SpellOrTrap): SetAsSpellOrTrap = {
+      new SetAsSpellOrTrapImpl(cause, spellOrTrap)
     }
 
-    override def newDestroy(player: Player, cards: Seq[AnyCard]): Destroy = {
-      DestroyImpl(player, cards)
+    override def newDestroy(cause: Cause, cards: Seq[AnyCard]): Destroy = {
+      DestroyImpl(cause, cards)
     }
 
-    override def newDestroy(player: Player, card: AnyCard): Destroy = {
-      newDestroy(player, Seq(card))
-    }
-
-    override def newDiscard(cause: Player, hand: Seq[AnyCard]): Discard = {
+    override def newDiscard(cause: Cause, hand: Seq[AnyCard]): Discard = {
       new DiscardImpl(cause, hand)
     }
 
-    override def newSetAsMonster(monster: Monster): SetAsMonster = {
-      new SetAsMonsterImpl(monster)
+    override def newSetAsMonster(cause: Cause, monster: Monster): SetAsMonster = {
+      new SetAsMonsterImpl(cause, monster)
     }
 
-    override def newSpecialSummon(controller: Player, monster: Monster, position: Position): SpecialSummonImpl = {
-      SpecialSummonImpl(controller, monster, position)
+    override def newSpecialSummon(cause: Cause, controller: Player, monster: Monster, position: Position): SpecialSummonImpl = {
+      SpecialSummonImpl(cause, controller, monster, position)
     }
 
-    override def newNormalSummon(monster: Monster): NormalSummon = {
-      new NormalSummonImpl(monster)
+    override def newNormalSummon(cause: Cause, monster: Monster): NormalSummon = {
+      new NormalSummonImpl(cause, monster)
     }
 
-    override def newFlipSummon(monster: Monster)(implicit eventsModule: EventsModule): FlipSummon = {
-      new FlipSummonImpl(monster)
+    override def newFlipSummon(cause: Cause, monster: Monster)(implicit eventsModule: EventsModule): FlipSummon = {
+      new FlipSummonImpl(cause, monster)
     }
 
-    override def newDraw(player: Player, howMany: Int): Draw = {
-      new DrawImpl(player, howMany)
+    override def newDraw(cause: Cause, player: Player, howMany: Int): Draw = {
+      new DrawImpl(cause, player, howMany)
     }
 
     override def newDiscardForHandSizeLimit()(implicit gameState: GameState): DiscardForHandSizeLimit = {
       new DiscardForHandSizeLimitImpl
     }
 
-    override def newSwitchPosition(monster: Monster)(implicit eventsModule: EventsModule): SwitchPosition = {
-      new SwitchPositionImpl(monster)
+    override def newSwitchPosition(cause: Cause, monster: Monster)(implicit eventsModule: EventsModule): SwitchPosition = {
+      new SwitchPositionImpl(cause, monster)
     }
 
-    override def newTributeSummon(monster: Monster): TributeSummon = {
-      new TributeSummonImpl(monster)
+    override def newTributeSummon(cause: Cause, monster: Monster): TributeSummon = {
+      new TributeSummonImpl(cause, monster)
     }
 
-    override def newTributeSet(monster: Monster): TributeSet = {
-      new TributeSetImpl(monster)
+    override def newTributeSet(cause: Cause, monster: Monster): TributeSet = {
+      new TributeSetImpl(cause, monster)
     }
 
     override def newDrawForTurn(implicit gameState: GameState): DrawForTurn = new DrawForTurnImpl
 
-    override def newDeclareDirectAttack(monster: Monster) = DeclareDirectAttack(monster)
+    override def newDeclareDirectAttack(cause: Cause, monster: Monster) = DeclareDirectAttack(cause, monster)
 
-    override def newDeclareAttackOnMonster(attacker: Monster, target: Monster) = DeclareAttackOnMonster(attacker, target)
+    override def newDeclareAttackOnMonster(cause: Cause, attacker: Monster, target: Monster) = DeclareAttackOnMonster(cause, attacker, target)
 
-    override def newChangeLifePoints(lifePointsChange: Int, player: Player): ChangeLifePoints = ChangeLifePoints(lifePointsChange, player)
+    override def newChangeLifePoints(cause: Cause, lifePointsChange: Int, player: Player): ChangeLifePoints = ChangeLifePoints(cause, lifePointsChange, player)
   }
 }

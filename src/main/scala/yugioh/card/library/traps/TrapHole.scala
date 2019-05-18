@@ -1,7 +1,7 @@
 package yugioh.card.library.traps
 
 import yugioh.{Criteria, GameState, Player, PlayerFastEffects}
-import yugioh.action.{ActionModule, InherentAction, NoAction}
+import yugioh.action._
 import yugioh.action.monster.NormalOrFlipSummon
 import yugioh.card.Card.AnyCard
 import yugioh.card.{Effect, EffectType, NormalTrap, TrapEffect}
@@ -15,7 +15,7 @@ class TrapHole(val Owner: Player) extends NormalTrap {
 
   override val Effects: List[Effect] = List(TrapHoleEffect)
 
-  object TrapHoleEffect extends TrapEffect {
+  object TrapHoleEffect extends TrapEffect { effect =>
     override val Card: TrapHole = TrapHole.this
     override val EffectType: EffectType = Effect
     override val maybeCostCriteria: Option[Criteria[AnyCard]] = None
@@ -74,17 +74,20 @@ class TrapHole(val Owner: Player) extends NormalTrap {
     })
 
     override val Resolution: InherentAction = new InherentAction {
-      override val player: Player = Card.Owner
+      override val cause: Cause = EffectCause(effect, Card.Owner)
 
       override def doAction()(implicit gameState: GameState, eventsModule: EventsModule, actionModule: ActionModule): Unit = {
-        val target = selectedTargets match {
-          case Seq(monster: Monster) =>
-            monster
+        val target: MonsterTarget = selectedTargets match {
+          case Seq(target@MonsterTarget(_, _)) =>
+            target
           case _ =>
             throw new AssertionError(s"selectedTargets should have contained a single monster, not $selectedTargets")
         }
 
-        target.destroy()
+        if (target.validTarget) {
+          val destructionCause = EffectCause(effect, cause)
+          target.card.destroy(destructionCause)
+        }
       }
     }
   }
